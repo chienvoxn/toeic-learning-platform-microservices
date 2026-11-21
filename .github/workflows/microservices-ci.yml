@@ -1,0 +1,56 @@
+﻿name: Microservices MVP CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  java-services:
+    name: Build ${{ matrix.service }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - identity-service
+          - content-service
+          - assessment-service
+          - interaction-service
+          - membership-service
+
+    defaults:
+      run:
+        working-directory: ${{ matrix.service }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          cache-dependency-path: ${{ matrix.service }}/pom.xml
+
+      - name: Build and test
+        run: mvn -B clean verify
+
+  compose-static:
+    name: Validate Docker Compose and JavaScript
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Check JS syntax
+        run: node --check web/app.js
+
+      - name: Compose validation
+        run: |
+          cp .env.example .env
+          docker compose config --quiet
