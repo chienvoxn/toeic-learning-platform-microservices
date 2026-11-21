@@ -1,24 +1,12 @@
 package com.toeic.assessment;
-
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.IdClass;
-import jakarta.persistence.LockModeType;
-import jakarta.persistence.Table;
+import java.time.ZoneOffset;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Lock;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 import org.springframework.http.HttpStatus;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -30,146 +18,6 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
-
-@Entity
-@Table(name = "attempts")
-class Attempt {
-    @Id
-    UUID attemptId;
-
-    @Column(nullable = false)
-    UUID userId;
-
-    @Column(nullable = false)
-    UUID quizId;
-
-    @Column(nullable = false)
-    String status = "IN_PROGRESS";
-
-    @Column(nullable = false)
-    OffsetDateTime createdAt;
-
-    Integer correctCount;
-    OffsetDateTime gradedAt;
-
-    protected Attempt() {
-    }
-
-    Attempt(UUID quizId, UUID userId) {
-        this.attemptId = UUID.randomUUID();
-        this.quizId = quizId;
-        this.userId = userId;
-        this.createdAt = OffsetDateTime.now(ZoneOffset.UTC);
-    }
-}
-
-@Entity
-@Table(name = "attempt_questions")
-@IdClass(AttemptQuestionKey.class)
-class AttemptQuestion {
-    @Id
-    UUID attemptId;
-
-    @Id
-    UUID questionId;
-
-    @Column(nullable = false, columnDefinition = "text")
-    String prompt;
-
-    @Column(nullable = false)
-    String correctChoice;
-
-    String selectedChoice;
-
-    @Column(name = "option_a", nullable = false)
-    String optionA;
-
-    @Column(name = "option_b", nullable = false)
-    String optionB;
-
-    @Column(name = "option_c", nullable = false)
-    String optionC;
-
-    @Column(name = "option_d", nullable = false)
-    String optionD;
-
-    @Column(nullable = false, columnDefinition = "text")
-    String explanation;
-
-    protected AttemptQuestion() {
-    }
-
-    AttemptQuestion(
-            UUID attemptId,
-            UUID questionId,
-            String prompt,
-            String optionA,
-            String optionB,
-            String optionC,
-            String optionD,
-            String correctChoice,
-            String explanation
-    ) {
-        this.attemptId = attemptId;
-        this.questionId = questionId;
-        this.prompt = prompt;
-        this.optionA = optionA;
-        this.optionB = optionB;
-        this.optionC = optionC;
-        this.optionD = optionD;
-        this.correctChoice = correctChoice;
-        this.explanation = explanation;
-    }
-}
-
-interface AttemptRepo extends JpaRepository<Attempt, UUID> {
-    @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("select a from Attempt a where a.attemptId = :id and a.userId = :user")
-    Optional<Attempt> lockOwn(@Param("id") UUID id, @Param("user") UUID user);
-
-    List<Attempt> findByUserIdOrderByCreatedAtDesc(UUID userId);
-}
-
-interface AttemptQuestionRepo extends JpaRepository<AttemptQuestion, AttemptQuestionKey> {
-    List<AttemptQuestion> findByAttemptId(UUID attemptId);
-}
-
-@Entity
-@Table(name = "event_outbox")
-class EventOutbox {
-    @Id
-    UUID eventId;
-
-    @Column(nullable = false)
-    UUID aggregateId;
-
-    @Column(nullable = false)
-    UUID actorId;
-
-    @Column(nullable = false)
-    String eventType;
-
-    @Column(nullable = false)
-    boolean published = false;
-
-    @Column(nullable = false)
-    OffsetDateTime occurredAt;
-
-    protected EventOutbox() {
-    }
-
-    EventOutbox(Attempt attempt) {
-        this.eventId = UUID.randomUUID();
-        this.aggregateId = attempt.attemptId;
-        this.actorId = attempt.userId;
-        this.eventType = "AttemptGraded";
-        this.occurredAt = OffsetDateTime.now(ZoneOffset.UTC);
-    }
-}
-
-interface OutboxRepo extends JpaRepository<EventOutbox, UUID> {
-    List<EventOutbox> findTop20ByPublishedFalseOrderByOccurredAtAsc();
-}
 
 @RestController
 @RequestMapping("/ms/v1/attempts")
