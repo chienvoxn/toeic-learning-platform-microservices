@@ -1,0 +1,50 @@
+2026-11-22T18:33:41.512+07:00 QA-01 Security / RBAC; checkout=aa43453828e941ce072117f9d74a8050ba7c78ef; project=toeic-microservices-mvp; Gateway=http://127.0.0.1:8088; fixture-run=2091af63c14c
+2026-11-22T18:33:42.900+07:00 Running services=12; demo PRO change enabled; revision is local checkout
+2026-11-22T18:33:42.900+07:00 SQL checks use read-only transactions; role bootstrap and login disable target the dedicated synthetic administrator only
+2026-11-22T18:33:44.730+07:00 learner registration: POST HTTP 200 (expected 200)
+2026-11-22T18:33:44.873+07:00 other-learner registration: POST HTTP 200 (expected 200)
+2026-11-22T18:33:45.002+07:00 teacher-candidate registration: POST HTTP 200 (expected 200)
+2026-11-22T18:33:45.529+07:00 LEARNER /rbac/me: GET HTTP 200 (expected 200)
+2026-11-22T18:33:45.529+07:00 LEARNER roles=LEARNER; content:write=False; rbac:manage=False
+2026-11-22T18:33:45.616+07:00 administrator registration: POST HTTP 200 (expected 200)
+2026-11-22T18:33:46.681+07:00 Synthetic ADMIN bootstrap: SQL COUNT(identity_user_roles, fixture ADMIN) 0 -> 1
+2026-11-22T18:33:47.019+07:00 ADMIN login: POST HTTP 200 (expected 200)
+2026-11-22T18:33:47.036+07:00 ADMIN /rbac/me: GET HTTP 200 (expected 200)
+2026-11-22T18:33:47.036+07:00 ADMIN roles=ADMIN,LEARNER; content:write=True; rbac:manage=True
+2026-11-22T18:33:48.277+07:00 LEARNER cannot grant TEACHER: POST HTTP 403 (expected 403)
+2026-11-22T18:33:48.576+07:00 LEARNER cannot grant TEACHER: SQL COUNT(identity_user_roles, target TEACHER) 0 -> 0
+2026-11-22T18:33:49.360+07:00 ADMIN grants TEACHER: POST HTTP 200 (expected 200)
+2026-11-22T18:33:49.640+07:00 ADMIN grants TEACHER: SQL COUNT(identity_user_roles, target TEACHER) 0 -> 1
+2026-11-22T18:33:49.730+07:00 TEACHER after role grant login: POST HTTP 200 (expected 200)
+2026-11-22T18:33:49.753+07:00 TEACHER /rbac/me: GET HTTP 200 (expected 200)
+2026-11-22T18:33:49.753+07:00 TEACHER roles=LEARNER,TEACHER; content:write=True; rbac:manage=False
+2026-11-22T18:33:50.052+07:00 TEACHER cannot grant ADMIN: POST HTTP 403 (expected 403)
+2026-11-22T18:33:50.357+07:00 TEACHER cannot grant ADMIN: SQL COUNT(identity_user_roles, target ADMIN) 0 -> 0
+2026-11-22T18:33:50.357+07:00 PASS Learner, Teacher and Admin role-management responses and SQL
+2026-11-22T18:33:52.010+07:00 LEARNER create quiz: POST HTTP 403 (expected 403)
+2026-11-22T18:33:52.391+07:00 LEARNER: SQL COUNT(toeic_quizzes, all rows) 2 -> 2; COUNT(run-specific title) 0 -> 0
+2026-11-22T18:33:52.391+07:00 PASS LEARNER authoring decision supported by SQL
+2026-11-22T18:33:54.635+07:00 TEACHER create quiz: POST HTTP 200 (expected 200)
+2026-11-22T18:33:54.901+07:00 TEACHER: SQL COUNT(toeic_quizzes, all rows) 2 -> 3; COUNT(run-specific title) 0 -> 1
+2026-11-22T18:33:54.902+07:00 TEACHER: test quiz ID 47058411-e798-411d-9d62-9a8d55b04b64
+2026-11-22T18:33:54.902+07:00 PASS TEACHER authoring decision supported by SQL
+2026-11-22T18:33:55.319+07:00 ADMIN create quiz: POST HTTP 200 (expected 200)
+2026-11-22T18:33:55.616+07:00 ADMIN: SQL COUNT(toeic_quizzes, all rows) 3 -> 4; COUNT(run-specific title) 0 -> 1
+2026-11-22T18:33:55.616+07:00 ADMIN: test quiz ID d3ed1db0-7b41-4b72-8865-7c8dadb4d1eb
+2026-11-22T18:33:55.616+07:00 PASS ADMIN authoring decision supported by SQL
+2026-11-22T18:33:55.684+07:00 Fixture quiz list: GET HTTP 200 (expected 200)
+2026-11-22T18:33:58.263+07:00 Owner opens FREE quiz: POST HTTP 200 (expected 200)
+2026-11-22T18:33:58.466+07:00 Owner gets own attempt: GET HTTP 200 (expected 200)
+2026-11-22T18:33:58.576+07:00 Non-owner LEARNER gets attempt: GET HTTP 404 (expected 404)
+2026-11-22T18:33:58.604+07:00 Non-owner ADMIN gets attempt: GET HTTP 404 (expected 404)
+2026-11-22T18:33:58.604+07:00 PASS attempt ownership: owner 200; other learner 404; admin 404
+2026-11-22T18:33:58.691+07:00 FREE membership: GET HTTP 200 (expected 200)
+2026-11-22T18:33:59.339+07:00 FREE starts premium quiz: POST HTTP 403 (expected 403)
+2026-11-22T18:33:59.690+07:00 FREE denial: SQL COUNT(attempts, learner and premium quiz) 0 -> 0
+2026-11-22T18:33:59.959+07:00 Demo upgrade to PRO: PUT HTTP 200 (expected 200)
+2026-11-22T18:34:00.155+07:00 PRO starts premium quiz: POST HTTP 200 (expected 200)
+2026-11-22T18:34:00.461+07:00 PRO success: SQL COUNT(attempts, learner and premium quiz) 0 -> 1
+2026-11-22T18:34:00.461+07:00 PASS FREE/PRO entitlement and SQL
+2026-11-22T18:34:01.342+07:00 Disabled ADMIN fixture login: POST HTTP 401 (expected 401)
+2026-11-22T18:34:01.342+07:00 PASS synthetic ADMIN login disabled; fixture rows retained
+2026-11-22T18:34:01.342+07:00 QA-01 PASS: HTTP, permissions and required SQL observations verified

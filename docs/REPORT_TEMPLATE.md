@@ -9,9 +9,9 @@
 | 5 independent Core Microservices | `docker compose ps`, image/service logs | Đã cấu hình. Chờ ảnh runtime. |
 | Independent Gateway | network tab: UI → :8088, nginx routes | Đã cấu hình. Smoke trước đó được báo đạt, chờ log và ảnh. |
 | 5 databases | `docker compose exec <db> psql ... \l` | Có cấu hình và migrations riêng. Chờ ảnh hoặc output DB. |
-| JWT roles/permissions | login response (redact JWT), decoding header/payload, denied learner authoring | Smoke trước đó được báo đạt. Chờ log. |
+| JWT roles/permissions | Quyền từ `/rbac/me`, HTTP và SQL COUNT theo vai trò | Learner bị từ chối tạo quiz và cấp role. Teacher tạo được quiz, bị từ chối cấp Admin. Admin cấp được Teacher và tạo được quiz. [Log QA-01](evidence/qa01-security-rbac-aa43453.txt) |
 | Interaction records reviews + activity | UI screenshot and `interaction_db` rows | Smoke trước đó được báo đạt. Chờ log. |
-| Membership FREE vs PRO | free 403 for premium, demo PRO allows it | Smoke trước đó được báo đạt. Chờ log để xác nhận nhánh PRO. |
+| Membership FREE vs PRO | FREE trả 403, demo PRO mở được cùng quiz premium | FREE trả 403 với COUNT attempt giữ 0. Sau demo upgrade, PRO trả 200 và COUNT tăng 0 → 1. [Log QA-01](evidence/qa01-security-rbac-aa43453.txt) |
 | No cross-database FK | ERD and migrations in each service | Đối chiếu migrations và mô hình sở hữu database. |
 | Docker Compose | `docker compose config --quiet` & full stack boot | Config exit 0. Chờ bằng chứng full stack boot. |
 
@@ -106,7 +106,8 @@ erDiagram
 | Performance 50 VUs / 60 s (QA-04) | `k6 run tests/load.js` | p95 < 500 ms, HTTP failures < 1%, all checks pass | **PASS, 2026-11-22.** 5,793 requests, 95.76 req/s, p95 29.18 ms, HTTP failures 0%, failed checks 0%. | [k6 console output](evidence/qa04-k6-20261122-run.txt) |
 | Interaction down (QA-03 A) | `python -B -u tests/test_fault_injection.py` | Grade persists while Interaction is down. Queue holds the event and activity appears after recovery. | **PASS, 2026-11-22.** Submit HTTP 200 in 94.0 ms, `GRADED` 0/3. Queue `ready` increased 0 → 1 with zero consumers. Matching activity observed at recovery poll 5. | [QA-03 log, case A](evidence/qa03-fault-injection-20261122-134619.txt) |
 | RabbitMQ down (QA-03 B) | `python -B -u tests/test_fault_injection.py` | Grade persists with outbox pending during outage. Same event is processed after recovery. | **PASS, 2026-11-22.** Submit HTTP 200 in 93.0 ms, `GRADED` 0/3. `published=false` in all 4 outage polls and 1 retry warning observed. Matching activity observed at recovery poll 6. | [QA-03 log, case B](evidence/qa03-fault-injection-20261122-134619.txt) |
-| No cross-user read | use another learner token | 404 / denied | Covered by unit test and reported smoke | Raw smoke output pending. |
+| QA-01 Security / RBAC | `POST /ms/v1/contents/quizzes` và SQL COUNT trước/sau | Learner nhận 403, số quiz không đổi | **PASS, `aa43453`.** Tổng quiz 2 → 2, quiz theo mã lần chạy 0 → 0. Teacher và Admin mỗi lần nhận 200 và thêm đúng một quiz. | [Log QA-01](evidence/qa01-security-rbac-aa43453.txt) |
+| No cross-user read | `GET /ms/v1/attempts/{id}` | Chủ sở hữu 200, người khác 404 | **PASS.** Cả Learner và Admin không sở hữu attempt đều nhận 404. | [Log QA-01](evidence/qa01-security-rbac-aa43453.txt) |
 | Concurrent submit | `python -B -u tests/test_concurrent_submit.py` | 10 HTTP 200, identical grade, one outbox row | **PASS, 2026-11-22.** 10/10 HTTP 200, `GRADED` 0/3, 65.9–298.2 ms, one `AttemptGraded` row. | Log QA-02 với attempt `d59d38b4-cd72-4184-bf5a-40d396102609`. |
 
 #### Kế hoạch chạy các phép thử
@@ -127,7 +128,7 @@ erDiagram
 
 Checkout `19aa006`, Windows 11 x64, AMD Ryzen 7 6800H (8 nhân, 16 luồng), RAM 7.19 GiB. Docker Desktop Engine 29.8.2, Compose 5.5.1, Docker báo 16 CPU và 3.43 GiB RAM. k6 v2.4.0 chạy trên cùng máy với Gateway. Preflight 2 VUs trong 5 giây gửi 20 requests với 60/60 checks đạt. Dữ liệu thử gồm hai quiz. p99 là 572.13 ms, cao hơn mốc 500 ms dùng cho p95. [Preflight và cấu hình máy](evidence/qa04-k6-20261122-preflight.txt) · [Summary JSON](evidence/qa04-k6-20261122-summary.json)
 
-Ghi kèm commit, ngày giờ, cấu hình máy, trạng thái Compose và dữ liệu thử đã ẩn JWT hoặc khóa dịch vụ. Với QA-01, đính kèm HTTP 403 và số hàng trước/sau nếu báo cáo yêu cầu chứng minh không có ghi dữ liệu.
+Ghi kèm commit, ngày giờ, cấu hình máy, trạng thái Compose và dữ liệu thử đã ẩn JWT hoặc khóa dịch vụ. Log QA-01 ghi timestamp, SHA checkout, HTTP status và SQL COUNT. Tài khoản Admin cần cho phép thử được provision riêng và đăng nhập đã bị vô hiệu hóa sau khi chạy. [Log QA-01](evidence/qa01-security-rbac-aa43453.txt)
 
 #### Chạy lại QA-04 trên Windows
 
