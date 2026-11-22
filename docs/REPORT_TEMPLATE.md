@@ -107,15 +107,31 @@ erDiagram
 | Interaction down | stop service then submit | grade success, event later visible | [PENDING] | [PENDING] |
 | RabbitMQ down | stop broker then submit | grade success, pending row during outage and activity after recovery | [PENDING] | [PENDING] |
 | No cross-user read | use another learner token | 404 / denied | Covered by unit test and reported smoke | Raw smoke output pending. |
-| Concurrent submit | 10 submits concurrently | 10 HTTP 200, same status and score, one outbox row | [PENDING] | [PENDING] |
+| Concurrent submit | `python -B -u tests/test_concurrent_submit.py` | 10 HTTP 200, identical grade, one outbox row | **PASS, 2026-11-22.** 10/10 HTTP 200, `GRADED` 0/3, 65.9–298.2 ms, one `AttemptGraded` row. | Log QA-02 với attempt `d59d38b4-cd72-4184-bf5a-40d396102609`. |
 
-#### Kế hoạch chạy các phép thử còn thiếu
+#### Kế hoạch chạy các phép thử
 
 1. **k6 (QA-04).** Xác nhận danh sách quiz hoạt động qua Gateway. Chạy `k6 run tests/load.js` với 50 VUs trong 1 phút. Lưu output, exit code, p95, `http_req_failed`, tổng số request và tỷ lệ check. Chấp nhận khi p95 < 500 ms và lỗi < 1%. Phép thử đo endpoint danh sách quiz.
-2. **Concurrent submit (QA-02).** Tạo một attempt mới, lưu lựa chọn có điểm kỳ vọng và xác nhận `IN_PROGRESS`. Dùng 10 worker khởi phát cùng lúc, cùng JWT chủ sở hữu và cùng `attemptId`, gọi `POST /ms/v1/attempts/{id}/submit`. Lưu từng HTTP status, body đã lọc và thời gian. Đối chiếu `attempts` có một kết quả `GRADED` với điểm kỳ vọng, và `event_outbox` có đúng một dòng lọc theo `aggregate_id` và `event_type = 'AttemptGraded'`. Lặp với lượt mới để tránh đo một lượt đã chấm sẵn.
+2. **Concurrent submit (QA-02).** Chạy [script QA-02](../tests/test_concurrent_submit.py) trên stack Compose đang hoạt động. Mỗi lần chạy đăng ký learner mới, mở một quiz FREE, lưu lựa chọn A và gửi 10 yêu cầu submit cùng JWT qua Gateway. Script ghi HTTP status, độ trễ và điểm của từng request, so sánh các phản hồi theo ID câu hỏi rồi truy vấn PostgreSQL ở chế độ chỉ đọc. Exit `0` khi cả 10 yêu cầu trả cùng kết quả `GRADED`, điểm khớp với snapshot đã lưu và outbox có đúng một sự kiện `AttemptGraded`. Exit `1` khi tiêu chí sai hoặc lỗi thiết lập. Exit `2` khi HTTP đạt nhưng thiếu xác minh DB.
 3. **Fault injection (QA-03 và mất broker).** Dùng một attempt mới cho mỗi kịch bản trong [quy trình fault injection](../tests/fault_injection.md). Dừng Interaction, nộp bài trong khi service dừng, rồi khởi động lại và tìm `ATTEMPT_GRADED` theo đúng `attemptId`. Dừng RabbitMQ, nộp bài và kiểm tra bản ghi outbox `published=false` khi broker vẫn dừng. Khởi động lại broker, kiểm tra log, cờ outbox và hoạt động tương ứng thông qua API. Ghi thời gian từ submit tới khi quan sát được activity. Chấp nhận nếu submit trả 200 trong thời gian gián đoạn và activity xuất hiện sau khi dịch vụ hồi phục. Có thể đặt cửa sổ quan sát 60 giây tính từ lúc dependency sẵn sàng, ghi rõ đây là ngưỡng đề xuất. Khôi phục từng dependency trước khi chuyển kịch bản.
 
 Ghi kèm commit, ngày giờ, cấu hình máy, trạng thái Compose và dữ liệu thử đã ẩn JWT hoặc khóa dịch vụ. Với QA-01, đính kèm HTTP 403 và số hàng trước/sau nếu báo cáo yêu cầu chứng minh không có ghi dữ liệu.
+
+#### Lưu bằng chứng QA-02 trên Windows
+
+Tại thư mục gốc repository, mở PowerShell và chạy các lệnh sau khi stack đã sẵn sàng. Nếu stack chưa chạy, khởi động bằng `docker compose up -d --build` trước.
+
+```powershell
+$gatewayAddress = docker compose port gateway 8088
+if ($LASTEXITCODE -ne 0) { throw 'Gateway Compose chưa sẵn sàng' }
+$env:GATEWAY_URL = 'http://' + $gatewayAddress.Trim()
+$qa02Log = Join-Path $env:TEMP ('toeic-qa02-' + (Get-Date -Format 'yyyyMMdd-HHmmss') + '.txt')
+"Git HEAD: $(git rev-parse --short HEAD)" | Tee-Object -FilePath $qa02Log
+python -B -u tests/test_concurrent_submit.py | Tee-Object -FilePath $qa02Log -Append
+$qa02Exit = $LASTEXITCODE
+"QA-02 exit code $qa02Exit" | Tee-Object -FilePath $qa02Log -Append
+Write-Output "Evidence file $qa02Log"
+```
 
 ### Suggested screenshot set
 
