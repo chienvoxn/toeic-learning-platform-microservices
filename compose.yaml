@@ -91,9 +91,7 @@ services:
         retries: 20,
       }
   identity-service:
-    build:
-      context: ./identity-service
-      network: host
+    build: ./identity-service
     environment:
       <<: *app
       DB_URL: jdbc:postgresql://identity-db:5432/identity_db

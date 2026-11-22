@@ -6,7 +6,7 @@
 
 **Business goal:** TOEIC learner registers, selects TOEIC content, practices, receives a grade, reviews material and accesses plans. Teacher may author quiz after authentication. Relevant stakeholders: Learner, Teacher, Admin, examiner, maintainer.
 
-**Constraints:** KTHDV Hướng 3: IAM (JWT, roles, permissions), core domain resources, interaction, membership, 4+ deployed core services, API Gateway, database ownership, Docker Compose. KTPM: ADD, arc42, C4 L1/L2/L3, 3+ measurable scenarios, 2+ ADR, runtime & deployment view, k6 and fault injection evidence. Assessment uses `entrypoints/core/data` packages with a separate package group for HTTP, JWT and AMQP adapters. Conformity with the official course boilerplate still requires confirmation.
+**Constraints:** KTHDV Hướng 3: IAM (JWT, roles, permissions), core domain resources, interaction, membership, 4+ deployed core services, API Gateway, database ownership, Docker Compose. KTPM: ADD, arc42, C4 L1/L2/L3, 3+ measurable scenarios, 2+ ADR, runtime & deployment view, k6 and fault injection evidence. Each service uses `entrypoints/core/data` packages and groups technical adapters separately. Conformity with the official course boilerplate still requires confirmation.
 
 ## 2. arc42 — Architecture constraints and quality goals
 
@@ -114,6 +114,31 @@ flowchart LR
 ```
 
 The application depends on persistence port interfaces and Spring injects the JPA implementations. `AttemptRepo.lockOwn` supplies the pessimistic write lock. The scheduled publisher reads and updates the outbox directly through `OutboxRepo`. `MessagingConfig` declares the durable exchange, queue and binding. Domain entities retain JPA mappings, and the application still calls the concrete JWT, HTTP and JDBC components shown above. [C4 component-to-package mapping](ASSESSMENT_DDD.md#ánh-xạ-c4-component--java-package--class--responsibility)
+
+### C4 component-to-package mapping for Identity, Content, Membership and Interaction
+
+Each package is relative to `com.toeic.<service>`. The `IdentityApplication`, `ContentApplication`, `MembershipApplication` and `InteractionApplication` bootstrap classes stay at their service roots for Spring component, entity and repository discovery.
+
+| Service | C4 component and responsibility | Java package | Class |
+|---|---|---|---|
+| Identity | Registration, login and role-management HTTP API | `entrypoints` | `IdentityDirectoryController` |
+| Identity | User model and demo account provisioning | `core` | `IdentityUser`, `DemoTeacherProvisioner` |
+| Identity | User persistence | `data.persistence` | `IdentityUserRepository` |
+| Identity | Role validation, grants and permission lookups through JDBC | `data.jdbc` | `RbacService` |
+| Identity | JWT signing and verification | `adapters.security` | `TokenService` |
+| Content | Quiz, snapshot and learning resource HTTP API | `entrypoints` | `QuizController`, `ResourceController` |
+| Content | Quiz, question and learning resource models | `core` | `Quiz`, `QuizQuestion`, `LearningResource` |
+| Content | Quiz, question and resource persistence | `data.persistence` | `QuizRepo`, `QuizQuestionRepo`, `ResourceRepository` |
+| Content | Local JWT verification and actor access | `adapters.security` | `TokenService`, `IdentityClient` |
+| Membership | Entitlement and demo plan change HTTP API | `entrypoints` | `MembershipController` |
+| Membership | Membership and plan state | `core` | `Membership` |
+| Membership | Membership persistence | `data.persistence` | `MembershipRepository` |
+| Membership | Local JWT verification and actor access | `adapters.security` | `TokenService`, `IdentityClient` |
+| Interaction | Review and learner activity HTTP API | `entrypoints` | `InteractionController`, `ActivityController` |
+| Interaction | Review and activity models | `core` | `ContentReview`, `LearningActivity` |
+| Interaction | Review and activity persistence | `data.persistence` | `ContentReviewRepository`, `ActivityRepo` |
+| Interaction | Graded-attempt consumer and RabbitMQ topology | `adapters.messaging` | `ActivityConsumer`, `ActivityMessaging` |
+| Interaction | Local JWT verification and actor access | `adapters.security` | `TokenService`, `IdentityClient` |
 
 ## 6. arc42 — Runtime view
 
