@@ -6,7 +6,7 @@
 
 **Business goal:** TOEIC learner registers, selects TOEIC content, practices, receives a grade, reviews material and accesses plans. Teacher may author quiz after authentication. Relevant stakeholders: Learner, Teacher, Admin, examiner, maintainer.
 
-**Constraints:** KTHDV Hướng 3: IAM (JWT, roles, permissions), core domain resources, interaction, membership, 4+ deployed core services, API Gateway, database ownership, Docker Compose. KTPM: ADD, arc42, C4 L1/L2/L3, 3+ measurable scenarios, 2+ ADR, runtime & deployment view, k6 and fault injection evidence. Assessment separates entry point, core and data responsibilities by class within one Java package. Literal `entrypoints/core/data` package conformity remains open if required by the course rubric.
+**Constraints:** KTHDV Hướng 3: IAM (JWT, roles, permissions), core domain resources, interaction, membership, 4+ deployed core services, API Gateway, database ownership, Docker Compose. KTPM: ADD, arc42, C4 L1/L2/L3, 3+ measurable scenarios, 2+ ADR, runtime & deployment view, k6 and fault injection evidence. Assessment uses `entrypoints/core/data` packages with a separate package group for HTTP, JWT and AMQP adapters. Conformity with the official course boilerplate still requires confirmation.
 
 ## 2. arc42 — Architecture constraints and quality goals
 
@@ -113,7 +113,7 @@ flowchart LR
  MC -.->|declares topology| MQ
 ```
 
-The application depends on persistence port interfaces and Spring injects the JPA implementations. `AttemptRepo.lockOwn` supplies the pessimistic write lock. The scheduled publisher reads and updates the outbox directly through `OutboxRepo`. `MessagingConfig` declares the durable exchange, queue and binding. Domain entities retain JPA mappings, and the application still calls the concrete JWT, HTTP and JDBC components shown above. See the [Assessment domain and dependency review](ASSESSMENT_DDD.md).
+The application depends on persistence port interfaces and Spring injects the JPA implementations. `AttemptRepo.lockOwn` supplies the pessimistic write lock. The scheduled publisher reads and updates the outbox directly through `OutboxRepo`. `MessagingConfig` declares the durable exchange, queue and binding. Domain entities retain JPA mappings, and the application still calls the concrete JWT, HTTP and JDBC components shown above. [C4 component-to-package mapping](ASSESSMENT_DDD.md#ánh-xạ-c4-component--java-package--class--responsibility)
 
 ## 6. arc42 — Runtime view
 
@@ -202,7 +202,7 @@ QA-01 to QA-04 above. Use [smoke](../tests/smoke.py), [k6](../tests/load.js) and
 3. **No instant token revocation**: short-lived 30min token; implement central revocation/version check if required.
 4. **Demo-only membership plan upgrade**: users can self-activate PRO when flag is true; never accept as paid entitlement.
 5. **Outbox publisher confirmations not implemented**: broker accepted/ack not tracked; use confirms and retry-safe transitions.
-6. **Assessment layer boundaries are logical**. The classes share one package. See the [Assessment DDD review](ASSESSMENT_DDD.md#8-giới-hạn-và-cải-tiến-sau-mvp) for the criteria for further separation.
+6. **Assessment dependency boundaries**. The application and domain share the core package, and the application depends on concrete HTTP, JWT and JDBC adapters. [Assessment DDD review](ASSESSMENT_DDD.md#8-giới-hạn-và-cải-tiến-sau-mvp)
 7. **Pending runtime evidence**: archive environment and test outputs, then measure performance, concurrent submit and fault recovery.
 
 ## 12. arc42 — Glossary

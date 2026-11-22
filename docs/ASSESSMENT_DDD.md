@@ -1,6 +1,6 @@
 # Assessment Service — Domain-Driven Design
 
-Tài liệu phản ánh mã tại `a308a74` trên nhánh `refactor/architecture-improvement`. Xem [kiến trúc tổng thể và C4 Level 3](EXAM_ARCHITECTURE.md#c4-level-3--assessment-components) và [trạng thái kiểm thử](VALIDATION_STATUS.md).
+Tài liệu phản ánh Assessment sau khi phân tầng package trên nhánh `refactor/architecture-improvement`, từ baseline `2fd4ed8`. `entrypoints/core/data` là cấu trúc mục tiêu tạm thời vì chưa tìm thấy boilerplate giảng viên. Xem [C4 Level 3](EXAM_ARCHITECTURE.md#c4-level-3--assessment-components).
 
 ## 1. Bounded Context và Ubiquitous Language
 
@@ -25,7 +25,7 @@ Assessment sở hữu vòng đời lượt luyện tập, câu hỏi được sa
 
 ## 2. Aggregate Design
 
-[`Attempt`](../assessment-service/src/main/java/com/toeic/assessment/Attempt.java) là Aggregate Root. [`AttemptQuestion`](../assessment-service/src/main/java/com/toeic/assessment/AttemptQuestion.java) là entity con với khóa ghép `AttemptQuestionKey(attemptId, questionId)` và FK nội bộ đến `attempts`. Root nhận câu hỏi từ application service qua `answer(question, choice)` và `grade(questions)`. Application service tải và lưu câu hỏi bằng port riêng. Quan hệ trong sơ đồ là quan hệ domain, được lưu bằng FK và truy vấn theo `attemptId`.
+[`Attempt`](../assessment-service/src/main/java/com/toeic/assessment/core/Attempt.java) là Aggregate Root. [`AttemptQuestion`](../assessment-service/src/main/java/com/toeic/assessment/core/AttemptQuestion.java) là entity con với khóa ghép `AttemptQuestionKey(attemptId, questionId)` và FK nội bộ đến `attempts`. Root nhận câu hỏi từ application service qua `answer(question, choice)` và `grade(questions)`. Application service tải và lưu câu hỏi bằng port riêng. Quan hệ trong sơ đồ là quan hệ domain, được lưu bằng FK và truy vấn theo `attemptId`.
 
 ```mermaid
 classDiagram
@@ -85,7 +85,7 @@ classDiagram
 
 ## 5. Application Services, Ports và hướng phụ thuộc
 
-[`AttemptApplicationService`](../assessment-service/src/main/java/com/toeic/assessment/AttemptApplicationService.java) điều phối `start`, `mine`, `get`, `answer` và `submit`, quản lý transaction và tạo `AttemptView`. `AttemptController` thực hiện routing và kiểm tra payload.
+[`AttemptApplicationService`](../assessment-service/src/main/java/com/toeic/assessment/core/AttemptApplicationService.java) điều phối `start`, `mine`, `get`, `answer` và `submit`, quản lý transaction và tạo `AttemptView`. `AttemptController` thực hiện routing và kiểm tra payload.
 
 | Port dùng bởi application | Adapter triển khai | Spring Data repository |
 |---|---|---|
@@ -94,8 +94,30 @@ classDiagram
 | `OutboxStore` | `JpaOutboxStore` | `OutboxRepo` |
 
 - Dependency ở mức mã nguồn đi từ controller vào application, rồi vào domain và các persistence port. JPA adapters triển khai port và gọi Spring Data repositories. `OutboxPublisher` thuộc infrastructure và dùng trực tiếp `OutboxRepo` cùng `RabbitTemplate`.
-- Application vẫn phụ thuộc Spring transaction/HTTP và các lớp cụ thể `IdentityClient`, `QuizClient`, `DailyAttemptQuota`. `OutboxStore` nhận kiểu `EventOutbox` có JPA mapping. `Attempt` và `AttemptQuestion` mang annotation `jakarta.persistence` nhưng không gọi application service, repository, JDBC, HTTP hay AMQP. Vai trò các lớp được tách logic trong cùng package `com.toeic.assessment`.
+- Application phụ thuộc Spring transaction/HTTP và các lớp cụ thể `IdentityClient`, `QuizClient`, `DailyAttemptQuota`. `OutboxStore` nhận kiểu `EventOutbox` có JPA mapping. `Attempt` và `AttemptQuestion` mang annotation `jakarta.persistence`. Dependency của hai entity này nằm trong model và JPA annotation.
 - Đối chiếu dự án mẫu, Assessment áp dụng aggregate giữ quy tắc, port cho đường ghi và test nghiệp vụ không cần khởi động hạ tầng. Dự án mẫu lựa chọn kiến trúc theo độ phức tạp từng context, dùng Domain Events rõ kiểu và có ArchUnit. Assessment dùng JPA trực tiếp trên domain entity và integration outbox để đáp ứng phạm vi MVP. [DDD by Examples — Library](https://github.com/ddd-by-examples/library#general-assumptions)
+
+### Ánh xạ C4 Component → Java Package → Class → Responsibility
+
+Các package trong bảng dùng tiền tố `com.toeic.assessment`. Trước khi phân tầng, toàn bộ lớp và hai bộ test trong bảng cùng nằm ngay tại package gốc.
+
+| C4 component | Java package | Class | Trách nhiệm và dependency qua package |
+|---|---|---|---|
+| Bootstrap | Package gốc | `AssessmentApplication` | Khởi động Spring Boot và lịch chạy outbox. Package gốc bao phủ component, entity và Spring Data repository scan. |
+| REST adapter | `.entrypoints` | `AttemptController`, `AttemptController.Start`, `AttemptController.Answer` | Bind HTTP, validate input, gọi application service và trả `AttemptView`. |
+| Use case | `.core` | `AttemptApplicationService`, `AttemptView`, `AttemptView.Question` | Điều phối transaction, thực thi use case, tạo kết quả dùng chung với REST. Giữ DTO kết quả tại nơi tạo để dependency từ REST đi vào core. |
+| Domain model | `.core` | `Attempt`, `AttemptQuestion`, `AttemptQuestionKey`, `AttemptStatus` | Chấm và bảo vệ invariant của lượt. JPA repository dùng entity và khóa ghép. Field, hành vi aggregate và constructor nghiệp vụ giữ package-private. |
+| Integration record | `.core` | `EventOutbox` | Application tạo bản ghi trong transaction chấm. Publisher đọc ID bằng accessor và đánh dấu qua `markPublished()`. |
+| Persistence ports | `.core` | `AttemptStore`, `AttemptQuestionStore`, `OutboxStore` | Hợp đồng lưu trữ cho application, được triển khai trong data. |
+| JPA adapters | `.data.persistence` | `JpaAttemptStore`, `JpaAttemptQuestionStore`, `JpaOutboxStore` | Triển khai các port, gọi Spring Data repositories cùng package. |
+| Spring Data repositories | `.data.persistence` | `AttemptRepo`, `AttemptQuestionRepo`, `OutboxRepo` | Truy vấn JPA và khóa attempt. `OutboxRepo` có visibility public để publisher tiếp tục polling trực tiếp. |
+| JDBC quota | `.data.jdbc` | `DailyAttemptQuota` | Giữ quota nguyên tử bằng JDBC trong transaction mở lượt. |
+| HTTP adapter | `.adapters.http` | `QuizClient`, `QuizClient.QuizQuestion`, `QuizClient.Snapshot`, `QuizClient.Entitlement` | Lấy snapshot Content và entitlement Membership. Hai phương thức gọi HTTP và kiểu dữ liệu kết quả được application sử dụng qua package. |
+| JWT adapter | `.adapters.security` | `IdentityClient`, `TokenService`, `TokenService.Actor` | Xác minh JWT cục bộ và lấy actor để application quyết định quyền. |
+| AMQP publisher và topology | `.adapters.messaging` | `OutboxPublisher`, `MessagingConfig` | Poll qua `OutboxRepo`, gửi RabbitMQ và khai báo exchange/queue/binding. |
+| Unit test tương ứng | `.core` trong `src/test/java` | `AttemptDomainTest`, `AttemptApplicationServiceTest` | Giữ quyền truy cập package của test domain và application, dùng mock cho các dependency hiện có. |
+
+`AttemptApplicationService`, `AttemptView`, các kiểu entity và port được dùng qua package có visibility public. `AttemptController`, hai repository attempt và ba JPA adapter vẫn package-private. Spring dùng scanner mặc định đi từ `AssessmentApplication`. JPA tiếp tục dùng field access, tên entity, bảng, khóa ghép và JPQL giữ nguyên.
 
 ## 6. Example Mapping
 
@@ -157,6 +179,6 @@ sequenceDiagram
 ## 8. Giới hạn và cải tiến sau MVP
 
 - `Attempt.grade` kiểm tra quyền sở hữu từng câu, còn việc đưa vào đủ tập câu và không trùng dựa vào truy vấn theo `attemptId` và khóa ghép trong DB. `grade` hiện chấp nhận danh sách rỗng khi gọi trực tiếp. Trường trong package và khả năng gọi `selectChoice` trực tiếp hạn chế mức đóng gói invariant. Nên ưu tiên củng cố ranh giới này nếu thêm đường ghi ngoài application service hiện tại.
-- Chi phí tách JPA entity khỏi domain hiện gồm mapping và kiểm thử lại giao dịch, khóa và tương thích schema. Giữ mô hình hiện tại cho MVP. Cân nhắc tách khi ORM cản trở đóng gói invariant, khi cần mô hình lưu trữ khác hoặc khi quy định học phần xác nhận bắt buộc tách package. Có thể thêm kiểm tra dependency khi ranh giới package ổn định.
+- Chi phí tách JPA entity khỏi domain hiện gồm mapping và kiểm thử lại giao dịch, khóa và tương thích schema. Giữ mapping trên model cho MVP. Cân nhắc tách entity khi ORM cản trở đóng gói invariant, khi cần mô hình lưu trữ khác hoặc khi boilerplate chính thức yêu cầu tách model.
 - Có thể đưa tích hợp HTTP và quota sau port nếu cần kiểm tra dependency bằng module hoặc thay hạ tầng. Thêm Domain Event kiểu riêng khi có luồng nghiệp vụ nội bộ cần tiêu thụ sự kiện. Nếu mục tiêu là tăng độ tin cậy giao message, ưu tiên publisher confirms và cơ chế nhận việc an toàn trước khi chạy nhiều publisher.
 - Điểm hiện là số câu đúng. MVP chưa có thời hạn làm bài, bắt buộc trả lời hết hoặc quy đổi điểm TOEIC. Kết quả concurrent submit, khôi phục sau sự cố và hiệu năng cần bằng chứng theo [kế hoạch thực nghiệm](REPORT_TEMPLATE.md#experiment-results-fill-after-actual-tests).

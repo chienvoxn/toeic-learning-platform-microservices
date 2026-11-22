@@ -1,4 +1,8 @@
-package com.toeic.assessment;
+package com.toeic.assessment.core;
+
+import com.toeic.assessment.adapters.http.QuizClient;
+import com.toeic.assessment.adapters.security.IdentityClient;
+import com.toeic.assessment.data.jdbc.DailyAttemptQuota;
 
 import java.util.List;
 import java.util.Map;
@@ -10,7 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 @Service
-class AttemptApplicationService {
+public class AttemptApplicationService {
     private final AttemptStore attempts;
     private final AttemptQuestionStore questions;
     private final OutboxStore outbox;

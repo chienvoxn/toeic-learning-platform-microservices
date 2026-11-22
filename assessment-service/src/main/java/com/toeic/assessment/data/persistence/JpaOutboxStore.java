@@ -1,4 +1,7 @@
-package com.toeic.assessment;
+package com.toeic.assessment.data.persistence;
+
+import com.toeic.assessment.core.EventOutbox;
+import com.toeic.assessment.core.OutboxStore;
 
 import org.springframework.stereotype.Repository;
 

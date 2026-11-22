@@ -1,4 +1,4 @@
-package com.toeic.assessment;
+package com.toeic.assessment.core;
 import java.util.*;
 public class AttemptQuestionKey implements java.io.Serializable {
  public UUID attemptId;public UUID questionId;public AttemptQuestionKey(){}

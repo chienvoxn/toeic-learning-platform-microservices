@@ -1,4 +1,7 @@
-package com.toeic.assessment;
+package com.toeic.assessment.data.persistence;
+
+import com.toeic.assessment.core.AttemptQuestion;
+import com.toeic.assessment.core.AttemptQuestionKey;
 
 import java.util.List;
 import java.util.UUID;

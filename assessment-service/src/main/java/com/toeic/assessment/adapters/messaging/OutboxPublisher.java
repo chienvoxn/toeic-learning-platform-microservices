@@ -1,4 +1,7 @@
-package com.toeic.assessment;
+package com.toeic.assessment.adapters.messaging;
+
+import com.toeic.assessment.data.persistence.OutboxRepo;
+
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -13,7 +16,7 @@ import org.slf4j.LoggerFactory;
  @Scheduled(fixedDelay=3000)
  @Transactional
  public void forward(){for(var e:outbox.findTop20ByPublishedFalseOrderByOccurredAtAsc())try{
-  rabbit.convertAndSend("toeic.events","attempt.graded", "{\"eventId\":\""+e.eventId+"\",\"userId\":\""+e.actorId+"\",\"attemptId\":\""+e.aggregateId+"\",\"type\":\"AttemptGraded\"}");
-  e.published=true;outbox.save(e);
+  rabbit.convertAndSend("toeic.events","attempt.graded", "{\"eventId\":\""+e.eventId()+"\",\"userId\":\""+e.actorId()+"\",\"attemptId\":\""+e.aggregateId()+"\",\"type\":\"AttemptGraded\"}");
+  e.markPublished();outbox.save(e);
  }catch(Exception ex){log.warn("Event broker unavailable; retry next poll: {}",ex.getClass().getSimpleName());break;}}
 }

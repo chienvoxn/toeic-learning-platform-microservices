@@ -1,4 +1,7 @@
-package com.toeic.assessment;
+package com.toeic.assessment.data.persistence;
+
+import com.toeic.assessment.core.Attempt;
+import com.toeic.assessment.core.AttemptStore;
 
 import java.util.List;
 import java.util.Optional;

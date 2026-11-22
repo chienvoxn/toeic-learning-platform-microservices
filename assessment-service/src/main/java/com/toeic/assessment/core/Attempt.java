@@ -1,4 +1,4 @@
-package com.toeic.assessment;
+package com.toeic.assessment.core;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -15,7 +15,7 @@ import java.util.UUID;
 /** Aggregate root protecting the state transitions of a practice attempt. */
 @Entity
 @Table(name = "attempts")
-class Attempt {
+public class Attempt {
     @Id
     UUID attemptId;
 

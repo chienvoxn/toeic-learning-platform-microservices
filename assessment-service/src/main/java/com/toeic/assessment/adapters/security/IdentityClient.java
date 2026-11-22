@@ -1,4 +1,4 @@
-package com.toeic.assessment;
+package com.toeic.assessment.adapters.security;
 import java.util.UUID;
 import org.springframework.stereotype.Component;
 @Component public class IdentityClient {

@@ -1,4 +1,7 @@
-package com.toeic.assessment;
+package com.toeic.assessment.entrypoints;
+
+import com.toeic.assessment.core.AttemptApplicationService;
+import com.toeic.assessment.core.AttemptView;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;

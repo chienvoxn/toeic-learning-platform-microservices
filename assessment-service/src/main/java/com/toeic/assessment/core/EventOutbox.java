@@ -1,4 +1,4 @@
-package com.toeic.assessment;
+package com.toeic.assessment.core;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -10,7 +10,7 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "event_outbox")
-class EventOutbox {
+public class EventOutbox {
     @Id
     UUID eventId;
 
@@ -38,5 +38,21 @@ class EventOutbox {
         this.actorId = attempt.userId;
         this.eventType = "AttemptGraded";
         this.occurredAt = OffsetDateTime.now(ZoneOffset.UTC);
+    }
+
+    public UUID eventId() {
+        return eventId;
+    }
+
+    public UUID aggregateId() {
+        return aggregateId;
+    }
+
+    public UUID actorId() {
+        return actorId;
+    }
+
+    public void markPublished() {
+        published = true;
     }
 }

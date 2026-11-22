@@ -1,6 +1,6 @@
-package com.toeic.assessment;
+package com.toeic.assessment.core;
 
 /** Application-facing persistence port for transactional outbox writes. */
-interface OutboxStore {
+public interface OutboxStore {
     EventOutbox save(EventOutbox event);
 }

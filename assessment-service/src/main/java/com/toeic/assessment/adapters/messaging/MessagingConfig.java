@@ -1,4 +1,4 @@
-package com.toeic.assessment;
+package com.toeic.assessment.adapters.messaging;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.amqp.core.*;

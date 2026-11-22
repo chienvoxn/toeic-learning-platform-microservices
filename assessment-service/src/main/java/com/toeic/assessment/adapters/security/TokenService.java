@@ -1,4 +1,4 @@
-package com.toeic.assessment;
+package com.toeic.assessment.adapters.security;
 import java.util.*;
 import java.time.Instant;
 import java.nio.charset.StandardCharsets;

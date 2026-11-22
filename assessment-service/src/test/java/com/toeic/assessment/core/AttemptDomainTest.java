@@ -1,4 +1,4 @@
-package com.toeic.assessment;
+package com.toeic.assessment.core;
 
 import java.util.List;
 import java.util.UUID;

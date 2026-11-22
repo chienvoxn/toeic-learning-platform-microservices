@@ -1,4 +1,4 @@
-package com.toeic.assessment;
+package com.toeic.assessment.core;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -11,7 +11,7 @@ import java.util.UUID;
 @Entity
 @Table(name = "attempt_questions")
 @IdClass(AttemptQuestionKey.class)
-class AttemptQuestion {
+public class AttemptQuestion {
     private static final Set<String> ALLOWED_CHOICES = Set.of("A", "B", "C", "D");
 
     @Id
