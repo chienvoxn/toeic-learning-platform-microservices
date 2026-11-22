@@ -1,0 +1,32 @@
+name: toeic-f02-it
+services:
+  postgres:
+    image: postgres:17-alpine
+    ports: ["127.0.0.1:55432:5432"]
+    environment:
+      POSTGRES_DB: f02_it
+      POSTGRES_USER: f02_it
+      POSTGRES_PASSWORD: ${F02_POSTGRES_PASSWORD:?Set a password for the isolated test PostgreSQL}
+    tmpfs: ["/var/lib/postgresql/data:size=128m"]
+    mem_limit: 384m
+    healthcheck:
+      test: ["CMD", "pg_isready", "-h", "127.0.0.1", "-U", "f02_it", "-d", "f02_it"]
+      interval: 5s
+      timeout: 4s
+      retries: 12
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    ports: ["127.0.0.1:55672:5672"]
+    environment:
+      RABBITMQ_DEFAULT_USER: f02_it
+      RABBITMQ_DEFAULT_VHOST: f02_it
+      RABBITMQ_DEFAULT_PASS: ${F02_RABBIT_PASSWORD:?Set a password for the isolated test RabbitMQ}
+      RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS: "+S 2:2"
+      RABBITMQ_CTL_ERL_ARGS: "+S 1:1"
+    tmpfs: ["/var/lib/rabbitmq:size=192m"]
+    mem_limit: 640m
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "check_port_connectivity"]
+      interval: 5s
+      timeout: 5s
+      retries: 12

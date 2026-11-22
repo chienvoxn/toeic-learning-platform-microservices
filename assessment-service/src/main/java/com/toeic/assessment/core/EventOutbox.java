@@ -51,8 +51,4 @@ public class EventOutbox {
     public UUID actorId() {
         return actorId;
     }
-
-    public void markPublished() {
-        published = true;
-    }
 }
