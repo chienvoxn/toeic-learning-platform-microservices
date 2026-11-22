@@ -23,7 +23,7 @@
 
 **Decision.** Keep `answer` and `grade` on `Attempt`, and delegate selection validation and correctness to `AttemptQuestion`. Use `IN_PROGRESS` and `GRADED`. The application loads children by attempt and takes a pessimistic write lock on the root for both answer and submit. On the first grade it saves the result and outbox row in one transaction.
 
-**Trade-off.** A service-only state model would leave the grading rules in orchestration code. The chosen aggregate makes rules directly unit-testable and retains existing JPA mappings and the separate child store. The application is responsible for providing the full set of children, and database-level concurrent submission still needs runtime evidence.
+**Trade-off.** A service-only state model would leave the grading rules in orchestration code. The chosen aggregate makes rules directly unit-testable and retains existing JPA mappings and the separate child store. The application is responsible for supplying all children for grading. The archived QA-02 run observed ten identical grades and one outbox row for the same attempt. [QA-02 log](evidence/qa02-concurrent-submit.txt) · [ADD traceability](EXAM_ARCHITECTURE.md#add-traceability)
 
 ## ADR-007 — Persistence ports for Assessment use cases
 

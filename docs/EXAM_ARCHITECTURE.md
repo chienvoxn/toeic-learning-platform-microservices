@@ -12,22 +12,30 @@
 
 ### Drivers (ADD)
 
-1. **Security:** no one can access another learner's attempts; learners cannot author exam keys; JWT signature is verified inside services.
-2. **Consistency:** grading is atomic/idempotent; grade and outbox are committed in one local DB transaction.
-3. **Availability:** Interaction outage should not break Assessment grading; events are queued for later.
-4. **Modifiability:** new content/question types can be added without direct cross-service DB access.
-5. **Performance:** read-only quiz list is lightweight; use measurement rather than assumption.
+The table below records the ADD design priority for the MVP. Authorization and submission consistency come first because they protect write operations and learner data. Availability comes next because grading is the core user journey. Quiz-list latency is the measured read-path goal. Modifiability supports subsequent changes to the persistence boundary.
 
 ### Quality Attribute Scenarios
 
-| ID | Source / stimulus / environment | Artifact / response | Proposed acceptance / evidence |
-|---|---|---|---|
-| QA-01 Security | Unprivileged learner sends `POST /ms/v1/contents/quizzes` with valid learner JWT | Content rejects without writing rows | HTTP 403; query COUNT unchanged; negative smoke test |
-| QA-02 Reliability | 10 concurrent submissions for one attempt under normal load | Assessment locks the attempt row and persists one grade and one outbox row | All 10 return HTTP 200 and the same grade. DB outbox count = 1 for that attempt. |
-| QA-03 Availability | Interaction unavailable while user submits a valid attempt | Assessment commits grade/outbox, provides score without waiting for consumer | submit HTTP 200 during failure, activity appears eventually after recovery |
-| QA-04 Performance | 50 virtual users continuously request quiz list from local Docker stack for 1 minute | Gateway + Content return sanitized quiz list | target p95 under 500 ms, failed requests under 1%; k6 report |
+| ID | Source | Stimulus | Environment | Artifact | Response | Response Measure |
+|---|---|---|---|---|---|---|
+| QA-01 Security | Learner with a valid JWT and without `content:write` | Send a valid quiz creation payload to `POST /ms/v1/contents/quizzes`. | Local Compose stack through Gateway, with no other quiz writes between SQL samples. | Content `QuizController`, JWT verification and `content_db.toeic_quizzes`. | Reject the request before inserting the quiz. | HTTP 403. SQL counts for all quizzes and for the run-specific title are unchanged. |
+| QA-02 Submission consistency | Owner of one new attempt, acting through 10 synchronized clients | Clients call `POST /ms/v1/attempts/{id}/submit` at the same time after one answer is saved. | Local Compose stack through Gateway with Assessment and PostgreSQL available. | Assessment submit use case, `attempts` and `event_outbox`. | Serialize grading on the attempt row. Commit the grade and outbox together on the first transition, then return the stored result on repeat submits. | 10/10 HTTP 200 with the same `GRADED` result. SQL confirms the saved score and exactly one `AttemptGraded` outbox row for the attempt. |
+| QA-03 Availability | Learner and test operator | Submit a new attempt while the operator stops Interaction (A) or RabbitMQ (B), then restart the stopped dependency. | Local Compose stack, one fault at a time. Assessment and its PostgreSQL remain available. | Assessment submit and outbox, RabbitMQ queue and Interaction activity projection. | Return the grade during the outage. A queues the event while the consumer is down. B retains the pending outbox row until the broker is available. After recovery, record the activity. | HTTP 200 and a persisted grade during both outages. A observes a ready message with zero consumers. B observes `published=false` while RabbitMQ is stopped. Within the 60 s observation window after Compose reports the restarted service running or healthy, the same `eventId` is published and visible in Interaction SQL and its authenticated API. |
+| QA-04 Performance | k6 clients | 50 VUs request `GET /ms/v1/contents/quizzes` for 60 s, with 500 ms think time. | Local Compose stack, Gateway on loopback, seeded quiz catalog, no authentication required. | Nginx Gateway, Content list handler, its repositories and `content_db`. | Return the public quiz list as JSON with no answers or explanations. | p95 < 500 ms, `http_req_failed` < 1%, and all HTTP/JSON/payload checks pass. |
 
-Targets are **proposed** for TOEIC domain, not numbers stated by your two exam PDFs, and need measured results.
+The response measures are TOEIC project targets. The QA-03 window comes from the test protocol. The supporting modifiability scenario M-01 is a proposed exercise. A maintainer replaces a persistence adapter behind its existing port on a development branch, the Assessment use case retains its behavior, and the measure is zero changes to `AttemptApplicationService` with its unit tests passing. [QA-03 test protocol](../tests/fault_injection.md)
+
+### ADD traceability
+
+| Driver (design priority) | Quality Attribute Scenario | Tactic | Component | ADR | Test Evidence |
+|---|---|---|---|---|---|
+| D01 · Security | QA-01 | Verify signed JWT locally and require the authoring permission before a write. Check attempt ownership on reads and writes. | Identity `RbacService` / `TokenService`, Content `QuizController`, Assessment `AttemptApplicationService`. | [ADR-002](ADR_MVP.md#adr-002--jwt-access-tokens-for-identity) | Learner authoring returned 403 and the total quiz count stayed 2 → 2. The log also records role grants and non-owner access checks. [QA-01 log](evidence/qa01-security-rbac-aa43453.txt) |
+| D02 · Consistency | QA-02 | Use a pessimistic row lock and one state transition. Commit grade and outbox in the same local transaction. | `AttemptApplicationService`, `Attempt`, `AttemptRepo.lockOwn`, `OutboxStore`, `assessment_db`. | [ADR-006](ADR_MVP.md#adr-006--attempt-as-the-assessment-aggregate-root) · [ADR-003](ADR_MVP.md#adr-003--rabbitmq--transactional-outbox) | 10 identical HTTP 200 grades and one SQL outbox row. [QA-02 log](evidence/qa02-concurrent-submit.txt) |
+| D03 · Availability | QA-03 A/B | Keep scoring independent of messaging. Poll pending outbox records, use the durable queue and deduplicate activity by event ID. | `OutboxPublisher`, `OutboxRepo`, RabbitMQ, `ActivityConsumer` and `ActivityRepo`. | [ADR-003](ADR_MVP.md#adr-003--rabbitmq--transactional-outbox) | Grade persisted in each outage. Queue and SQL samples plus the activity API confirm both recovery paths. [QA-03 log](evidence/qa03-fault-injection-20261122-134619.txt) |
+| D04 · Quiz-list performance | QA-04 | Keep the public read on the Content service and its own database. Serialize a compact `QuizView`. | Nginx, `QuizController.list`, `QuizRepo` and `QuizQuestionRepo`. | [ADR-001](ADR_MVP.md#adr-001--five-business-services-vs-one-modular-monolith) · [ADR-004](ADR_MVP.md#adr-004--postgresql-per-service) | 5,793 requests at 95.76 req/s, p95 29.18 ms and zero HTTP or validation failures on the seeded local stack. [k6 summary](evidence/qa04-k6-20261122-summary.json) |
+| D05 · Persistence modifiability | M-01 · Proposed adapter replacement | Put persistence calls behind use-case-facing interfaces. | `AttemptStore`, `AttemptQuestionStore`, `OutboxStore` and the `Jpa*Store` implementations. | [ADR-007](ADR_MVP.md#adr-007--persistence-ports-for-assessment-use-cases) | Unit tests exercise orchestration with mocked stores. A real adapter replacement has yet to be measured. [Application tests](../assessment-service/src/test/java/com/toeic/assessment/core/AttemptApplicationServiceTest.java) |
+
+Evidence applies to its recorded run. QA-01 records checkout `aa43453`, QA-03 records `f191b7a`, and QA-04 records `19aa006`. The archived QA-02 log records its run time and attempt ID, with no checkout SHA. These results support the decisions above at the respective run conditions.
 
 ## 3. arc42 — Context and scope (C4 Level 1)
 
@@ -35,14 +43,16 @@ Targets are **proposed** for TOEIC domain, not numbers stated by your two exam P
 flowchart LR
  L["Learner"] -->|Register, practice, grade| S["TOEIC Learning Platform"]
  T["Teacher"] -->|Author questions| S
- E["Examiner"] -->|Review diagrams and test evidence| S
+ A["Admin"] -->|Manage user role assignments| S
 ```
 
 | External actor | Interactions |
 |---|---|
 | Learner | register/sign in, view quizzes, practice, feedback, membership |
 | Teacher | authenticated creation of new quizzes |
-| Examiner | observe demo, network failure and performance tests |
+| Admin | sign in, inspect permissions and grant roles through Identity |
+
+Examiner is an assessment stakeholder who reviews the demo and evidence. The runtime role catalog contains Learner, Teacher and Admin. [Identity RBAC migration](../identity-service/src/main/resources/db/migration/V3__rbac.sql) · [Admin UI](../web/app.js)
 
 ## 4. arc42 — Solution strategy
 
@@ -180,7 +190,53 @@ sequenceDiagram
  X->>X: Idempotent activity projection
 ```
 
-**Failure narrative:** The durable Interaction queue can hold successfully routed messages while the consumer is down. If the send throws during a broker outage, the row remains pending for a later poll. Publisher confirms are absent, so the `published` flag alone cannot demonstrate broker receipt. Recovery scenarios are pending in the [validation status](VALIDATION_STATUS.md).
+### QA-03 availability and recovery
+
+This is the selected runtime scenario for the evaluation. Each branch uses a different attempt and event ID. The test operator stops the relevant dependency before the learner starts and submits the attempt.
+
+```mermaid
+sequenceDiagram
+ actor O as Test operator
+ actor L as Learner
+ participant G as Gateway
+ participant A as Assessment submit
+ participant DB as Assessment DB
+ participant P as OutboxPublisher
+ participant Q as RabbitMQ
+ participant X as Interaction
+ participant XD as Interaction DB
+ O->>O: Stop Interaction for A or RabbitMQ for B
+ L->>G: POST /ms/v1/attempts/{id}/submit
+ G->>A: Forward JWT and attempt ID
+ A->>DB: Lock the owned attempt
+ A->>DB: Commit GRADED and AttemptGraded outbox row with published=false
+ DB-->>A: Local transaction commits
+ A-->>G: HTTP 200 with grade
+ G-->>L: HTTP 200 with grade
+ P->>DB: Poll pending rows via OutboxRepo
+ alt A - Interaction stopped, RabbitMQ available
+   P->>Q: Send AttemptGraded to toeic.events with attempt.graded
+   Note over Q: Durable interaction.attempt-graded queue holds the message
+   P->>DB: Mark published=true after the send call returns
+   O->>X: Restart Interaction
+ else B - RabbitMQ stopped, Interaction running
+   P-xQ: Send attempt fails while the broker is stopped
+   Note over P,DB: Log retry and keep published=false
+   O->>Q: Restart RabbitMQ
+   P->>DB: A later poll reads the same pending eventId
+   P->>Q: Send the same AttemptGraded event
+   P->>DB: Mark published=true after the send call returns
+ end
+ Q->>X: Deliver through interaction.attempt-graded
+ X->>XD: Check eventId and insert ATTEMPT_GRADED if absent
+ L->>G: GET /api/v1/interactions/activities/me
+ G->>X: Forward the learner's JWT
+ X->>XD: Read activities by the JWT subject
+ X-->>G: HTTP 200 with matching eventId
+ G-->>L: Activity visible
+```
+
+The publisher polls with a 3 s fixed delay and leaves a row pending when sending throws. It sets `published` after `convertAndSend` returns. Publisher confirms are absent, so recovery evidence requires the matching event ID in SQL and the API. The stored run observed the match after about **12.70 s** for A and **16.17 s** for B, measured from the point Compose reported the restarted dependency running or healthy. The submit calls returned HTTP 200 in 94.0 ms and 93.0 ms respectively. [Fault injection log](evidence/qa03-fault-injection-20261122-134619.txt) · [OutboxPublisher](../assessment-service/src/main/java/com/toeic/assessment/adapters/messaging/OutboxPublisher.java) · [ActivityConsumer](../interaction-service/src/main/java/com/toeic/interaction/adapters/messaging/ActivityConsumer.java)
 
 ## 7. arc42 — Deployment view (Docker Compose)
 
@@ -218,7 +274,7 @@ See [ADR-001 to ADR-007](ADR_MVP.md) for service boundaries, JWT, transactional 
 
 ## 10. arc42 — Quality requirements
 
-QA-01 to QA-04 above. Use [smoke](../tests/smoke.py), [k6](../tests/load.js) and [fault injection](../tests/fault_injection.md). Record results in the [report template](REPORT_TEMPLATE.md).
+Use the [six-field QA-01 to QA-04 definitions](#quality-attribute-scenarios) and [ADD traceability](#add-traceability) to compare targets with the archived results. The [report template](REPORT_TEMPLATE.md) groups the measured evidence and the KTHDV diagrams.
 
 ## 11. arc42 — Risks & technical debt
 
@@ -228,7 +284,7 @@ QA-01 to QA-04 above. Use [smoke](../tests/smoke.py), [k6](../tests/load.js) and
 4. **Demo-only membership plan upgrade**: users can self-activate PRO when flag is true; never accept as paid entitlement.
 5. **Outbox publisher confirmations not implemented**: broker accepted/ack not tracked; use confirms and retry-safe transitions.
 6. **Assessment dependency boundaries**. The application and domain share the core package, and the application depends on concrete HTTP, JWT and JDBC adapters. [Assessment DDD review](ASSESSMENT_DDD.md#8-giới-hạn-và-cải-tiến-sau-mvp)
-7. **Pending runtime evidence**: archive environment and test outputs, then measure performance, concurrent submit and fault recovery.
+7. **Runtime evidence scope**. QA-01 was recorded at `aa43453`. The archived QA-02, QA-03 and QA-04 runs predate the package refactor. The linked logs support their own run conditions. A clean full-stack rebuild at the submission revision remains unverified. [Validation status](VALIDATION_STATUS.md)
 
 ## 12. arc42 — Glossary
 

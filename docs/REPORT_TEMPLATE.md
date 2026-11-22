@@ -22,10 +22,34 @@ classDiagram
  class IdentityUser {
    UUID userId
    String email
-   String passwordHash
+   String role
+ }
+ class UserRole {
+   <<table>>
+   UUID userId
+   String roleCode
+ }
+ class Role {
+   <<table>>
+   String code
+ }
+ class RolePermission {
+   <<table>>
+   String roleCode
+   String permissionCode
+ }
+ class Permission {
+   <<table>>
+   String code
  }
  class RbacService {
    +access(userId) Access
+   +grant(userId, role)
+ }
+ class Access {
+   <<record>>
+   Set~String~ roles
+   Set~String~ permissions
  }
  class TokenService {
    +issue(userId, roles, permissions) String
@@ -33,76 +57,179 @@ classDiagram
  }
  class Actor {
    UUID userId
-   Set roles
-   Set permissions
+   Set~String~ roles
+   Set~String~ permissions
    +can(permission) boolean
  }
+ IdentityUser "1" -- "0..*" UserRole : identity_user_roles
+ Role "1" -- "0..*" UserRole : assigned role
+ Role "1" -- "0..*" RolePermission : identity_role_permissions
+ Permission "1" -- "0..*" RolePermission : granted permission
  IdentityDirectoryController ..> IdentityUser : credentials
- IdentityDirectoryController --> RbacService : loads role and permission codes
- IdentityDirectoryController --> TokenService : issues token
- TokenService ..> Actor : validates claims
+ IdentityDirectoryController --> RbacService : resolves or grants roles
+ IdentityDirectoryController --> TokenService : issues token from Access
+ RbacService ..> UserRole : reads and writes using JDBC
+ RbacService ..> RolePermission : reads using JDBC
+ RbacService ..> Access : returns effective permissions
+ TokenService ..> Actor : returns verified JWT claims
 ```
 
-`RbacService` reads role and permission assignments from `identity_user_roles` and `identity_role_permissions` using JDBC.
+Các kiểu `<<table>>` biểu diễn cấu trúc SQL. Mỗi hàng gán nối đúng một User và một Role, hoặc đúng một Role và một Permission. Vì mỗi đầu có thể xuất hiện trong nhiều hàng gán, User–Role và Role–Permission đều là quan hệ nhiều–nhiều. `IdentityUser.role` là trường hiển thị cũ. Khi đăng nhập, controller lấy `RbacService.Access` từ DB để phát các tập role và permission trong JWT. `Actor` mang claims đã xác minh khi xử lý request, nên grant mới được phản ánh trong JWT ở lần phát token kế tiếp. [Controller](../identity-service/src/main/java/com/toeic/identity/entrypoints/IdentityDirectoryController.java) · [RbacService](../identity-service/src/main/java/com/toeic/identity/data/jdbc/RbacService.java) · [TokenService](../identity-service/src/main/java/com/toeic/identity/adapters/security/TokenService.java) · [Log QA-01](evidence/qa01-security-rbac-aa43453.txt)
 
-### ERD ownership (abbreviated)
+### ERD ownership (five databases)
+
+Mỗi sơ đồ dưới đây là một ranh giới database, hiển thị các cột khóa và cột cần để giải thích ownership. Mọi cạnh là FK nội database theo Flyway. Cạnh liền biểu thị FK thuộc khóa chính của bảng con. Cạnh đứt biểu thị FK ngoài khóa chính của bảng con. Tham chiếu bằng UUID xuyên service nằm ở bảng riêng.
+
+#### identity_db — Identity
 
 ```mermaid
 erDiagram
- IDENTITY_USERS { UUID user_id PK
-   string email
-   string role }
- TOEIC_QUIZZES { UUID quiz_id PK
-   string title
-   boolean premium }
- TOEIC_QUESTIONS { UUID question_id PK
-   UUID quiz_id FK
-   string correct_choice }
- ATTEMPTS { UUID attempt_id PK
-   UUID user_id
-   UUID quiz_id
-   string status }
- ATTEMPT_QUESTIONS { UUID attempt_id PK,FK
-   UUID question_id PK
-   string correct_choice }
- USER_MEMBERSHIPS { UUID id PK
-   UUID user_id
-   string plan_code }
- CONTENT_REVIEWS { UUID id PK
-   UUID user_id
-   UUID content_id }
- LEARNING_ACTIVITIES { UUID event_id PK
-   UUID user_id
-   UUID attempt_id }
- DAILY_ATTEMPT_USAGE { UUID user_id PK
-   date quota_date PK
-   int used_count }
- EVENT_OUTBOX { UUID event_id PK
-   UUID aggregate_id
-   UUID actor_id
-   string event_type
-   boolean published }
- TOEIC_QUIZZES ||--o{ TOEIC_QUESTIONS : owns
- ATTEMPTS ||--o{ ATTEMPT_QUESTIONS : snapshots
+ IDENTITY_USERS {
+   uuid user_id PK
+   string email UK
+   string role
+ }
+ IDENTITY_ROLES {
+   string code PK
+ }
+ IDENTITY_PERMISSIONS {
+   string code PK
+ }
+ IDENTITY_USER_ROLES {
+   uuid user_id PK,FK
+   string role_code PK,FK
+ }
+ IDENTITY_ROLE_PERMISSIONS {
+   string role_code PK,FK
+   string permission_code PK,FK
+ }
+ IDENTITY_USERS ||--o{ IDENTITY_USER_ROLES : user_id
+ IDENTITY_ROLES ||--o{ IDENTITY_USER_ROLES : role_code
+ IDENTITY_ROLES ||--o{ IDENTITY_ROLE_PERMISSIONS : role_code
+ IDENTITY_PERMISSIONS ||--o{ IDENTITY_ROLE_PERMISSIONS : permission_code
 ```
 
-`user_id`, `content_id`, `quiz_id` in other databases are IDs **without cross-database foreign keys**.
+#### content_db — Content
+
+```mermaid
+erDiagram
+ LEARNING_RESOURCES {
+   uuid resource_id PK
+   uuid owner_user_id
+ }
+ TOEIC_QUIZZES {
+   uuid quiz_id PK
+   string title
+   boolean premium
+ }
+ TOEIC_QUESTIONS {
+   uuid question_id PK
+   uuid quiz_id FK
+ }
+ TOEIC_QUIZZES ||..o{ TOEIC_QUESTIONS : quiz_id
+```
+
+#### assessment_db — Assessment
+
+```mermaid
+erDiagram
+ ATTEMPTS {
+   uuid attempt_id PK
+   uuid user_id
+   uuid quiz_id
+   string status
+ }
+ ATTEMPT_QUESTIONS {
+   uuid attempt_id PK,FK
+   uuid question_id PK
+   string correct_choice
+   string selected_choice
+ }
+ DAILY_ATTEMPT_USAGE {
+   uuid user_id PK
+   date quota_date PK
+   int used_count
+ }
+ EVENT_OUTBOX {
+   uuid event_id PK
+   uuid aggregate_id
+   uuid actor_id
+   string event_type
+   boolean published
+ }
+ ATTEMPTS ||--o{ ATTEMPT_QUESTIONS : attempt_id
+```
+
+`event_outbox.aggregate_id` lưu ID của attempt từ ứng dụng. Migration không khai báo FK cho cột này.
+
+#### interaction_db — Interaction
+
+```mermaid
+erDiagram
+ CONTENT_REVIEWS {
+   uuid id PK
+   uuid user_id
+   uuid content_id
+   int stars
+ }
+ LEARNING_ACTIVITIES {
+   uuid event_id PK
+   uuid user_id
+   uuid attempt_id
+   string kind
+ }
+```
+
+`content_reviews` có ràng buộc UNIQUE ghép `(user_id, content_id)`. `learning_activities.event_id` khớp event outbox để đối chiếu và chống ghi lặp.
+
+#### membership_db — Membership
+
+```mermaid
+erDiagram
+ MEMBERSHIP_PLANS {
+   string code PK
+   int max_practice_per_day
+ }
+ USER_MEMBERSHIPS {
+   uuid id PK
+   uuid user_id UK
+   string plan_code FK
+   string status
+ }
+ MEMBERSHIP_PLANS ||..o{ USER_MEMBERSHIPS : plan_code
+```
+
+#### Tham chiếu logic xuyên service
+
+| Database giữ UUID | Cột | Ranh giới được tham chiếu |
+|---|---|---|
+| Content | `learning_resources.owner_user_id` | `identity_db.identity_users.user_id` |
+| Assessment | `attempts.user_id`, `daily_attempt_usage.user_id`, `event_outbox.actor_id` | `identity_db.identity_users.user_id` |
+| Interaction | `content_reviews.user_id`, `learning_activities.user_id` | `identity_db.identity_users.user_id`. Review lấy subject của JWT, activity nhận `userId` từ `AttemptGraded`. |
+| Membership | `user_memberships.user_id` | `identity_db.identity_users.user_id` |
+| Assessment | `attempts.quiz_id`, `attempt_questions.question_id` | ID từ Content snapshot, trỏ về `toeic_quizzes.quiz_id` và `toeic_questions.question_id`. |
+| Interaction | `content_reviews.content_id` | ID nội dung do caller truyền. UI demo dùng quiz ID của Content. |
+| Interaction | `learning_activities.attempt_id`, `learning_activities.event_id` | `assessment_db.attempts.attempt_id` và `assessment_db.event_outbox.event_id` qua integration event. |
+
+Các tham chiếu ở bảng này không có FK xuyên DB. Nguồn đối chiếu gồm các migration [Identity](../identity-service/src/main/resources/db/migration), [Content](../content-service/src/main/resources/db/migration), [Assessment](../assessment-service/src/main/resources/db/migration), [Interaction](../interaction-service/src/main/resources/db/migration) và [Membership](../membership-service/src/main/resources/db/migration).
 
 ## II. KTPM — ADD / arc42 / C4
 
 - arc42 1/3/4/5/6/7/9/10 sections are in the [architecture document](EXAM_ARCHITECTURE.md).
-- At least 3 Quality Attribute Scenarios: QA-01, QA-02, QA-03, QA-04.
+- Four six-field scenarios and the supporting modifiability exercise. [Quality attribute scenarios](EXAM_ARCHITECTURE.md#quality-attribute-scenarios) · [ADD traceability](EXAM_ARCHITECTURE.md#add-traceability)
 - Seven ADRs, including the Assessment aggregate and persistence ports. [ADR log](ADR_MVP.md)
-- C4 L1, L2, L3 and Runtime/Deployment Mermaid diagrams in architecture file.
+- C4 L1, L2, L3 and Deployment views are in the architecture file. [QA-03 runtime and recovery](EXAM_ARCHITECTURE.md#qa-03-availability-and-recovery)
 - Assessment bounded context, aggregate, invariants and Example Mapping. [Assessment DDD](ASSESSMENT_DDD.md)
 
 ### Experiment results (fill after actual tests)
 
+Phiên chạy trong `docs/evidence/` ghi checkout `aa43453` cho QA-01, `f191b7a` cho QA-03 và `19aa006` cho QA-04. Log QA-02 không ghi SHA checkout. Các số liệu dưới đây thuộc phiên chạy tương ứng.
+
 | Experiment | Command | Expected | Observed | Screenshot |
 |---|---|---|---|---|
-| Assessment unit tests | `mvn -f assessment-service/pom.xml test` | domain rules and use-case orchestration | 12 passed in existing Surefire reports | Archive the two reports with run metadata. |
-| Functional smoke | `python tests/smoke.py` | all enabled assertions pass | 10 checks passed per project owner | Raw output pending. |
-| Daily quota concurrency | `python tests/test_quota_concurrency.py` | after 9 starts, parallel starts yield 1 HTTP 200 and 9 HTTP 429, total 10 | Passed per project owner | Raw output pending. |
+| Assessment unit tests | `mvn -f assessment-service/pom.xml test` | domain rules and use-case orchestration | Raw report pending in `docs/evidence/`. | Archive the Surefire reports with run metadata. |
+| Functional smoke | `python tests/smoke.py` | all enabled assertions pass | Raw output pending in `docs/evidence/`. | [Validation history](VALIDATION_STATUS.md) |
+| Daily quota concurrency | `python tests/test_quota_concurrency.py` | after 9 starts, parallel starts yield 1 HTTP 200 and 9 HTTP 429, total 10 | Raw output pending in `docs/evidence/`. | [Validation history](VALIDATION_STATUS.md) |
 | Performance 50 VUs / 60 s (QA-04) | `k6 run tests/load.js` | p95 < 500 ms, HTTP failures < 1%, all checks pass | **PASS, 2026-11-22.** 5,793 requests, 95.76 req/s, p95 29.18 ms, HTTP failures 0%, failed checks 0%. | [k6 console output](evidence/qa04-k6-20261122-run.txt) |
 | Interaction down (QA-03 A) | `python -B -u tests/test_fault_injection.py` | Grade persists while Interaction is down. Queue holds the event and activity appears after recovery. | **PASS, 2026-11-22.** Submit HTTP 200 in 94.0 ms, `GRADED` 0/3. Queue `ready` increased 0 → 1 with zero consumers. Matching activity observed at recovery poll 5. | [QA-03 log, case A](evidence/qa03-fault-injection-20261122-134619.txt) |
 | RabbitMQ down (QA-03 B) | `python -B -u tests/test_fault_injection.py` | Grade persists with outbox pending during outage. Same event is processed after recovery. | **PASS, 2026-11-22.** Submit HTTP 200 in 93.0 ms, `GRADED` 0/3. `published=false` in all 4 outage polls and 1 retry warning observed. Matching activity observed at recovery poll 6. | [QA-03 log, case B](evidence/qa03-fault-injection-20261122-134619.txt) |
