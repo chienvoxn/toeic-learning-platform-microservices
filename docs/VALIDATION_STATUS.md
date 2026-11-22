@@ -1,15 +1,14 @@
-# Validation status — generated in restricted environment
+# Validation status — TOEIC Microservices MVP
 
-| Validation | Result |
+Assessment reference revision is `a308a74` on `refactor/architecture-improvement`. The current review verified the working-tree revision and grouped evidence by source below.
+
+| Validation | Result and evidence |
 |---|---|
-| All five Maven POMs XML parse | PASS, XML parser |
-| Docker Compose YAML syntax | PASS, PyYAML (12 configured containers) |
-| Frontend JS syntax | PASS, `node --check web/app.js` |
-| Smoke test Python syntax | PASS, `python -m py_compile tests/smoke.py` |
-| Java source lexical parsing | No standalone Java syntax errors detected by `javac -proc:none`; dependencies absent, so full compilation **NOT CHECKED** |
-| `docker compose config` with actual Docker | **NOT RUN** — Docker binary unavailable |
-| `docker compose up --build` | **NOT RUN** — Docker binary unavailable |
-| Maven compile/test | **NOT RUN** — Maven and dependencies unavailable (no Internet from runtime) |
-| End-to-end smoke / performance / fault injection | **NOT RUN** — requires running stack |
-
-These are not proof of the completed runtime. Use `docker compose up --build -d`, `python tests/smoke.py`, `k6 run tests/load.js`, and `tests/fault_injection.md` on your own Docker-ready machine; record evidence before final report. Do not mark any unexecuted scenario as PASS.
+| Assessment unit tests | **12 passed in local Surefire reports** under `assessment-service/target/surefire-reports/`. `AttemptDomainTest` 5 and `AttemptApplicationServiceTest` 7, zero failures, errors and skips. Reviewed existing reports. They are build outputs without commit metadata and were not regenerated during the documentation review. |
+| Functional E2E smoke | **10 checks passed in the prior run as reported by the project owner.** [Smoke script](../tests/smoke.py). Raw console output and run metadata are still needed for independently verifiable submission evidence. Demo PRO coverage depends on the run configuration. |
+| Daily quota concurrency | **Passed in the prior run as reported by the project owner.** [Quota test](../tests/test_quota_concurrency.py) expects 9 successful sequential starts, then 1 HTTP 200 and 9 HTTP 429 for 10 simultaneous starts, with 10 attempts persisted in total. Raw output still needs to be attached. This scenario exercises start and quota reservation. |
+| Static baseline checks | Previous restricted-environment review recorded successful XML parsing of five POMs, PyYAML parsing of Compose, `node --check web/app.js` and smoke script syntax. The earlier `javac -proc:none` inspection lacked dependencies and cannot serve as full build evidence. |
+| Docker Compose config | **Passed in this review.** `docker compose config --quiet` exited 0. This checks resolved configuration. Runtime inspection via `docker compose ps` was denied by the sandbox at the Docker socket. |
+| Fresh full-stack build and deployment evidence | **Pending for the report.** Capture revision, machine, `docker compose ps`, health and relevant screenshots or logs from a controlled Compose stack. |
+| Concurrent submit, k6 and fault injection | **Pending.** Unit tests and sequential smoke exercise submit behavior. The still-pending concurrent submit requires shared PostgreSQL state. See the [experiment plan](REPORT_TEMPLATE.md#experiment-results-fill-after-actual-tests). |
+| Documentation | All 9 Mermaid blocks parsed with Mermaid 11. All 24 relative links and heading fragments resolved. Git whitespace checks passed for the modified files and the new DDD document. Mermaid rendering was outside the syntax check. |

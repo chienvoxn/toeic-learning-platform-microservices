@@ -1,12 +1,12 @@
 # TOEIC Learning Platform — Microservices MVP Architecture (ADD + arc42 + C4)
 
-**Status:** Designed and coded for a five-service demo; system-wide runtime measurements **pending local execution**. **Scope:** a bounded exam demonstration, not full original TOEIC feature parity.
+**Status:** Five-service demo implemented. See [validation status](VALIDATION_STATUS.md) for prior checks and pending experiments. **Scope:** a bounded exam demonstration, not full original TOEIC feature parity.
 
 ## 1. arc42 — Introduction and goals
 
 **Business goal:** TOEIC learner registers, selects TOEIC content, practices, receives a grade, reviews material and accesses plans. Teacher may author quiz after authentication. Relevant stakeholders: Learner, Teacher, Admin, examiner, maintainer.
 
-**Constraints:** KTHDV Hướng 3: IAM (JWT, roles, permissions), core domain resources, interaction, membership, 4+ deployed core services, API Gateway, database ownership, Docker Compose. KTPM: ADD, arc42, C4 L1/L2/L3, 3+ measurable scenarios, 2+ ADR, runtime & deployment view, k6 and fault injection evidence. Code should have clear `entrypoints/core/data` responsibilities; this MVP currently places some entities and controller logic in single Java classes and should be refactored into the provided boilerplate before claiming literal template conformity.
+**Constraints:** KTHDV Hướng 3: IAM (JWT, roles, permissions), core domain resources, interaction, membership, 4+ deployed core services, API Gateway, database ownership, Docker Compose. KTPM: ADD, arc42, C4 L1/L2/L3, 3+ measurable scenarios, 2+ ADR, runtime & deployment view, k6 and fault injection evidence. Assessment separates entry point, core and data responsibilities by class within one Java package. Literal `entrypoints/core/data` package conformity remains open if required by the course rubric.
 
 ## 2. arc42 — Architecture constraints and quality goals
 
@@ -23,7 +23,7 @@
 | ID | Source / stimulus / environment | Artifact / response | Proposed acceptance / evidence |
 |---|---|---|---|
 | QA-01 Security | Unprivileged learner sends `POST /ms/v1/contents/quizzes` with valid learner JWT | Content rejects without writing rows | HTTP 403; query COUNT unchanged; negative smoke test |
-| QA-02 Reliability | 10 concurrent submissions for one attempt under normal load | Assessment serializes parent attempt, computes one stored result, one event row | All successful retries return identical grade, DB outbox count = 1 |
+| QA-02 Reliability | 10 concurrent submissions for one attempt under normal load | Assessment locks the attempt row and persists one grade and one outbox row | All 10 return HTTP 200 and the same grade. DB outbox count = 1 for that attempt. |
 | QA-03 Availability | Interaction unavailable while user submits a valid attempt | Assessment commits grade/outbox, provides score without waiting for consumer | submit HTTP 200 during failure, activity appears eventually after recovery |
 | QA-04 Performance | 50 virtual users continuously request quiz list from local Docker stack for 1 minute | Gateway + Content return sanitized quiz list | target p95 under 500 ms, failed requests under 1%; k6 report |
 
@@ -81,18 +81,39 @@ flowchart TB
 
 ```mermaid
 flowchart LR
- HTTP["AttemptController — entrypoint"] --> APP["Attempt flow + grading — application/core"]
- APP --> AUTH["TokenService — actor validation"]
- APP --> QUIZ["QuizClient — outbound content/entitlement adapter"]
- APP --> REPO["Attempt/Question repositories — data"]
- APP --> OUT["EventOutbox repository — data"]
- REPO --> DB[(assessment_db)]
- OUT --> DB
- OUT --> P["OutboxPublisher — scheduled adapter"]
- P --> MQ["RabbitMQ exchange"]
+ GW["Nginx Gateway"] --> HTTP
+ subgraph AS[Assessment Service]
+  HTTP["AttemptController · REST adapter"] --> APP["AttemptApplicationService · transactions and AttemptView"]
+  APP --> DOMAIN["Attempt · AttemptQuestion · AttemptStatus"]
+  APP --> EVENT["EventOutbox · mapped integration record"]
+  APP --> AUTH["IdentityClient"]
+  AUTH --> TOKEN["TokenService · local JWT validation"]
+  APP --> CLIENT["QuizClient · HTTP adapter"]
+  APP --> QUOTA["DailyAttemptQuota · JdbcTemplate"]
+  APP --> AS_PORT["AttemptStore"]
+  APP --> QS_PORT["AttemptQuestionStore"]
+  APP --> OS_PORT["OutboxStore"]
+  AS_JPA["JpaAttemptStore"] -.->|implements| AS_PORT
+  QS_JPA["JpaAttemptQuestionStore"] -.->|implements| QS_PORT
+  OS_JPA["JpaOutboxStore"] -.->|implements| OS_PORT
+  AS_JPA --> AR["AttemptRepo"]
+  QS_JPA --> QR["AttemptQuestionRepo"]
+  OS_JPA --> OR["OutboxRepo"]
+  OR -->|maps| EVENT
+  P["OutboxPublisher · scheduled RabbitTemplate send"] --> OR
+  MC["MessagingConfig · exchange, queue and binding"]
+ end
+ CLIENT -->|snapshot| C["Content Service"]
+ CLIENT -->|entitlement| M["Membership Service"]
+ QUOTA --> DB[(assessment_db)]
+ AR --> DB
+ QR --> DB
+ OR --> DB
+ P --> MQ["RabbitMQ · toeic.events"]
+ MC -.->|declares topology| MQ
 ```
 
-**Repository vs ideal layering:** Controllers, entities and application logic are intentionally compact in this demo. To fully match the provided `entrypoints/core/data` boilerplate, split them into packages before final submission. This gap is tracked rather than hidden.
+The application depends on persistence port interfaces and Spring injects the JPA implementations. `AttemptRepo.lockOwn` supplies the pessimistic write lock. The scheduled publisher reads and updates the outbox directly through `OutboxRepo`. `MessagingConfig` declares the durable exchange, queue and binding. Domain entities retain JPA mappings, and the application still calls the concrete JWT, HTTP and JDBC components shown above. See the [Assessment domain and dependency review](ASSESSMENT_DDD.md).
 
 ## 6. arc42 — Runtime view
 
@@ -115,28 +136,33 @@ sequenceDiagram
  C-->>A: Questions + immutable answer keys
  A->>M: GET internal entitlement (service key)
  M-->>A: FREE/PRO + quota
- A->>DB: Save attempt and question snapshots
- A-->>L: Attempt (no correct keys)
+ A->>DB: Reserve daily UTC quota and save attempt and snapshots atomically
+ A-->>G: IN_PROGRESS view
+ G-->>L: Choices with grading feedback hidden
  L->>G: PUT choice per question
  G->>A: Proxy
  A->>DB: Lock attempt, store choice
+ A-->>G: Updated attempt view
+ G-->>L: Updated choice
  L->>G: POST /submit
  G->>A: Proxy
  A->>DB: Lock attempt, grade + outbox atomic commit
- A-->>L: Grade and explanation
- Note over A,Q: Outbox worker retries independently
+ A-->>G: GRADED view
+ G-->>L: Grade and explanations
+ Note over A,Q: Scheduled OutboxPublisher polls pending rows via OutboxRepo
  A->>Q: AttemptGraded
  Q-->>X: Durable event
  X->>X: Idempotent activity projection
 ```
 
-**Failure narrative:** If Interaction is down, RabbitMQ persists the event queue. If RabbitMQ is down, the row remains pending in Assessment outbox until publisher recovers. Limitations: publisher confirmation still needs hardening.
+**Failure narrative:** The durable Interaction queue can hold successfully routed messages while the consumer is down. If the send throws during a broker outage, the row remains pending for a later poll. Publisher confirms are absent, so the `published` flag alone cannot demonstrate broker receipt. Recovery scenarios are pending in the [validation status](VALIDATION_STATUS.md).
 
 ## 7. arc42 — Deployment view (Docker Compose)
 
 ```mermaid
 flowchart TB
  Browser[Browser localhost:8088] --> NG["gateway/nginx"]
+ Monitor["RabbitMQ management UI localhost:15672"] --> Rabbit
  subgraph Docker[Docker network — internal only]
   NG --> I[identity-service:8084]
   NG --> C[content-service:8085]
@@ -158,16 +184,16 @@ flowchart TB
 - **Security:** BCrypt for identity password storage; role/permission claims; Signature HMAC-SHA256 and exp, iss, aud verification; UUID actor always sourced from token. Internal service key not exposed through Gateway.
 - **Data integrity:** pessimistic lock on attempt for save/submit; idempotent submit; immutable snapshots; outbox saved inside grading transaction. No distributed transaction across Content/Membership and Assessment, because snapshot and entitlement are read before local commit. A membership changing concurrently can produce an entitlement race—acceptable for this educational MVP, not a billing guarantee.
 - **Observability:** `docker compose logs`, RabbitMQ dashboard, health by endpoint; structured traces not implemented.
-- **Data and privacy:** each database belongs to a single service; review GET currently returns user UUID (redact for real product).
+- **Data and privacy:** each database belongs to a single service. The public review GET exposes reviewer UUID. Interaction activity is queried by the user from the verified token.
 - **API resilience:** direct synchronous service calls with timeouts; circuit breaker/retry are suggested production extensions, not implemented.
 
 ## 9. arc42 — Architectural decisions
 
-See `ADR_MVP.md` for ADR-001 to ADR-005; major tradeoffs: five service boundaries vs simplicity, JWT vs opaque session, RabbitMQ outbox vs direct HTTP, relational database ownership and testable UI.
+See [ADR-001 to ADR-007](ADR_MVP.md) for service boundaries, JWT, transactional outbox, database ownership, demo UI, the Assessment aggregate and persistence ports.
 
 ## 10. arc42 — Quality requirements
 
-QA-01 to QA-04 above; for verification use `tests/smoke.py`, `tests/load.js`, `tests/fault_injection.md`. Record results in `REPORT_TEMPLATE.md`.
+QA-01 to QA-04 above. Use [smoke](../tests/smoke.py), [k6](../tests/load.js) and [fault injection](../tests/fault_injection.md). Record results in the [report template](REPORT_TEMPLATE.md).
 
 ## 11. arc42 — Risks & technical debt
 
@@ -176,8 +202,8 @@ QA-01 to QA-04 above; for verification use `tests/smoke.py`, `tests/load.js`, `t
 3. **No instant token revocation**: short-lived 30min token; implement central revocation/version check if required.
 4. **Demo-only membership plan upgrade**: users can self-activate PRO when flag is true; never accept as paid entitlement.
 5. **Outbox publisher confirmations not implemented**: broker accepted/ack not tracked; use confirms and retry-safe transitions.
-6. **Full `entrypoints/core/data` boilerplate mapping not yet implemented**.
-7. **No live validation here**: check Docker builds, migrations and test outputs locally.
+6. **Assessment layer boundaries are logical**. The classes share one package. See the [Assessment DDD review](ASSESSMENT_DDD.md#8-giới-hạn-và-cải-tiến-sau-mvp) for the criteria for further separation.
+7. **Pending runtime evidence**: archive environment and test outputs, then measure performance, concurrent submit and fault recovery.
 
 ## 12. arc42 — Glossary
 

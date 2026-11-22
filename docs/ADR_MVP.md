@@ -14,3 +14,23 @@
 
 ## ADR-005 — Small standalone web UI
 **Status:** Accepted for exam demo. **Context:** existing complete React and React Native UIs depend on monolith endpoints; migrating all features is substantially larger. **Decision:** a small same-origin HTML/CSS/JS frontend served by Nginx tests the new 5-service workflow without copying old UI. **Consequence:** works for grading demonstration; does not prove full compatibility with existing frontend. Later migration via Strangler Fig routing and frontend contract adapters.
+
+## ADR-006 — Attempt as the Assessment Aggregate Root
+
+**Status.** Accepted and implemented.
+
+**Context.** Answering and grading a practice attempt must follow the same state rules. Each attempt must use the question snapshot captured at start.
+
+**Decision.** Keep `answer` and `grade` on `Attempt`, and delegate selection validation and correctness to `AttemptQuestion`. Use `IN_PROGRESS` and `GRADED`. The application loads children by attempt and takes a pessimistic write lock on the root for both answer and submit. On the first grade it saves the result and outbox row in one transaction.
+
+**Trade-off.** A service-only state model would leave the grading rules in orchestration code. The chosen aggregate makes rules directly unit-testable and retains existing JPA mappings and the separate child store. The application is responsible for providing the full set of children, and database-level concurrent submission still needs runtime evidence.
+
+## ADR-007 — Persistence ports for Assessment use cases
+
+**Status.** Accepted and implemented.
+
+**Context.** Use-case tests need to isolate orchestration from Spring Data JPA while preserving the existing schema and lock semantics.
+
+**Decision.** Inject `AttemptStore`, `AttemptQuestionStore` and `OutboxStore` into `AttemptApplicationService`. Their `Jpa*Store` adapters delegate to Spring Data repositories. Keep `lockOwn` in the attempt port and implement it in `AttemptRepo`. The scheduled publisher uses `OutboxRepo` for polling and updating, and quota reservation uses the dedicated JDBC component.
+
+**Trade-off.** Direct Spring Data injection would remove adapter classes while coupling use-case tests to repository interfaces from the framework. Separate domain and persistence entities would add mapping and transaction verification. The selected boundary isolates persistence calls for use-case tests and keeps JPA annotations on the mapped model. See the [dependency review](ASSESSMENT_DDD.md#5-application-services-ports-và-hướng-phụ-thuộc).
