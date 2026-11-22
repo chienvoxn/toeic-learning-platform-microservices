@@ -223,19 +223,7 @@ Các tham chiếu ở bảng này không có FK xuyên DB. Nguồn đối chiế
 
 ### Experiment results (fill after actual tests)
 
-Phiên chạy trong `docs/evidence/` ghi checkout `aa43453` cho QA-01, `f191b7a` cho QA-03 và `19aa006` cho QA-04. Log QA-02 không ghi SHA checkout. Các số liệu dưới đây thuộc phiên chạy tương ứng.
-
-| Experiment | Command | Expected | Observed | Screenshot |
-|---|---|---|---|---|
-| Assessment unit tests | `mvn -f assessment-service/pom.xml test` | domain rules and use-case orchestration | Raw report pending in `docs/evidence/`. | Archive the Surefire reports with run metadata. |
-| Functional smoke | `python tests/smoke.py` | all enabled assertions pass | Raw output pending in `docs/evidence/`. | [Validation history](VALIDATION_STATUS.md) |
-| Daily quota concurrency | `python tests/test_quota_concurrency.py` | after 9 starts, parallel starts yield 1 HTTP 200 and 9 HTTP 429, total 10 | Raw output pending in `docs/evidence/`. | [Validation history](VALIDATION_STATUS.md) |
-| Performance 50 VUs / 60 s (QA-04) | `k6 run tests/load.js` | p95 < 500 ms, HTTP failures < 1%, all checks pass | **PASS, 2026-11-22.** 5,793 requests, 95.76 req/s, p95 29.18 ms, HTTP failures 0%, failed checks 0%. | [k6 console output](evidence/qa04-k6-20261122-run.txt) |
-| Interaction down (QA-03 A) | `python -B -u tests/test_fault_injection.py` | Grade persists while Interaction is down. Queue holds the event and activity appears after recovery. | **PASS, 2026-11-22.** Submit HTTP 200 in 94.0 ms, `GRADED` 0/3. Queue `ready` increased 0 → 1 with zero consumers. Matching activity observed at recovery poll 5. | [QA-03 log, case A](evidence/qa03-fault-injection-20261122-134619.txt) |
-| RabbitMQ down (QA-03 B) | `python -B -u tests/test_fault_injection.py` | Grade persists with outbox pending during outage. Same event is processed after recovery. | **PASS, 2026-11-22.** Submit HTTP 200 in 93.0 ms, `GRADED` 0/3. `published=false` in all 4 outage polls and 1 retry warning observed. Matching activity observed at recovery poll 6. | [QA-03 log, case B](evidence/qa03-fault-injection-20261122-134619.txt) |
-| QA-01 Security / RBAC | `POST /ms/v1/contents/quizzes` và SQL COUNT trước/sau | Learner nhận 403, số quiz không đổi | **PASS, `aa43453`.** Tổng quiz 2 → 2, quiz theo mã lần chạy 0 → 0. Teacher và Admin mỗi lần nhận 200 và thêm đúng một quiz. | [Log QA-01](evidence/qa01-security-rbac-aa43453.txt) |
-| No cross-user read | `GET /ms/v1/attempts/{id}` | Chủ sở hữu 200, người khác 404 | **PASS.** Cả Learner và Admin không sở hữu attempt đều nhận 404. | [Log QA-01](evidence/qa01-security-rbac-aa43453.txt) |
-| Concurrent submit | `python -B -u tests/test_concurrent_submit.py` | 10 HTTP 200, identical grade, one outbox row | **PASS, 2026-11-22.** 10/10 HTTP 200, `GRADED` 0/3, 65.9–298.2 ms, one `AttemptGraded` row. | Log QA-02 với attempt `d59d38b4-cd72-4184-bf5a-40d396102609`. |
+Dùng [bảng QA-01–04 và bộ hình nộp](SUBMISSION_EVIDENCE.md) cho phần kết quả. Mỗi phép thử có timestamp, SHA checkout khi có, ngưỡng, kết quả và giới hạn. [Validation status](VALIDATION_STATUS.md) lưu riêng CI, unit test, smoke và quota.
 
 #### Kế hoạch chạy các phép thử
 
@@ -295,12 +283,7 @@ Write-Output "Evidence file $qa02Log"
 
 ### Suggested screenshot set
 
-1. Login / learner homepage / quiz list
-2. Exam in progress (no answer key) / graded result (explanations)
-3. FREE denied for PRO quiz / PRO demo activation
-4. Content/Identity/Assessment/Interaction/Membership logs and `docker compose ps`
-5. RabbitMQ management queue + activity received after Interaction restart
-6. k6 summary with requests, p95 and failures
+Dùng [sơ đồ kết xuất và checklist ảnh demo](SUBMISSION_EVIDENCE.md#sơ-đồ-cho-báo-cáo). Các ảnh màn hình cần chụp trong lần chạy thật. Ghi provenance và chỉ ghi kết quả thực tế quan sát được.
 
 ### Final conclusion template
 
@@ -308,4 +291,4 @@ Write-Output "Evidence file $qa02Log"
 
 ## III. Limitations to disclose in report
 
-This bundle is an integrated **TOEIC MVP**; it does not migrate all original source features. The original project is a Spring Boot modular monolith with mature question bank, assessment, SRS and RAG. The demo's compact service code has not yet been reorganized to a literal `entrypoints/core/data` boilerplate. Any requirement for full original feature parity or strict provided boilerplate remains future work. Execution evidence must be captured on a machine capable of Docker+Maven dependency resolution.
+This bundle is an integrated **TOEIC MVP**; it does not migrate all original source features. The original project is a Spring Boot modular monolith with mature question bank, assessment, SRS and RAG. All five services have `entrypoints/core/data` layers. Comparison with the instructor-provided boilerplate is pending (K08 PARTIAL). CI, local runtime and historical QA runs have separate provenance in [Validation status](VALIDATION_STATUS.md).

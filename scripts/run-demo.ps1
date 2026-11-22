@@ -1,4 +1,4 @@
-# Run from the microservices folder in PowerShell, with Docker Desktop open.
+# Run from the repository root in PowerShell, with Docker Desktop open.
 $ErrorActionPreference = 'Stop'
 if (-not (Test-Path '.env')) {
     Copy-Item '.env.example' '.env'
@@ -10,4 +10,6 @@ if ($LASTEXITCODE -ne 0) { throw 'Invalid Compose configuration' }
 docker compose up --build -d
 if ($LASTEXITCODE -ne 0) { throw 'Docker build/start failed. Inspect docker compose logs.' }
 docker compose ps
-Write-Host 'Open http://localhost:8088. Check logs if services are not ready.' -ForegroundColor Green
+$gatewayAddress = docker compose port gateway 8088
+if ($LASTEXITCODE -ne 0 -or -not $gatewayAddress) { throw 'Gateway port unavailable' }
+Write-Host ('Gateway: http://' + $gatewayAddress.Trim() + '. Check readiness as described in README.md.') -ForegroundColor Green
