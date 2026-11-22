@@ -1,0 +1,50 @@
+Start: 2026-11-22T13:53:11.4656290+07:00
+Git HEAD: 19aa006; branch: refactor/architecture-improvement
+Gateway: http://127.0.0.1:8088
+k6: k6.exe v2.4.0 (commit/dd9395906d, go1.26.11, windows/amd64)
+Profile: 50 VUs / 60s, 500ms think time, no authentication
+Machine, container and endpoint details: qa04-k6-20261122-preflight.txt
+Command: k6 run --quiet --no-color --vus 50 --duration 60s --summary-export docs/evidence/qa04-k6-20261122-summary.json tests/load.js
+
+
+  █ THRESHOLDS
+
+    checks
+    ✓ 'rate==1' rate=100.00%
+
+    http_req_duration
+    ✓ 'p(95)<500' p(95)=29.17ms
+
+    http_req_failed
+    ✓ 'rate<0.01' rate=0.00%
+
+
+  █ TOTAL RESULTS
+
+    checks_total.......: 17379   287.279931/s
+    checks_succeeded...: 100.00% 17379 out of 17379
+    checks_failed......: 0.00%   0 out of 17379
+
+    ✓ HTTP 200
+    ✓ JSON content type
+    ✓ non-empty public QuizView list
+
+    HTTP
+    http_req_duration..............: med=6.75ms   p(90)=18.08ms  p(95)=29.17ms p(99)=572.13ms
+      { expected_response:true }...: med=6.75ms   p(90)=18.08ms  p(95)=29.17ms p(99)=572.13ms
+    http_req_failed................: 0.00%  0 out of 5793
+    http_reqs......................: 5793   95.759977/s
+
+    EXECUTION
+    iteration_duration.............: med=507.65ms p(90)=519.48ms p(95)=530.5ms p(99)=1.08s
+    iterations.....................: 5793   95.759977/s
+    vus............................: 50     min=50        max=50
+    vus_max........................: 50     min=50        max=50
+
+    NETWORK
+    data_received..................: 2.3 MB 37 kB/s
+    data_sent......................: 533 kB 8.8 kB/s
+
+
+
+End: 2026-11-22T13:54:12.4383446+07:00; QA-04 k6 exit code: 0
