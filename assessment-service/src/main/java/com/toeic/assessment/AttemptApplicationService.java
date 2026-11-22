@@ -1,10 +1,9 @@
 package com.toeic.assessment;
 
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -56,12 +55,12 @@ class AttemptApplicationService {
     private AttemptView view(Attempt attempt) {
         var attemptQuestions = projection(
                 attempt.attemptId,
-                "GRADED".equals(attempt.status)
+                attempt.isGraded()
         );
         return new AttemptView(
                 attempt.attemptId,
                 attempt.quizId,
-                attempt.status,
+                attempt.status.name(),
                 attemptQuestions.size(),
                 attempt.correctCount,
                 attempt.createdAt,
@@ -133,7 +132,7 @@ class AttemptApplicationService {
         Attempt attempt = attempts.lockOwn(attemptId, userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
-        if (!"IN_PROGRESS".equals(attempt.status)) {
+        if (attempt.isGraded()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Already graded");
         }
 
@@ -143,7 +142,11 @@ class AttemptApplicationService {
 
         var question = questions.findById(key)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        question.selectedChoice = choice;
+        try {
+            attempt.answer(question, choice);
+        } catch (IllegalStateException ex) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Already graded", ex);
+        }
         questions.save(question);
         return view(attempt);
     }
@@ -154,12 +157,7 @@ class AttemptApplicationService {
         Attempt attempt = attempts.lockOwn(attemptId, userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
-        if (!"GRADED".equals(attempt.status)) {
-            attempt.correctCount = (int) questions.findByAttemptId(attemptId).stream()
-                    .filter(q -> q.correctChoice.equals(q.selectedChoice))
-                    .count();
-            attempt.status = "GRADED";
-            attempt.gradedAt = OffsetDateTime.now(ZoneOffset.UTC);
+        if (attempt.grade(questions.findByAttemptId(attemptId))) {
             attempts.save(attempt);
             outbox.save(new EventOutbox(attempt));
         }

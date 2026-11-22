@@ -5,12 +5,15 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
 import jakarta.persistence.Table;
+import java.util.Set;
 import java.util.UUID;
 
 @Entity
 @Table(name = "attempt_questions")
 @IdClass(AttemptQuestionKey.class)
 class AttemptQuestion {
+    private static final Set<String> ALLOWED_CHOICES = Set.of("A", "B", "C", "D");
+
     @Id
     UUID attemptId;
 
@@ -63,5 +66,16 @@ class AttemptQuestion {
         this.optionD = optionD;
         this.correctChoice = correctChoice;
         this.explanation = explanation;
+    }
+
+    void selectChoice(String choice) {
+        if (!ALLOWED_CHOICES.contains(choice)) {
+            throw new IllegalArgumentException("Choice must be A, B, C, or D");
+        }
+        selectedChoice = choice;
+    }
+
+    boolean isCorrect() {
+        return correctChoice.equals(selectedChoice);
     }
 }
