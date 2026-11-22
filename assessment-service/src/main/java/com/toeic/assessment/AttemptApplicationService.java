@@ -11,17 +11,17 @@ import org.springframework.web.server.ResponseStatusException;
 
 @Service
 class AttemptApplicationService {
-    private final AttemptRepo attempts;
-    private final AttemptQuestionRepo questions;
-    private final OutboxRepo outbox;
+    private final AttemptStore attempts;
+    private final AttemptQuestionStore questions;
+    private final OutboxStore outbox;
     private final IdentityClient identity;
     private final QuizClient quizzes;
     private final DailyAttemptQuota dailyQuota;
 
     AttemptApplicationService(
-            AttemptRepo attempts,
-            AttemptQuestionRepo questions,
-            OutboxRepo outbox,
+            AttemptStore attempts,
+            AttemptQuestionStore questions,
+            OutboxStore outbox,
             IdentityClient identity,
             QuizClient quizzes,
             DailyAttemptQuota dailyQuota
