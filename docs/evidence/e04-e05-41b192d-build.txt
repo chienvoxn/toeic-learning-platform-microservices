@@ -1,0 +1,321 @@
+2026-11-22T19:06:18.556+07:00 Start Maven clean verify and environment | checkout=41b192ddbe6c53eaa610f1c72e99d4b94e5813fb | project=toeic-microservices-mvp
+2026-11-22T19:06:18.851+07:00 BEGIN Git branch | command: git branch --show-current
+refactor/remaining-layered-services
+2026-11-22T19:06:18.908+07:00 END Git branch | exit=0 | elapsed=0.06s
+2026-11-22T19:06:18.908+07:00 BEGIN Host environment | command: powershell.exe -NoProfile -Command "$cpu=Get-CimInstance Win32_Processor | Select-Object -First 1; $os=Get-CimInstance Win32_OperatingSystem; $hw=Get-CimInstance Win32_ComputerSystem; [pscustomobject]@{windows=$os.Caption;version=$os.Version;architecture=$os.OSArchitecture;cpu=$cpu.Name;cores=$cpu.NumberOfCores;logical=$cpu.NumberOfLogicalProcessors;physicalRamBytes=$hw.TotalPhysicalMemory} | ConvertTo-Json -Compress"
+{"windows":"Microsoft Windows 11 Home Single Language","version":"10.0.26300","architecture":"64-bit","cpu":"AMD Ryzen 7 6800H with Radeon Graphics         ","cores":8,"logical":16,"physicalRamBytes":7722795008}
+2026-11-22T19:06:22.060+07:00 END Host environment | exit=0 | elapsed=3.16s
+2026-11-22T19:06:22.060+07:00 BEGIN Java version | command: java -version
+openjdk version "21.0.12.1" 2026-08-18 LTS
+OpenJDK Runtime Environment Temurin-21.0.12.1+1 (build 21.0.12.1+1-LTS)
+OpenJDK 64-Bit Server VM Temurin-21.0.12.1+1 (build 21.0.12.1+1-LTS, mixed mode, sharing)
+2026-11-22T19:06:22.757+07:00 END Java version | exit=0 | elapsed=0.69s
+2026-11-22T19:06:22.757+07:00 BEGIN Python version | command: C:\Users\PC\AppData\Local\Programs\Python\Python312\python.exe --version
+Python 3.12.10
+2026-11-22T19:06:22.782+07:00 END Python version | exit=0 | elapsed=0.03s
+2026-11-22T19:06:22.782+07:00 BEGIN Docker CLI version | command: docker --version
+Docker version 29.8.2, build 7fc2dff
+2026-11-22T19:06:22.846+07:00 END Docker CLI version | exit=0 | elapsed=0.06s
+2026-11-22T19:06:22.846+07:00 BEGIN Docker Compose version | command: docker compose version
+Docker Compose version v5.5.1
+2026-11-22T19:06:23.015+07:00 END Docker Compose version | exit=0 | elapsed=0.17s
+2026-11-22T19:06:23.020+07:00 BEGIN Maven version | command: cmd.exe /d /c C:\Users\PC\.m2\wrapper\dists\apache-maven-3.10.0\2aaba761688b1a6ea5a46e7e5f4d5406ed7a75ee8da95e5e3079863a23461c9b\bin\mvn.cmd -version
+Apache Maven 3.10.0 (c43a36b8d67be7e0805a411bc0898af1a51f5472)
+Maven home: C:\Users\PC\.m2\wrapper\dists\apache-maven-3.10.0\2aaba761688b1a6ea5a46e7e5f4d5406ed7a75ee8da95e5e3079863a23461c9b
+Java version: 21.0.12.1, vendor: Eclipse Adoptium, runtime: C:\Program Files\Eclipse Adoptium\jdk-21.0.12.101-hotspot
+Default locale: en_US, platform encoding: UTF-8, time zone: Asia/Saigon
+OS name: "windows 11", version: "10.0", arch: "amd64", family: "windows"
+2026-11-22T19:06:23.633+07:00 END Maven version | exit=0 | elapsed=0.61s
+2026-11-22T19:06:23.633+07:00 Limits: new scratch directories avoid OneDrive locks. Dependency cache is reused offline. Content has no unit tests.
+2026-11-22T19:06:23.691+07:00 BEGIN identity Maven clean verify | command: cmd.exe /d /c C:\Users\PC\.m2\wrapper\dists\apache-maven-3.10.0\2aaba761688b1a6ea5a46e7e5f4d5406ed7a75ee8da95e5e3079863a23461c9b\bin\mvn.cmd -B -ntp -o clean verify
+[INFO] Scanning for projects...
+[INFO] Loaded 24571 auto-discovered prefixes for remote repository central (prefixes-central.txt)
+[INFO]
+[INFO] ---------------------< com.toeic:identity-service >---------------------
+[INFO] Building identity-service 0.1.0
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] Loaded 24571 auto-discovered prefixes for remote repository maven-central (prefixes-maven-central.txt)
+[INFO]
+[INFO] --- clean:3.5.0:clean (default-clean) @ identity-service ---
+[INFO]
+[INFO] --- resources:3.5.0:resources (default-resources) @ identity-service ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 3 resources from src\main\resources to target\classes
+[INFO]
+[INFO] --- compiler:3.15.0:compile (default-compile) @ identity-service ---
+[INFO] Loaded 64 auto-discovered prefixes for remote repository apache.snapshots (prefixes-apache.snapshots.txt)
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 7 source files with javac [debug parameters release 21] to target\classes
+[INFO] /C:/Users/PC/AppData/Local/Temp/toeic-e04-e05-41b192d-wpso_7hh/identity-service/src/main/java/com/toeic/identity/adapters/security/TokenService.java: C:\Users\PC\AppData\Local\Temp\toeic-e04-e05-41b192d-wpso_7hh\identity-service\src\main\java\com\toeic\identity\adapters\security\TokenService.java uses or overrides a deprecated API.
+[INFO] /C:/Users/PC/AppData/Local/Temp/toeic-e04-e05-41b192d-wpso_7hh/identity-service/src/main/java/com/toeic/identity/adapters/security/TokenService.java: Recompile with -Xlint:deprecation for details.
+[INFO]
+[INFO] --- resources:3.5.0:testResources (default-testResources) @ identity-service ---
+[INFO] skip non existing resourceDirectory C:\Users\PC\AppData\Local\Temp\toeic-e04-e05-41b192d-wpso_7hh\identity-service\src\test\resources
+[INFO]
+[INFO] --- compiler:3.15.0:testCompile (default-testCompile) @ identity-service ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 1 source file with javac [debug parameters release 21] to target\test-classes
+[INFO]
+[INFO] --- surefire:3.5.6:test (default-test) @ identity-service ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO]
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.toeic.identity.adapters.security.TokenServiceTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.016 s -- in com.toeic.identity.adapters.security.TokenServiceTest
+[INFO]
+[INFO] Results:
+[INFO]
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0
+[INFO]
+[INFO]
+[INFO] --- jar:3.5.1:jar (default-jar) @ identity-service ---
+[INFO] Building jar: C:\Users\PC\AppData\Local\Temp\toeic-e04-e05-41b192d-wpso_7hh\identity-service\target\identity-service-0.1.0.jar
+[INFO]
+[INFO] --- spring-boot:4.1.1:repackage (repackage) @ identity-service ---
+[INFO] Loaded 50 auto-discovered prefixes for remote repository ow2-snapshot (prefixes-ow2-snapshot.txt)
+[INFO] Replacing main artifact C:\Users\PC\AppData\Local\Temp\toeic-e04-e05-41b192d-wpso_7hh\identity-service\target\identity-service-0.1.0.jar with repackaged archive, adding nested dependencies in BOOT-INF/.
+[INFO] The original artifact has been renamed to C:\Users\PC\AppData\Local\Temp\toeic-e04-e05-41b192d-wpso_7hh\identity-service\target\identity-service-0.1.0.jar.original
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  10.844 s
+[INFO] Finished at: 2026-11-22T19:06:36+07:00
+[INFO] ------------------------------------------------------------------------
+2026-11-22T19:06:36.650+07:00 END identity Maven clean verify | exit=0 | elapsed=12.95s
+2026-11-22T19:06:36.653+07:00 IDENTITY PASS: tests=3; failures=0; errors=0; skipped=0
+2026-11-22T19:06:36.740+07:00 BEGIN content Maven clean verify | command: cmd.exe /d /c C:\Users\PC\.m2\wrapper\dists\apache-maven-3.10.0\2aaba761688b1a6ea5a46e7e5f4d5406ed7a75ee8da95e5e3079863a23461c9b\bin\mvn.cmd -B -ntp -o clean verify
+[INFO] Scanning for projects...
+[INFO] Loaded 24571 auto-discovered prefixes for remote repository central (prefixes-central.txt)
+[INFO]
+[INFO] ---------------------< com.toeic:content-service >----------------------
+[INFO] Building content-service 0.1.0
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] Loaded 24571 auto-discovered prefixes for remote repository maven-central (prefixes-maven-central.txt)
+[INFO]
+[INFO] --- clean:3.5.0:clean (default-clean) @ content-service ---
+[INFO]
+[INFO] --- resources:3.5.0:resources (default-resources) @ content-service ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 2 resources from src\main\resources to target\classes
+[INFO]
+[INFO] --- compiler:3.15.0:compile (default-compile) @ content-service ---
+[INFO] Loaded 64 auto-discovered prefixes for remote repository apache.snapshots (prefixes-apache.snapshots.txt)
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 11 source files with javac [debug parameters release 21] to target\classes
+[INFO] /C:/Users/PC/AppData/Local/Temp/toeic-e04-e05-41b192d-wpso_7hh/content-service/src/main/java/com/toeic/content/adapters/security/TokenService.java: C:\Users\PC\AppData\Local\Temp\toeic-e04-e05-41b192d-wpso_7hh\content-service\src\main\java\com\toeic\content\adapters\security\TokenService.java uses or overrides a deprecated API.
+[INFO] /C:/Users/PC/AppData/Local/Temp/toeic-e04-e05-41b192d-wpso_7hh/content-service/src/main/java/com/toeic/content/adapters/security/TokenService.java: Recompile with -Xlint:deprecation for details.
+[INFO]
+[INFO] --- resources:3.5.0:testResources (default-testResources) @ content-service ---
+[INFO] skip non existing resourceDirectory C:\Users\PC\AppData\Local\Temp\toeic-e04-e05-41b192d-wpso_7hh\content-service\src\test\resources
+[INFO]
+[INFO] --- compiler:3.15.0:testCompile (default-testCompile) @ content-service ---
+[INFO] No sources to compile
+[INFO]
+[INFO] --- surefire:3.5.6:test (default-test) @ content-service ---
+[INFO] No tests to run.
+[INFO]
+[INFO] --- jar:3.5.1:jar (default-jar) @ content-service ---
+[INFO] Building jar: C:\Users\PC\AppData\Local\Temp\toeic-e04-e05-41b192d-wpso_7hh\content-service\target\content-service-0.1.0.jar
+[INFO]
+[INFO] --- spring-boot:4.1.1:repackage (repackage) @ content-service ---
+[INFO] Loaded 50 auto-discovered prefixes for remote repository ow2-snapshot (prefixes-ow2-snapshot.txt)
+[INFO] Replacing main artifact C:\Users\PC\AppData\Local\Temp\toeic-e04-e05-41b192d-wpso_7hh\content-service\target\content-service-0.1.0.jar with repackaged archive, adding nested dependencies in BOOT-INF/.
+[INFO] The original artifact has been renamed to C:\Users\PC\AppData\Local\Temp\toeic-e04-e05-41b192d-wpso_7hh\content-service\target\content-service-0.1.0.jar.original
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  5.409 s
+[INFO] Finished at: 2026-11-22T19:06:44+07:00
+[INFO] ------------------------------------------------------------------------
+2026-11-22T19:06:44.318+07:00 END content Maven clean verify | exit=0 | elapsed=7.58s
+2026-11-22T19:06:44.319+07:00 CONTENT PASS: tests=0; failures=0; errors=0; skipped=0
+2026-11-22T19:06:44.398+07:00 BEGIN assessment Maven clean verify | command: cmd.exe /d /c C:\Users\PC\.m2\wrapper\dists\apache-maven-3.10.0\2aaba761688b1a6ea5a46e7e5f4d5406ed7a75ee8da95e5e3079863a23461c9b\bin\mvn.cmd -B -ntp -o clean verify
+[INFO] Scanning for projects...
+[INFO] Loaded 24571 auto-discovered prefixes for remote repository central (prefixes-central.txt)
+[INFO]
+[INFO] --------------------< com.toeic:assessment-service >--------------------
+[INFO] Building assessment-service 0.1.0
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] Loaded 24571 auto-discovered prefixes for remote repository maven-central (prefixes-maven-central.txt)
+[INFO]
+[INFO] --- clean:3.5.0:clean (default-clean) @ assessment-service ---
+[INFO]
+[INFO] --- resources:3.5.0:resources (default-resources) @ assessment-service ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 3 resources from src\main\resources to target\classes
+[INFO]
+[INFO] --- compiler:3.15.0:compile (default-compile) @ assessment-service ---
+[INFO] Loaded 64 auto-discovered prefixes for remote repository apache.snapshots (prefixes-apache.snapshots.txt)
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 24 source files with javac [debug parameters release 21] to target\classes
+[INFO] /C:/Users/PC/AppData/Local/Temp/toeic-e04-e05-41b192d-wpso_7hh/assessment-service/src/main/java/com/toeic/assessment/adapters/http/QuizClient.java: Some input files use or override a deprecated API.
+[INFO] /C:/Users/PC/AppData/Local/Temp/toeic-e04-e05-41b192d-wpso_7hh/assessment-service/src/main/java/com/toeic/assessment/adapters/http/QuizClient.java: Recompile with -Xlint:deprecation for details.
+[INFO]
+[INFO] --- resources:3.5.0:testResources (default-testResources) @ assessment-service ---
+[INFO] skip non existing resourceDirectory C:\Users\PC\AppData\Local\Temp\toeic-e04-e05-41b192d-wpso_7hh\assessment-service\src\test\resources
+[INFO]
+[INFO] --- compiler:3.15.0:testCompile (default-testCompile) @ assessment-service ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 2 source files with javac [debug parameters release 21] to target\test-classes
+[INFO]
+[INFO] --- surefire:3.5.6:test (default-test) @ assessment-service ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO]
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.toeic.assessment.core.AttemptApplicationServiceTest
+Mockito is currently self-attaching to enable the inline-mock-maker. This will no longer work in future releases of the JDK. Please add Mockito as an agent to your build as described in Mockito's documentation: https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
+WARNING: A Java agent has been loaded dynamically (C:\Users\PC\.m2\repository\net\bytebuddy\byte-buddy-agent\1.18.11\byte-buddy-agent-1.18.11.jar)
+WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
+WARNING: Dynamic loading of agents will be disallowed by default in a future release
+OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.861 s -- in com.toeic.assessment.core.AttemptApplicationServiceTest
+[INFO] Running com.toeic.assessment.core.AttemptDomainTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.018 s -- in com.toeic.assessment.core.AttemptDomainTest
+[INFO]
+[INFO] Results:
+[INFO]
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0
+[INFO]
+[INFO]
+[INFO] --- jar:3.5.1:jar (default-jar) @ assessment-service ---
+[INFO] Building jar: C:\Users\PC\AppData\Local\Temp\toeic-e04-e05-41b192d-wpso_7hh\assessment-service\target\assessment-service-0.1.0.jar
+[INFO]
+[INFO] --- spring-boot:4.1.1:repackage (repackage) @ assessment-service ---
+[INFO] Loaded 50 auto-discovered prefixes for remote repository ow2-snapshot (prefixes-ow2-snapshot.txt)
+[INFO] Replacing main artifact C:\Users\PC\AppData\Local\Temp\toeic-e04-e05-41b192d-wpso_7hh\assessment-service\target\assessment-service-0.1.0.jar with repackaged archive, adding nested dependencies in BOOT-INF/.
+[INFO] The original artifact has been renamed to C:\Users\PC\AppData\Local\Temp\toeic-e04-e05-41b192d-wpso_7hh\assessment-service\target\assessment-service-0.1.0.jar.original
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  12.498 s
+[INFO] Finished at: 2026-11-22T19:06:58+07:00
+[INFO] ------------------------------------------------------------------------
+2026-11-22T19:06:58.809+07:00 END assessment Maven clean verify | exit=0 | elapsed=14.42s
+2026-11-22T19:06:58.809+07:00 ASSESSMENT PASS: tests=12; failures=0; errors=0; skipped=0
+2026-11-22T19:06:58.860+07:00 BEGIN membership Maven clean verify | command: cmd.exe /d /c C:\Users\PC\.m2\wrapper\dists\apache-maven-3.10.0\2aaba761688b1a6ea5a46e7e5f4d5406ed7a75ee8da95e5e3079863a23461c9b\bin\mvn.cmd -B -ntp -o clean verify
+[INFO] Scanning for projects...
+[INFO] Loaded 24571 auto-discovered prefixes for remote repository central (prefixes-central.txt)
+[INFO]
+[INFO] --------------------< com.toeic:membership-service >--------------------
+[INFO] Building membership-service 0.1.0
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] Loaded 24571 auto-discovered prefixes for remote repository maven-central (prefixes-maven-central.txt)
+[INFO]
+[INFO] --- clean:3.5.0:clean (default-clean) @ membership-service ---
+[INFO]
+[INFO] --- resources:3.5.0:resources (default-resources) @ membership-service ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO]
+[INFO] --- compiler:3.15.0:compile (default-compile) @ membership-service ---
+[INFO] Loaded 64 auto-discovered prefixes for remote repository apache.snapshots (prefixes-apache.snapshots.txt)
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 6 source files with javac [debug parameters release 21] to target\classes
+[INFO] /C:/Users/PC/AppData/Local/Temp/toeic-e04-e05-41b192d-wpso_7hh/membership-service/src/main/java/com/toeic/membership/adapters/security/TokenService.java: C:\Users\PC\AppData\Local\Temp\toeic-e04-e05-41b192d-wpso_7hh\membership-service\src\main\java\com\toeic\membership\adapters\security\TokenService.java uses or overrides a deprecated API.
+[INFO] /C:/Users/PC/AppData/Local/Temp/toeic-e04-e05-41b192d-wpso_7hh/membership-service/src/main/java/com/toeic/membership/adapters/security/TokenService.java: Recompile with -Xlint:deprecation for details.
+[INFO]
+[INFO] --- resources:3.5.0:testResources (default-testResources) @ membership-service ---
+[INFO] skip non existing resourceDirectory C:\Users\PC\AppData\Local\Temp\toeic-e04-e05-41b192d-wpso_7hh\membership-service\src\test\resources
+[INFO]
+[INFO] --- compiler:3.15.0:testCompile (default-testCompile) @ membership-service ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 1 source file with javac [debug parameters release 21] to target\test-classes
+[INFO]
+[INFO] --- surefire:3.5.6:test (default-test) @ membership-service ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO]
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.toeic.membership.core.MembershipTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.200 s -- in com.toeic.membership.core.MembershipTest
+[INFO]
+[INFO] Results:
+[INFO]
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0
+[INFO]
+[INFO]
+[INFO] --- jar:3.5.1:jar (default-jar) @ membership-service ---
+[INFO] Building jar: C:\Users\PC\AppData\Local\Temp\toeic-e04-e05-41b192d-wpso_7hh\membership-service\target\membership-service-0.1.0.jar
+[INFO]
+[INFO] --- spring-boot:4.1.1:repackage (repackage) @ membership-service ---
+[INFO] Loaded 50 auto-discovered prefixes for remote repository ow2-snapshot (prefixes-ow2-snapshot.txt)
+[INFO] Replacing main artifact C:\Users\PC\AppData\Local\Temp\toeic-e04-e05-41b192d-wpso_7hh\membership-service\target\membership-service-0.1.0.jar with repackaged archive, adding nested dependencies in BOOT-INF/.
+[INFO] The original artifact has been renamed to C:\Users\PC\AppData\Local\Temp\toeic-e04-e05-41b192d-wpso_7hh\membership-service\target\membership-service-0.1.0.jar.original
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  8.299 s
+[INFO] Finished at: 2026-11-22T19:07:09+07:00
+[INFO] ------------------------------------------------------------------------
+2026-11-22T19:07:09.102+07:00 END membership Maven clean verify | exit=0 | elapsed=10.24s
+2026-11-22T19:07:09.102+07:00 MEMBERSHIP PASS: tests=1; failures=0; errors=0; skipped=0
+2026-11-22T19:07:09.195+07:00 BEGIN interaction Maven clean verify | command: cmd.exe /d /c C:\Users\PC\.m2\wrapper\dists\apache-maven-3.10.0\2aaba761688b1a6ea5a46e7e5f4d5406ed7a75ee8da95e5e3079863a23461c9b\bin\mvn.cmd -B -ntp -o clean verify
+[INFO] Scanning for projects...
+[INFO] Loaded 24571 auto-discovered prefixes for remote repository central (prefixes-central.txt)
+[INFO]
+[INFO] -------------------< com.toeic:interaction-service >--------------------
+[INFO] Building interaction-service 0.1.0
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] Loaded 24571 auto-discovered prefixes for remote repository maven-central (prefixes-maven-central.txt)
+[INFO]
+[INFO] --- clean:3.5.0:clean (default-clean) @ interaction-service ---
+[INFO]
+[INFO] --- resources:3.5.0:resources (default-resources) @ interaction-service ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 2 resources from src\main\resources to target\classes
+[INFO]
+[INFO] --- compiler:3.15.0:compile (default-compile) @ interaction-service ---
+[INFO] Loaded 64 auto-discovered prefixes for remote repository apache.snapshots (prefixes-apache.snapshots.txt)
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 10 source files with javac [debug parameters release 21] to target\classes
+[INFO] /C:/Users/PC/AppData/Local/Temp/toeic-e04-e05-41b192d-wpso_7hh/interaction-service/src/main/java/com/toeic/interaction/adapters/messaging/ActivityConsumer.java: Some input files use or override a deprecated API.
+[INFO] /C:/Users/PC/AppData/Local/Temp/toeic-e04-e05-41b192d-wpso_7hh/interaction-service/src/main/java/com/toeic/interaction/adapters/messaging/ActivityConsumer.java: Recompile with -Xlint:deprecation for details.
+[INFO]
+[INFO] --- resources:3.5.0:testResources (default-testResources) @ interaction-service ---
+[INFO] skip non existing resourceDirectory C:\Users\PC\AppData\Local\Temp\toeic-e04-e05-41b192d-wpso_7hh\interaction-service\src\test\resources
+[INFO]
+[INFO] --- compiler:3.15.0:testCompile (default-testCompile) @ interaction-service ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 1 source file with javac [debug parameters release 21] to target\test-classes
+[INFO]
+[INFO] --- surefire:3.5.6:test (default-test) @ interaction-service ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO]
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.toeic.interaction.core.ContentReviewTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.138 s -- in com.toeic.interaction.core.ContentReviewTest
+[INFO]
+[INFO] Results:
+[INFO]
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0
+[INFO]
+[INFO]
+[INFO] --- jar:3.5.1:jar (default-jar) @ interaction-service ---
+[INFO] Building jar: C:\Users\PC\AppData\Local\Temp\toeic-e04-e05-41b192d-wpso_7hh\interaction-service\target\interaction-service-0.1.0.jar
+[INFO]
+[INFO] --- spring-boot:4.1.1:repackage (repackage) @ interaction-service ---
+[INFO] Loaded 50 auto-discovered prefixes for remote repository ow2-snapshot (prefixes-ow2-snapshot.txt)
+[INFO] Replacing main artifact C:\Users\PC\AppData\Local\Temp\toeic-e04-e05-41b192d-wpso_7hh\interaction-service\target\interaction-service-0.1.0.jar with repackaged archive, adding nested dependencies in BOOT-INF/.
+[INFO] The original artifact has been renamed to C:\Users\PC\AppData\Local\Temp\toeic-e04-e05-41b192d-wpso_7hh\interaction-service\target\interaction-service-0.1.0.jar.original
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  7.725 s
+[INFO] Finished at: 2026-11-22T19:07:19+07:00
+[INFO] ------------------------------------------------------------------------
+2026-11-22T19:07:19.271+07:00 END interaction Maven clean verify | exit=0 | elapsed=10.08s
+2026-11-22T19:07:19.271+07:00 INTERACTION PASS: tests=1; failures=0; errors=0; skipped=0
+2026-11-22T19:07:19.271+07:00 Stage build PASS

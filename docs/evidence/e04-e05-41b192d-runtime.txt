@@ -1,0 +1,216 @@
+2026-11-22T19:07:20.722+07:00 Start Full Compose no-cache build and startup | checkout=41b192ddbe6c53eaa610f1c72e99d4b94e5813fb | project=toeic-microservices-mvp
+2026-11-22T19:07:20.914+07:00 BEGIN Compose resolved config validation | command: docker compose -p toeic-microservices-mvp config --quiet
+2026-11-22T19:07:21.289+07:00 END Compose resolved config validation | exit=0 | elapsed=0.38s
+2026-11-22T19:07:21.289+07:00 BEGIN Docker Engine environment | command: docker info --format "{{.ServerVersion}}; {{.OperatingSystem}}; {{.NCPU}} CPUs; {{.MemTotal}} bytes RAM"
+29.8.2; Docker Desktop (containerized); 16 CPUs; 3678273536 bytes RAM
+2026-11-22T19:07:22.358+07:00 END Docker Engine environment | exit=0 | elapsed=1.08s
+2026-11-22T19:07:22.358+07:00 BEGIN Running Compose projects | command: docker ps --format "{{.Label \"com.docker.compose.project\"}}"
+toeic-microservices-mvp
+toeic-microservices-mvp
+toeic-microservices-mvp
+toeic-microservices-mvp
+toeic-microservices-mvp
+toeic-microservices-mvp
+toeic-microservices-mvp
+toeic-microservices-mvp
+toeic-microservices-mvp
+toeic-microservices-mvp
+toeic-microservices-mvp
+toeic-microservices-mvp
+2026-11-22T19:07:22.650+07:00 END Running Compose projects | exit=0 | elapsed=0.28s
+2026-11-22T19:07:22.651+07:00 BEGIN Configured service inventory | command: docker compose -p toeic-microservices-mvp config --services
+interaction-db
+membership-db
+membership-service
+rabbitmq
+assessment-db
+content-db
+content-service
+assessment-service
+identity-db
+interaction-service
+identity-service
+gateway
+2026-11-22T19:07:22.892+07:00 END Configured service inventory | exit=0 | elapsed=0.25s
+2026-11-22T19:07:22.892+07:00 BEGIN Compose container IDs | command: docker compose -p toeic-microservices-mvp ps -aq
+b37f8b171a344affa7d74ef178665425406c82f7a6caa7762bfb56dd12bc7634
+4a0995aa22742f4c4f345cfdf35b8a2f59c5f385d3ba4484eaf45168d9368ef6
+7488ee92ee171ef4286fbc4988b2a491650220f86b98b8ee60884c09e1584c7a
+d8b0437f04cc5000c19e87c0033388ff39b7a77f507f851af793a19c403709c6
+429fd5fdc29834148b9615ae2f82a59074eb27359187ce99c07ce53f942b705f
+1130d821e1bb4c5de75b6b217ec4940d373f9a6913b450bcd210d062aa7b0630
+9c2deb2020081363611d79046c5cfdaed7b280e1acd4c9094cc2c83aa8f55c14
+054ed146f4fb16e56970ff77804f1c05b81085f12795e3a2586726e5bc0374dc
+d9ea146fc1dad3948731b78bed7c72203874a7ae6c07955ed3a3dc1017397b9e
+fd0451dd721934d6c0ec296342e353db1ec3763d575096b1c7dbb31f99d72465
+0fe462e2a784a859cc46c3f2969f0a63e7fc9bc392fdcfe3b0fd5284b665386c
+4fc452d5b1c33a37f5fa2acd9b3b0fc4bbfc47aa865a6a972a5decdfd58cb9cb
+2026-11-22T19:07:23.304+07:00 END Compose container IDs | exit=0 | elapsed=0.41s
+2026-11-22T19:07:23.304+07:00 BEGIN Docker inspect (allowlisted fields only) | command: docker inspect b37f8b171a344affa7d74ef178665425406c82f7a6caa7762bfb56dd12bc7634 4a0995aa22742f4c4f345cfdf35b8a2f59c5f385d3ba4484eaf45168d9368ef6 7488ee92ee171ef4286fbc4988b2a491650220f86b98b8ee60884c09e1584c7a d8b0437f04cc5000c19e87c0033388ff39b7a77f507f851af793a19c403709c6 429fd5fdc29834148b9615ae2f82a59074eb27359187ce99c07ce53f942b705f 1130d821e1bb4c5de75b6b217ec4940d373f9a6913b450bcd210d062aa7b0630 9c2deb2020081363611d79046c5cfdaed7b280e1acd4c9094cc2c83aa8f55c14 054ed146f4fb16e56970ff77804f1c05b81085f12795e3a2586726e5bc0374dc d9ea146fc1dad3948731b78bed7c72203874a7ae6c07955ed3a3dc1017397b9e fd0451dd721934d6c0ec296342e353db1ec3763d575096b1c7dbb31f99d72465 0fe462e2a784a859cc46c3f2969f0a63e7fc9bc392fdcfe3b0fd5284b665386c 4fc452d5b1c33a37f5fa2acd9b3b0fc4bbfc47aa865a6a972a5decdfd58cb9cb
+2026-11-22T19:07:23.535+07:00 END Docker inspect (allowlisted fields only) | exit=0 | elapsed=0.23s
+2026-11-22T19:07:23.537+07:00 BEGIN Existing network ID | command: docker network inspect toeic-microservices-mvp_default --format {{.Id}}
+148dc859fbcdf00595f65f078079cd994dc9f0ff3687930c4ce7797c2ce13032
+2026-11-22T19:07:23.665+07:00 END Existing network ID | exit=0 | elapsed=0.12s
+2026-11-22T19:07:23.665+07:00 BEGIN Existing project volumes | command: docker volume ls -q --filter label=com.docker.compose.project=toeic-microservices-mvp
+toeic-microservices-mvp_assessment_data
+toeic-microservices-mvp_content_data
+toeic-microservices-mvp_identity_data
+toeic-microservices-mvp_interaction_data
+toeic-microservices-mvp_membership_data
+toeic-microservices-mvp_rabbit_data
+2026-11-22T19:07:23.792+07:00 END Existing project volumes | exit=0 | elapsed=0.12s
+2026-11-22T19:07:23.792+07:00 Limits: Compose build uses --no-cache for all five buildable services. Startup reuses the project, DB data and broker volumes. A new database initialization and GitHub CI are outside this run.
+2026-11-22T19:07:23.792+07:00 BEGIN Compose full project no-cache build | command: docker compose --progress quiet --parallel 1 -p toeic-microservices-mvp build --no-cache
+2026-11-22T19:10:54.618+07:00 END Compose full project no-cache build | exit=0 | elapsed=210.81s
+2026-11-22T19:10:54.623+07:00 BEGIN Compose full project startup | command: docker compose --parallel 1 -p toeic-microservices-mvp up -d --no-build --wait --wait-timeout 240
+ Container toeic-microservices-mvp-identity-db-1 Running
+ Container toeic-microservices-mvp-rabbitmq-1 Running
+ Container toeic-microservices-mvp-membership-db-1 Running
+ Container toeic-microservices-mvp-assessment-db-1 Running
+ Container toeic-microservices-mvp-gateway-1 Running
+ Container toeic-microservices-mvp-interaction-db-1 Running
+ Container toeic-microservices-mvp-content-db-1 Running
+ Container toeic-microservices-mvp-content-service-1 Recreate
+ Container toeic-microservices-mvp-membership-service-1 Recreate
+ Container toeic-microservices-mvp-interaction-service-1 Recreate
+ Container toeic-microservices-mvp-identity-service-1 Recreate
+ Container toeic-microservices-mvp-membership-service-1 Recreated
+ Container toeic-microservices-mvp-content-service-1 Recreated
+ Container toeic-microservices-mvp-interaction-service-1 Recreated
+ Container toeic-microservices-mvp-assessment-service-1 Recreate
+ Container toeic-microservices-mvp-identity-service-1 Recreated
+ Container toeic-microservices-mvp-assessment-service-1 Recreated
+ Container toeic-microservices-mvp-content-db-1 Waiting
+ Container toeic-microservices-mvp-membership-db-1 Waiting
+ Container toeic-microservices-mvp-interaction-db-1 Waiting
+ Container toeic-microservices-mvp-identity-db-1 Waiting
+ Container toeic-microservices-mvp-rabbitmq-1 Waiting
+ Container toeic-microservices-mvp-membership-db-1 Healthy
+ Container toeic-microservices-mvp-content-db-1 Healthy
+ Container toeic-microservices-mvp-rabbitmq-1 Healthy
+ Container toeic-microservices-mvp-identity-db-1 Healthy
+ Container toeic-microservices-mvp-membership-service-1 Starting
+ Container toeic-microservices-mvp-identity-service-1 Starting
+ Container toeic-microservices-mvp-content-service-1 Starting
+ Container toeic-microservices-mvp-interaction-db-1 Healthy
+ Container toeic-microservices-mvp-interaction-service-1 Starting
+ Container toeic-microservices-mvp-membership-service-1 Started
+ Container toeic-microservices-mvp-identity-service-1 Started
+ Container toeic-microservices-mvp-content-service-1 Started
+ Container toeic-microservices-mvp-assessment-db-1 Waiting
+ Container toeic-microservices-mvp-rabbitmq-1 Waiting
+ Container toeic-microservices-mvp-rabbitmq-1 Healthy
+ Container toeic-microservices-mvp-assessment-db-1 Healthy
+ Container toeic-microservices-mvp-assessment-service-1 Starting
+ Container toeic-microservices-mvp-interaction-service-1 Started
+ Container toeic-microservices-mvp-assessment-service-1 Started
+ Container toeic-microservices-mvp-identity-service-1 Waiting
+ Container toeic-microservices-mvp-interaction-service-1 Waiting
+ Container toeic-microservices-mvp-identity-db-1 Waiting
+ Container toeic-microservices-mvp-content-db-1 Waiting
+ Container toeic-microservices-mvp-membership-service-1 Waiting
+ Container toeic-microservices-mvp-membership-db-1 Waiting
+ Container toeic-microservices-mvp-gateway-1 Waiting
+ Container toeic-microservices-mvp-content-service-1 Waiting
+ Container toeic-microservices-mvp-rabbitmq-1 Waiting
+ Container toeic-microservices-mvp-assessment-db-1 Waiting
+ Container toeic-microservices-mvp-interaction-db-1 Waiting
+ Container toeic-microservices-mvp-assessment-service-1 Waiting
+ Container toeic-microservices-mvp-interaction-service-1 Healthy
+ Container toeic-microservices-mvp-gateway-1 Healthy
+ Container toeic-microservices-mvp-content-service-1 Healthy
+ Container toeic-microservices-mvp-content-db-1 Healthy
+ Container toeic-microservices-mvp-identity-service-1 Healthy
+ Container toeic-microservices-mvp-assessment-service-1 Healthy
+ Container toeic-microservices-mvp-rabbitmq-1 Healthy
+ Container toeic-microservices-mvp-membership-db-1 Healthy
+ Container toeic-microservices-mvp-interaction-db-1 Healthy
+ Container toeic-microservices-mvp-identity-db-1 Healthy
+ Container toeic-microservices-mvp-assessment-db-1 Healthy
+ Container toeic-microservices-mvp-membership-service-1 Healthy
+2026-11-22T19:11:21.082+07:00 END Compose full project startup | exit=0 | elapsed=26.45s
+2026-11-22T19:14:34.228+07:00 Stage runtime FAIL | TimeoutExpired
+2026-11-22T19:16:19.880+07:00 Follow-up diagnostics recorded after the readiness timeout | checkout=41b192ddbe6c53eaa610f1c72e99d4b94e5813fb
+The separate read-only Compose logs/status probe, initiated before the timeout, eventually exited 0.
+Its filtered assessment log showed a Flyway database connection and no Spring Boot Started marker in the sample.
+Running service names returned by the probe:
+assessment-db
+assessment-service
+content-db
+content-service
+gateway
+identity-db
+identity-service
+interaction-db
+interaction-service
+membership-db
+membership-service
+rabbitmq
+Host memory sample from Win32_OperatingSystem (KiB): FreePhysicalMemory=17092, TotalVisibleMemorySize=7541792.
+Low free host memory coincided with slow Docker log access. No specific container OOM or definitive cause was established.
+Runtime validation runner exit=1. Application readiness, Gateway HTTP 200 and final volume/network comparison were not verified.
+2026-11-22T19:23:59+07:00 | Runtime continuation | SHA=41b192ddbe6c53eaa610f1c72e99d4b94e5813fb | existing project=toeic-microservices-mvp
+2026-11-22T19:24:00+07:00 | powershell -NoProfile -Command Get-CimInstance Win32_OperatingSystem | Select-Object FreePhysicalMemory,TotalVisibleMemorySize | ConvertTo-Json -Compress | exit=0 | elapsed=1.00s
+2026-11-22T19:24:00+07:00 | {"FreePhysicalMemory":472496,"TotalVisibleMemorySize":7541792}
+2026-11-22T19:24:00+07:00 | docker version --format client={{.Client.Version}} server={{.Server.Version}} | exit=0 | elapsed=0.23s
+2026-11-22T19:24:00+07:00 | client=29.8.2 server=29.8.2
+2026-11-22T19:24:01+07:00 | docker ps -a --filter label=com.docker.compose.project=toeic-microservices-mvp --format {{.ID}}|{{.Label "com.docker.compose.service"}}|{{.Label "com.docker.compose.oneoff"}}|{{.State}} | exit=0 | elapsed=0.14s
+2026-11-22T19:24:01+07:00 | 018e9fe89e39|assessment-service|False|running
+7e6a45849dd6|identity-service|False|running
+b2134506ddcd|content-service|False|running
+8440a7f0ba8d|interaction-service|False|exited
+3403c517c716|membership-service|False|running
+429fd5fdc298|gateway|False|running
+1130d821e1bb|identity-db|False|running
+4fc452d5b1c3|rabbitmq|False|running
+054ed146f4fb|interaction-db|False|running
+7488ee92ee17|content-db|False|running
+b37f8b171a34|assessment-db|False|running
+fd0451dd7219|membership-db|False|running
+2026-11-22T19:24:01+07:00 | Runtime continuation FAIL | exit=1 | RuntimeError: Expected 12 running regular Compose containers with distinct service names
+2026-11-22T19:24:09+07:00 | Interaction preflight diagnosis | exit=0 | status=exited exit=1 oom=false started=2026-11-22T12:11:09.737588725Z finished=2026-11-22T12:15:46.426153712Z restartCount=0
+2026-11-22T19:24:21+07:00 | Interaction bounded log diagnosis | exit=0 | exception types=['org.flywaydb.core.internal.exception.sqlExceptions.FlywaySqlUnableToConnectToDbException', 'org.postgresql.util.PSQLException', 'java.net.SocketTimeoutException']
+2026-11-22T19:24:52+07:00 | Targeted recovery | SHA=41b192ddbe6c53eaa610f1c72e99d4b94e5813fb | project=toeic-microservices-mvp | only existing Interaction container eligible for start
+2026-11-22T19:24:53+07:00 | powershell -NoProfile -Command (Get-CimInstance Win32_OperatingSystem).FreePhysicalMemory | exit=0 | elapsed=0.83s
+2026-11-22T19:24:53+07:00 | 504420
+2026-11-22T19:24:53+07:00 | docker inspect --format {{.State.Health.Status}} 054ed146f4fb | exit=0 | elapsed=0.11s
+2026-11-22T19:24:53+07:00 | healthy
+2026-11-22T19:24:56+07:00 | docker compose -p toeic-microservices-mvp start interaction-service | exit=0 | elapsed=2.47s
+2026-11-22T19:24:56+07:00 | docker logs --tail 150 --timestamps 7e6a45849dd6 | exit=0 | elapsed=0.16s
+2026-11-22T19:24:56+07:00 | 2026-11-22T12:19:49.450605086Z 2026-11-22T12:19:49.447Z  INFO 1 --- [identity-service] [           main] com.toeic.identity.IdentityApplication   : Started IdentityApplication in 514.625 seconds (process running for 524.208)
+2026-11-22T19:24:56+07:00 | docker logs --tail 150 --timestamps b2134506ddcd | exit=0 | elapsed=0.14s
+2026-11-22T19:24:56+07:00 | 2026-11-22T12:20:06.324542815Z 2026-11-22T12:20:06.323Z  INFO 1 --- [content-service] [           main] com.toeic.content.ContentApplication     : Started ContentApplication in 525.903 seconds (process running for 540.608)
+2026-11-22T19:24:56+07:00 | docker logs --tail 150 --timestamps 018e9fe89e39 | exit=0 | elapsed=0.12s
+2026-11-22T19:24:56+07:00 | 2026-11-22T12:20:08.145469011Z 2026-11-22T12:20:08.143Z  INFO 1 --- [assessment-service] [           main] c.t.assessment.AssessmentApplication     : Started AssessmentApplication in 521.02 seconds (process running for 532.216)
+2026-11-22T19:24:56+07:00 | docker logs --tail 150 --timestamps 3403c517c716 | exit=0 | elapsed=0.16s
+2026-11-22T19:24:56+07:00 | 2026-11-22T12:19:03.962662565Z 2026-11-22T12:19:03.930Z  INFO 1 --- [membership-service] [           main] c.t.membership.MembershipApplication     : Started MembershipApplication in 468.686 seconds (process running for 478.683)
+2026-11-22T19:24:57+07:00 | docker logs --tail 150 --timestamps 8440a7f0ba8d | exit=0 | elapsed=0.23s
+2026-11-22T19:24:57+07:00 | docker inspect --format {{.State.Status}} 8440a7f0ba8d | exit=0 | elapsed=0.25s
+2026-11-22T19:24:57+07:00 | running
+2026-11-22T19:25:01+07:00 | docker logs --tail 150 --timestamps 8440a7f0ba8d | exit=0 | elapsed=0.09s
+2026-11-22T19:25:01+07:00 | docker inspect --format {{.State.Status}} 8440a7f0ba8d | exit=0 | elapsed=0.09s
+2026-11-22T19:25:01+07:00 | running
+2026-11-22T19:25:05+07:00 | docker logs --tail 150 --timestamps 8440a7f0ba8d | exit=0 | elapsed=0.09s
+2026-11-22T19:25:05+07:00 | docker inspect --format {{.State.Status}} 8440a7f0ba8d | exit=0 | elapsed=0.08s
+2026-11-22T19:25:05+07:00 | running
+2026-11-22T19:25:09+07:00 | docker logs --tail 150 --timestamps 8440a7f0ba8d | exit=0 | elapsed=0.14s
+2026-11-22T19:25:09+07:00 | docker inspect --format {{.State.Status}} 8440a7f0ba8d | exit=0 | elapsed=0.11s
+2026-11-22T19:25:09+07:00 | running
+2026-11-22T19:25:14+07:00 | docker logs --tail 150 --timestamps 8440a7f0ba8d | exit=0 | elapsed=0.08s
+2026-11-22T19:25:14+07:00 | 2026-11-22T12:25:12.269858280Z 2026-11-22T12:25:12.269Z  INFO 1 --- [interaction-service] [           main] c.t.interaction.InteractionApplication   : Started InteractionApplication in 13.71 seconds (process running for 15.894)
+2026-11-22T19:25:14+07:00 | docker ps -a --filter label=com.docker.compose.project=toeic-microservices-mvp --format {{.Label "com.docker.compose.service"}}|{{.Label "com.docker.compose.oneoff"}}|{{.State}} | exit=0 | elapsed=0.14s
+2026-11-22T19:25:14+07:00 | assessment-service|False|running
+identity-service|False|running
+content-service|False|running
+interaction-service|False|running
+membership-service|False|running
+gateway|False|running
+identity-db|False|running
+rabbitmq|False|running
+interaction-db|False|running
+content-db|False|running
+assessment-db|False|running
+membership-db|False|running
+2026-11-22T19:25:14+07:00 | PASS | 12 running Compose containers | one-off=0 | five Spring Boot Started markers
+2026-11-22T19:25:21+07:00 | GET http://127.0.0.1:8088/ms/v1/contents/quizzes | HTTP 200 | exit=0
+2026-11-22T19:25:21+07:00 | Runtime readiness PASS | exit=0 | bounded startup logs and public Gateway probe

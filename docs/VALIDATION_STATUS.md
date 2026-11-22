@@ -1,15 +1,28 @@
 # Validation status — TOEIC Microservices MVP
 
-Assessment reference revision is `a308a74` on `refactor/architecture-improvement`. The current review verified the working-tree revision and grouped evidence by source below.
+Current verification checkout is `41b192ddbe6c53eaa610f1c72e99d4b94e5813fb` on `refactor/remaining-layered-services`. Results for older QA runs retain their own provenance.
+
+## Verification at 41b192d
+
+| Stage | Result and evidence |
+|---|---|
+| Maven clean verify | **PASS, five services.** Identity 3, Content 0, Assessment 12, Membership 1, Interaction 1. Total 17 tests, zero failures, errors or skips. Content has no unit tests. Maven ran in fresh copies of the module sources with the local dependency cache. [Environment and raw Maven output](evidence/e04-e05-41b192d-build.txt) |
+| Compose config and no-cache build | **PASS.** Config exited 0 and the full project no-cache build completed in 210.81 s. Compose reported exit 0 for `up -d --no-build --wait`. The run used `toeic-microservices-mvp` with the existing DB and broker volumes. [Compose output](evidence/e04-e05-41b192d-runtime.txt) |
+| Application startup verification | **PASS after targeted recovery.** Docker Engine 29.8.2 responded. The continuation initially found 11/12 containers running. Interaction had exited after a Flyway connection timeout. Its database was healthy and the host reported 504,420 KiB free at recovery. Starting only the existing Interaction container yielded five Spring Boot `Started` markers, 12 running containers, zero one-offs and HTTP 200 at the Gateway quiz endpoint. The initial deployment required this manual recovery. [Runtime output and diagnostics](evidence/e04-e05-41b192d-runtime.txt) |
+| Smoke | **PASS, 10/10 checks, exit 0.** Coverage included demo PRO, ownership and delivery of an activity through Outbox and RabbitMQ. [Raw output](evidence/e04-e05-41b192d-tests.txt) |
+| Daily quota concurrency | **PASS, exit 0.** After nine sequential starts, the ten concurrent starts returned one HTTP 200 and nine HTTP 429 responses. Ten attempts were persisted in total. [Raw output](evidence/e04-e05-41b192d-tests.txt) |
+| Concurrent submit | **NOT RUN in the continuation.** Available RAM dropped to 51,780 KiB before this script, so the runner stopped. The archived QA-02 result below retains its original provenance. [Preflight and exit record](evidence/e04-e05-41b192d-tests.txt) |
+| GitHub CI | **Not verified at this SHA.** GitHub returned 422 for the commit lookup and the combined status list was empty. Local Maven and Docker results have their own evidence above. |
+
+## Recorded baseline and historical QA runs
 
 | Validation | Result and evidence |
 |---|---|
 | Assessment unit tests | **12 passed in local Surefire reports** under `assessment-service/target/surefire-reports/`. `AttemptDomainTest` 5 and `AttemptApplicationServiceTest` 7, zero failures, errors and skips. Reviewed existing reports. They are build outputs without commit metadata and were not regenerated during the documentation review. |
-| Functional E2E smoke | **10 checks passed in the prior run as reported by the project owner.** [Smoke script](../tests/smoke.py). Raw console output and run metadata are still needed for independently verifiable submission evidence. Demo PRO coverage depends on the run configuration. |
-| Daily quota concurrency | **Passed in the prior run as reported by the project owner.** [Quota test](../tests/test_quota_concurrency.py) expects 9 successful sequential starts, then 1 HTTP 200 and 9 HTTP 429 for 10 simultaneous starts, with 10 attempts persisted in total. Raw output still needs to be attached. This scenario exercises start and quota reservation. |
+| Functional E2E smoke | **10 checks passed in the prior run as reported by the project owner.** The run above provides independent evidence at `41b192d`, with demo PRO coverage in that environment. [Smoke script](../tests/smoke.py) |
+| Daily quota concurrency | **Passed in the prior run as reported by the project owner.** The run above provides independent evidence at `41b192d` for the start and quota reservation scenario. [Quota test](../tests/test_quota_concurrency.py) |
 | Static baseline checks | Previous restricted-environment review recorded successful XML parsing of five POMs, PyYAML parsing of Compose, `node --check web/app.js` and smoke script syntax. The earlier `javac -proc:none` inspection lacked dependencies and cannot serve as full build evidence. |
 | Docker Compose config | **Passed in this review.** `docker compose config --quiet` exited 0. This checks resolved configuration. Runtime inspection via `docker compose ps` was denied by the sandbox at the Docker socket. |
-| Fresh full-stack build and deployment evidence | **Pending for the report.** Capture revision, machine, `docker compose ps`, health and relevant screenshots or logs from a controlled Compose stack. |
 | Security and RBAC (QA-01) | **Passed on the existing Compose stack at checkout `aa43453`, 2026-11-22.** Learner authoring returned 403, total quizzes stayed 2 → 2 and the run-specific title stayed 0 → 0. Teacher and Admin authoring each returned 200 and added one quiz. Admin granted Teacher with SQL count 0 → 1. Learner and Teacher grant attempts returned 403 with counts 0 → 0. The attempt owner received 200 and non-owner Learner/Admin received 404. FREE premium start returned 403 with count 0 → 0. Demo PRO returned 200 with count 0 → 1. The synthetic Admin login was disabled and verified with 401. [Timestamped HTTP and SQL log](evidence/qa01-security-rbac-aa43453.txt) |
 | Concurrent submit (QA-02) | **Passed on the Windows Compose stack, 2026-11-22.** 10/10 HTTP 200 with the same grade and exactly one outbox event. [QA-02 log](evidence/qa02-concurrent-submit.txt) |
 | Fault injection (QA-03 A) | **Passed on the Windows Compose stack, 2026-11-22.** During the Interaction outage, submit returned HTTP 200, Assessment persisted the grade, and the queue held a ready message with no consumers. After restart the same outbox event ID appeared in `learning_activities` and the authenticated API. [QA-03 log](evidence/qa03-fault-injection-20261122-134619.txt) |

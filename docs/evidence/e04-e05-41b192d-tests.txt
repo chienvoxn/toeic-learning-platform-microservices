@@ -1,0 +1,36 @@
+2026-11-22T19:16:19.880+07:00 QA regression suite | checkout=41b192ddbe6c53eaa610f1c72e99d4b94e5813fb | project=toeic-microservices-mvp
+Stage tests NOT RUN. The Compose build and up commands completed, but startup verification timed out while reading application logs.
+No API calls from the three regression scripts were attempted for this revision. No exit code exists for an unstarted script.
+tests/smoke.py | NOT RUN | exit=n/a
+tests/test_quota_concurrency.py | NOT RUN | exit=n/a
+tests/test_concurrent_submit.py | NOT RUN | exit=n/a
+Limits: local validation stopped when Docker log access timed out and host free memory was low. Archived QA results from other runs are separate evidence.
+2026-11-22T19:25:48+07:00 | Regression continuation | SHA=41b192ddbe6c53eaa610f1c72e99d4b94e5813fb | Python stdlib scripts, sequential | http://127.0.0.1:8088 | Compose project=toeic-microservices-mvp
+2026-11-22T19:25:48+07:00 | Scope: local demo stack and existing volumes; scripts create test accounts/attempts; single run per script; mixed stdout/stderr with credential and email redaction; results are not CI or load measurements
+2026-11-22T19:25:49+07:00 | python tests/smoke.py | preflight free RAM=785648 KiB | memory probe exit=0
+2026-11-22T19:25:49+07:00 | BEGIN python tests/smoke.py | limit=120s
+PASS: register + JWT
+PASS: public quiz list does not reveal answer key
+PASS: learner RBAC denies teacher authoring
+PASS: internal answer-key route blocked by Gateway
+PASS: FREE user denied premium quiz
+PASS: attempt submission idempotent; explanations returned only after grading
+PASS: ownership guard
+PASS: demo PRO entitlement unlocks premium quiz
+PASS: interaction review
+PASS: RabbitMQ outbox -> Interaction activity delivered
+ALL SMOKE ASSERTIONS PASSED
+2026-11-22T19:26:13+07:00 | END python tests/smoke.py | PASS | exit=0 | elapsed=24.05s
+2026-11-22T19:26:14+07:00 | python tests/test_quota_concurrency.py | preflight free RAM=673808 KiB | memory probe exit=0
+2026-11-22T19:26:14+07:00 | BEGIN python tests/test_quota_concurrency.py | limit=120s
+1. Creating 9 attempts sequentially...
+PASS: 9 attempts created
+2. Sending 10 concurrent requests...
+HTTP 200: 1
+HTTP 429: 9
+PASS: Exactly 10 attempts persisted
+ALL QUOTA CONCURRENCY ASSERTIONS PASSED
+2026-11-22T19:26:16+07:00 | END python tests/test_quota_concurrency.py | PASS | exit=0 | elapsed=2.25s
+2026-11-22T19:26:18+07:00 | python tests/test_concurrent_submit.py | preflight free RAM=51780 KiB | memory probe exit=0
+2026-11-22T19:26:18+07:00 | python tests/test_concurrent_submit.py | NOT RUN | exit=n/a | Host available memory below 256 MiB
+2026-11-22T19:26:18+07:00 | Regression continuation FAIL | exit=1
