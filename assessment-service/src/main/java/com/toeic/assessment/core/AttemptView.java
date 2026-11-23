@@ -17,6 +17,7 @@ public record AttemptView(
 ) {
     record Question(
             UUID id,
+            Integer position,
             String prompt,
             Map<String, String> choices,
             String selectedChoice,

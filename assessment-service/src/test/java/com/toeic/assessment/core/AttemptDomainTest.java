@@ -10,6 +10,7 @@ class AttemptDomainTest {
         return new AttemptQuestion(
                 attempt.attemptId,
                 UUID.randomUUID(),
+                null,
                 "Sample question", "one", "two", "three", "four",
                 correct, "Explanation"
         );

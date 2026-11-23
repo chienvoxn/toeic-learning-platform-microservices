@@ -8,5 +8,6 @@ import java.util.UUID;
 public interface AttemptQuestionStore {
     AttemptQuestion save(AttemptQuestion question);
     Optional<AttemptQuestion> findById(AttemptQuestionKey key);
+    /** Snapshot order: positions first, then legacy rows ordered by question ID. */
     List<AttemptQuestion> findByAttemptId(UUID attemptId);
 }

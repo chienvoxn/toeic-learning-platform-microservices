@@ -2,6 +2,14 @@
 
 The verified GitHub code baseline is `730dd5cca4a9f8690720b4379bda8458e64707e0` on `refactor/remaining-layered-services`. The submission documentation and Compose filename change are local working-tree updates. Older runs retain the checkout recorded in their own evidence.
 
+## Phase 1–3B source checkpoint
+
+**PARTIAL / NOT READY for demo deployment.** This checkpoint covers the local Phase 1–3B changes above `e9022b1`, including Assessment question order preservation.
+
+- Frontend regression passed 46/46. Focused Assessment unit and loopback HTTP tests passed 16/16. Assessment V4 also passed a SQL smoke with synthetic legacy rows on isolated PostgreSQL 18.
+- Content V3 passed 3/3 in the earlier isolated PostgreSQL 18 run. The subsequently added transaction rollback and publish response-loss tests are pending execution.
+- Content V3 and Assessment V4 are pending migration on the demo. The PostgreSQL 17 migration and rollback drill, the live Content → Assessment flow and F-02 integration remain **NOT VERIFIED** for this checkpoint.
+
 ## Verification at 730dd5c and submission checks
 
 | Scope | Result and evidence |

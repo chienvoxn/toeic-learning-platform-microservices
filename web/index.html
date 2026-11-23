@@ -1,29 +1,267 @@
 <!doctype html>
-<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TOEIC Flow · Microservices Demo</title><link rel="stylesheet" href="/style.css"></head>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TOEIC Flow</title><link rel="stylesheet" href="/style.css"></head>
 <body>
-<a class="skip-link" href="#page-title">Đến nội dung chính</a>
-<div class="shell">
+<a id="skip-main" class="skip-link" href="#page-title">Đến nội dung chính</a>
+<div class="shell" id="app-shell">
   <aside class="sidebar">
-    <div class="brand"><span class="mark" aria-hidden="true">T</span><div><strong>TOEIC Flow</strong><small>MICROSERVICES MVP</small></div></div>
+    <div class="brand"><span class="mark" aria-hidden="true">T</span><strong>TOEIC Flow</strong></div>
+    <label id="workspace-switch" class="workspace-switch hidden">Không gian làm việc
+      <select id="workspace-picker"></select>
+    </label>
     <nav id="primary-nav" class="hidden" aria-label="Điều hướng chính">
-      <button type="button" data-tab="dashboard" aria-controls="dashboard-view" aria-current="page" class="nav active">Tổng quan</button>
+      <button type="button" data-tab="admin-home" aria-controls="admin-home-view" class="nav">Tổng quan quản trị</button>
+      <button type="button" data-tab="admin" aria-controls="admin-view" class="nav">Phân quyền</button>
+      <button type="button" data-tab="teacher-home" aria-controls="teacher-home-view" class="nav">Đề của tôi</button>
+      <button type="button" data-tab="teacher" aria-controls="teacher-view" class="nav" disabled>Tạo đề</button>
+      <button type="button" data-tab="dashboard" aria-controls="dashboard-view" class="nav">Tổng quan</button>
       <button type="button" data-tab="practice" aria-controls="practice-view" class="nav">Luyện thi TOEIC</button>
+      <button type="button" data-tab="results" aria-controls="results-view" class="nav">Kết quả của tôi</button>
       <button type="button" data-tab="membership" aria-controls="membership-view" class="nav">Gói thành viên</button>
-      <button type="button" data-tab="interaction" aria-controls="interaction-view" class="nav">Tương tác</button>
-      <button type="button" data-tab="teacher" aria-controls="teacher-view" class="nav hidden" id="teacher-tab">Giáo viên</button>
-      <button type="button" data-tab="admin" aria-controls="admin-view" class="nav hidden" id="admin-tab">Quản trị RBAC</button>
-      <button type="button" data-tab="architecture" aria-controls="architecture-view" class="nav">Kiến trúc</button>
     </nav>
-    <div class="sidefoot">KTHDV · KTPM<br>5 service · 5 database · Gateway</div>
   </aside>
-  <main id="main-content"><header><div><span class="eyebrow">LEARNING MANAGEMENT SYSTEM</span><h1 id="page-title" tabindex="-1">Bảng điều khiển</h1></div><div class="account"><span id="identity-state" class="chip">Chưa đăng nhập</span><button id="logout" class="ghost hidden">Đăng xuất</button></div></header>
-  <div id="flash" role="status"></div>
-<section id="auth-panel" class="panel authgrid"><div><span class="eyebrow">BẮT ĐẦU HỌC TOEIC</span><h2>Học tập thông minh, tiến bộ mỗi ngày.</h2><p>Đăng nhập để lưu bài thi, nhận kết quả chấm điểm và trải nghiệm quyền thành viên.</p><div class="illustration"><div class="bigscore">650<span> / 990</span></div><div>Đặt mục tiêu · Luyện đều đặn · Theo dõi kết quả</div></div></div><div class="authform"><div class="tabrow"><button id="show-login" type="button" class="tab active" aria-controls="login-form" aria-pressed="true">Đăng nhập</button><button id="show-register" type="button" class="tab" aria-controls="register-form" aria-pressed="false">Đăng ký</button></div><form id="login-form"><label>Email<input id="login-email" type="email" required autocomplete="email" placeholder="you@example.com"></label><label>Mật khẩu<input id="login-password" type="password" required autocomplete="current-password" placeholder="••••••••"></label><button id="login-submit" class="primary" type="submit">Đăng nhập</button></form><form id="register-form" class="hidden"><label>Họ tên<input id="register-name" minlength="2" required placeholder="Nguyễn Văn A"></label><label>Email<input id="register-email" type="email" required autocomplete="email"></label><label>Mật khẩu (ít nhất 8 ký tự)<input id="register-password" type="password" minlength="8" required autocomplete="new-password"></label><button id="register-submit" class="primary" type="submit">Tạo tài khoản</button></form><button type="button" id="restore-session" class="ghost hidden">Thử khôi phục phiên</button></div></section>
-<div id="app-panel" class="hidden"><section id="dashboard-view" class="view"><div class="hero"><div><span class="eyebrow">WELCOME BACK</span><h2 id="welcome">Chào mừng trở lại</h2><p>Luyện tập Part 5 và Part 6 trên một hệ thống được phân tách thành 5 dịch vụ độc lập.</p><button id="jump-practice" class="lightbtn">Bắt đầu luyện tập →</button></div><div class="heroart">A+<small>Every day counts.</small></div></div><div class="stats"><article class="stat"><span>Số đề có sẵn</span><strong id="stat-quizzes">—</strong><small id="home-catalog-status" class="region-status" role="status"></small></article><article class="stat"><span>Lượt luyện tập của bạn</span><strong id="stat-attempts">—</strong><small id="home-history-status" class="region-status" role="status"></small></article><article class="stat"><span>Gói hiện tại</span><strong id="stat-plan">—</strong><small id="home-membership-status" class="region-status" role="status"></small></article></div><div class="panel"><div class="sectionhead"><h3>Bài TOEIC có sẵn</h3><button class="ghost" id="refresh-home">Làm mới</button></div><div id="home-quizzes" class="cards"></div></div></section>
-<section id="practice-view" class="view hidden"><div class="sectionhead"><div><h2>Luyện thi TOEIC</h2><p>Chọn đề, trả lời câu hỏi và xem lời giải sau khi nộp bài.</p></div><button class="ghost" id="refresh-practice">Làm mới</button></div><p id="practice-catalog-status" class="region-status" role="status"></p><div id="practice-catalog" class="cards"></div><p id="attempt-open-status" class="region-status" role="status"></p><div id="attempt-area" class="panel hidden"></div><div class="panel"><h3>Lịch sử làm bài</h3><p id="practice-history-status" class="region-status" role="status"></p><div id="attempt-list"></div></div></section>
-<section id="membership-view" class="view hidden"><div class="sectionhead"><div><h2>Gói thành viên</h2><p>Giới hạn luyện tập và quyền truy cập bài Premium do service riêng kiểm soát.</p></div><button id="refresh-plan" class="ghost">Làm mới</button></div><p id="plan-status" class="region-status" role="status"></p><p id="plan-current"></p><div class="plans"><article class="panel plan"><span class="eyebrow">STARTER</span><h2>FREE</h2><div class="price">0 ₫</div><p>10 lượt luyện tập/ngày · Đề miễn phí</p><button id="choose-free" class="ghost">Chọn FREE (Demo)</button></article><article class="panel plan popular"><span class="eyebrow">UNLOCK MORE</span><h2>PRO</h2><div class="price">Demo</div><p>1.000 lượt/ngày · Mở khóa đề Premium</p><button id="choose-pro" class="primary">Kích hoạt PRO (Demo)</button></article></div><p class="notice">Chuyển gói chỉ dành cho demo kỹ thuật, không xử lý thanh toán thật. Tính năng này phải tắt khi triển khai thực tế.</p></section>
-<section id="interaction-view" class="view hidden"><div class="sectionhead"><div><h2>Tương tác học tập</h2><p>Đánh giá đề và xem hoạt động nhận qua RabbitMQ.</p></div><button class="ghost" id="refresh-activities">Làm mới</button></div><div class="panel"><h3>Đánh giá đề</h3><p id="review-catalog-status" class="region-status" role="status"></p><label>Chọn đề<select id="review-quiz" disabled></select></label><div class="reviewform"><label>Số sao<select id="review-stars"><option value="5">★★★★★ · 5</option><option value="4">★★★★ · 4</option><option value="3">★★★ · 3</option><option value="2">★★ · 2</option><option value="1">★ · 1</option></select></label><label>Nhận xét<input id="review-comment" maxlength="1000" placeholder="Nội dung học tập hữu ích..."></label><button id="save-review" class="primary" disabled>Lưu đánh giá</button></div><p id="reviews-status" class="region-status" role="status"></p><div id="reviews-list" class="feed"></div></div><div class="panel"><h3>Hoạt động đã xử lý</h3><p class="muted">Sau khi nộp bài, Assessment lưu outbox; RabbitMQ giao sự kiện tới Interaction.</p><p id="activity-status" class="region-status" role="status"></p><div id="activity-list" class="feed"></div></div></section>
-<section id="teacher-view" class="view hidden"><div class="sectionhead"><div><h2>Tạo bài luyện TOEIC</h2><p>Chỉ tài khoản TEACHER/ADMIN có quyền <code>content:write</code> mới tạo được đề.</p></div></div><div class="panel"><form id="teacher-form"><label>Tiêu đề đề<input name="title" required maxlength="255" placeholder="TOEIC Part 5 — Conditionals"></label><div class="formcolumns"><label>Part<select name="part"><option>5</option><option>6</option><option>7</option><option>1</option><option>2</option><option>3</option><option>4</option></select></label><label>Quyền truy cập<select name="premium"><option value="false">FREE</option><option value="true">PRO</option></select></label></div><h3>Câu hỏi</h3><label>Đề bài<input name="prompt" required placeholder="The report ____ ready tomorrow."></label><div class="formcolumns"><label>Phương án A<input name="a" required></label><label>Phương án B<input name="b" required></label><label>Phương án C<input name="c" required></label><label>Phương án D<input name="d" required></label></div><div class="formcolumns"><label>Đáp án đúng<select name="answer"><option>A</option><option>B</option><option>C</option><option>D</option></select></label><label>Giải thích<input name="explanation" required></label></div><button class="primary" type="submit">Xuất bản đề mới</button></form></div></section>
-<section id="admin-view" class="view hidden"><h2>Quản trị vai trò</h2><div class="panel"><p>Quyền được lưu trong Identity DB và đưa vào JWT khi người dùng đăng nhập. Thay đổi vai trò cần đăng nhập lại để nhận claim mới.</p><form id="admin-form"><label>UUID người dùng<input name="userId" required placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"></label><label>Vai trò<select name="role"><option>TEACHER</option><option>LEARNER</option><option>ADMIN</option></select></label><button class="primary" type="submit">Cấp vai trò</button></form></div></section>
-<section id="architecture-view" class="view hidden"><h2>Minh họa kiến trúc</h2><div class="panel"><p>Đây là bảng điều khiển cho bản MVP độc lập, không phải các chức năng của monolith cũ đã được di chuyển nguyên vẹn.</p><div class="arch"><div class="archbox">Web UI</div><div class="arrow">↓</div><div class="archbox highlighted">Nginx API Gateway :8088</div><div class="arrow">↓</div><div class="archservices"><div>Identity<br><small>JWT / RBAC</small></div><div>Content<br><small>Quizzes</small></div><div>Assessment<br><small>Grading</small></div><div>Interaction<br><small>Reviews</small></div><div>Membership<br><small>Entitlement</small></div></div><div class="dbnote">Mỗi service sở hữu PostgreSQL riêng · RabbitMQ nối Assessment → Interaction</div></div></div><div class="panel"><h3>Các kịch bản để trình bày trước giảng viên</h3><ol><li>Đăng nhập, nhìn thấy JWT và kiểm tra quyền truy cập.</li><li>Làm một đề miễn phí, nộp hai lần: kết quả không bị chấm lại.</li><li>Truy cập đề Premium bằng FREE bị từ chối; kích hoạt PRO Demo rồi thực hiện được.</li><li>Tắt Interaction Service, nộp bài vẫn thành công; bật lại để nhận sự kiện đã xếp hàng.</li></ol></div></section></div>
-</main></div><script src="/app.js" defer></script></body></html>
+  <main id="main-content"><header class="topbar"><h1 id="page-title" tabindex="-1">Đăng nhập</h1><div class="account"><span id="identity-state" class="chip">Chưa đăng nhập</span><button id="logout" type="button" class="ghost hidden">Đăng xuất</button></div></header>
+  <div id="toast" class="toast toast-empty"><div id="flash" role="status"></div><button id="dismiss-toast" type="button" class="ghost hidden" aria-label="Đóng thông báo">×</button></div>
+  <p id="route-status" class="region-status" role="status"></p>
+<section id="auth-panel" class="panel authgrid"><div><span class="eyebrow">BẮT ĐẦU HỌC TOEIC</span><h2>Học tập thông minh, tiến bộ mỗi ngày.</h2><p>Đăng nhập để lưu bài thi, nhận kết quả chấm điểm và trải nghiệm quyền thành viên.</p><div class="illustration"><div>Đặt mục tiêu · Luyện đều đặn · Theo dõi kết quả</div></div></div><div class="authform"><div class="tabrow"><button id="show-login" type="button" class="tab active" aria-controls="login-form" aria-pressed="true">Đăng nhập</button><button id="show-register" type="button" class="tab" aria-controls="register-form" aria-pressed="false">Đăng ký</button></div><form id="login-form"><label>Email<input id="login-email" type="email" required autocomplete="email" placeholder="you@example.com"></label><label>Mật khẩu<input id="login-password" type="password" required autocomplete="current-password" placeholder="••••••••"></label><button id="login-submit" class="primary" type="submit">Đăng nhập</button></form><form id="register-form" class="hidden"><label>Họ tên<input id="register-name" minlength="2" required placeholder="Nguyễn Văn A"></label><label>Email<input id="register-email" type="email" required autocomplete="email"></label><label>Mật khẩu (ít nhất 8 ký tự)<input id="register-password" type="password" minlength="8" required autocomplete="new-password"></label><button id="register-submit" class="primary" type="submit">Tạo tài khoản</button></form><button type="button" id="restore-session" class="ghost hidden">Thử khôi phục phiên</button></div></section>
+<div id="app-panel" class="hidden">
+  <section id="dashboard-view" class="view" aria-label="Tổng quan học tập">
+    <div class="hero">
+      <div class="hero-copy">
+        <h2 id="welcome">Chào mừng trở lại</h2>
+        <p>Chọn đề TOEIC để luyện tập và xem kết quả sau khi nộp bài.</p>
+        <button id="jump-practice" type="button" class="lightbtn" aria-controls="practice-view">
+          Bắt đầu luyện tập <span aria-hidden="true">→</span>
+        </button>
+      </div>
+      <div class="hero-art" aria-hidden="true">
+        <div class="hero-sheet"><span></span><span></span><span></span></div>
+        <div class="hero-check">✓</div>
+      </div>
+    </div>
+    <div class="dashboard-heading">
+      <h2>Tóm tắt học tập</h2>
+      <button class="ghost" id="refresh-home" type="button">Làm mới dữ liệu</button>
+    </div>
+    <div class="stats">
+      <article class="stat">
+        <h3>Đề luyện có sẵn</h3>
+        <strong id="stat-quizzes" class="stat-value">—</strong>
+      </article>
+      <article class="stat">
+        <h3>Lượt luyện tập của bạn</h3>
+        <strong id="stat-attempts" class="stat-value">—</strong>
+        <p id="home-history-detail" class="stat-detail"></p>
+        <small id="home-history-status" class="region-status" role="status"></small>
+      </article>
+      <article class="stat">
+        <h3>Gói thành viên</h3>
+        <div><strong id="stat-plan" class="stat-value plan-value">—</strong></div>
+        <p id="home-membership-detail" class="stat-detail"></p>
+        <small id="home-membership-status" class="region-status" role="status"></small>
+      </article>
+    </div>
+    <div id="home-resume" class="panel resume-card hidden"></div>
+    <section class="panel dashboard-catalog" aria-labelledby="home-catalog-title">
+      <h2 id="home-catalog-title">Đề luyện gợi ý</h2>
+      <p id="home-catalog-status" class="region-status" role="status"></p>
+      <div id="home-quizzes" class="cards"></div>
+    </section>
+  </section>
+  <section id="practice-view" class="view hidden" aria-label="Thư viện đề">
+    <div class="sectionhead">
+      <p>Tìm đề bạn muốn luyện theo tên, Part hoặc gói truy cập.</p>
+      <div class="view-actions">
+        <button type="button" class="ghost" id="practice-review">Đánh giá đề</button>
+        <button type="button" class="ghost" id="refresh-practice">Làm mới</button>
+      </div>
+    </div>
+    <div class="panel library-filters" aria-label="Bộ lọc đề">
+      <label>Tên đề<input id="quiz-search" type="search" placeholder="Tìm theo tên đề"></label>
+      <label>Part<select id="quiz-part"><option value="">Tất cả Part</option></select></label>
+      <label>Gói truy cập<select id="quiz-plan"><option value="">Tất cả gói</option><option value="FREE">FREE</option><option value="PRO">PRO</option></select></label>
+    </div>
+    <p id="practice-catalog-status" class="region-status" role="status"></p>
+    <p id="practice-plan-status" class="region-status" role="status"></p>
+    <p id="library-count" class="region-status" role="status"></p>
+    <div id="practice-catalog" class="cards"></div>
+  </section>
+
+  <section id="quiz-view" class="view hidden" aria-label="Thông tin đề luyện">
+    <button type="button" id="quiz-back" class="ghost">← Thư viện đề</button>
+    <p id="quiz-detail-status" class="region-status" role="status"></p>
+    <p id="quiz-plan-status" class="region-status" role="status"></p>
+    <div id="quiz-detail"></div>
+    <button type="button" id="retry-quiz" class="ghost hidden">Tải lại đề</button>
+    <p id="attempt-open-status" class="region-status" role="status"></p>
+  </section>
+
+  <section id="attempt-view" class="view hidden" aria-label="Phòng luyện thi">
+    <button type="button" id="exit-attempt" class="ghost">← Rời phòng luyện thi</button>
+    <div id="attempt-area" class="hidden"></div>
+  </section>
+
+  <section id="result-view" class="view hidden" aria-label="Kết quả lượt làm">
+    <div id="result-area"></div>
+  </section>
+  <div id="attempt-loading" class="hidden">
+    <p id="attempt-load-status" class="region-status" role="status"></p>
+    <button type="button" id="retry-attempt" class="ghost hidden">Tải lại lượt làm</button>
+  </div>
+
+  <section id="results-view" class="view hidden" aria-label="Lịch sử làm bài">
+    <div class="panel">
+      <div class="sectionhead">
+        <h2>Lịch sử làm bài</h2>
+        <div class="view-actions">
+          <button type="button" class="ghost" id="results-review">Đánh giá đề</button>
+          <button type="button" class="ghost" id="refresh-history">Làm mới</button>
+        </div>
+      </div>
+      <p class="muted">Tên đề lấy từ thư viện hiện tại khi còn tra được.</p>
+      <p id="practice-history-status" class="region-status" role="status"></p>
+      <p id="history-catalog-status" class="region-status" role="status"></p>
+      <div id="attempt-list" class="feed"></div>
+    </div>
+  </section>
+
+  <section id="membership-view" class="view hidden">
+    <div class="sectionhead">
+      <p id="plan-current"></p>
+      <button type="button" id="refresh-plan" class="ghost">Làm mới</button>
+    </div>
+    <p id="plan-status" class="region-status" role="status"></p>
+    <div class="plans">
+      <article class="panel plan"><h2>FREE</h2><p>Luyện các đề miễn phí.</p><button type="button" id="choose-free" class="ghost">Chọn FREE (Demo)</button></article>
+      <article class="panel plan popular"><h2>PRO</h2><p>Mở thêm các đề PRO.</p><button type="button" id="choose-pro" class="primary">Kích hoạt PRO (Demo)</button></article>
+    </div>
+    <p class="notice">Chuyển gói mô phỏng. Không thu tiền thật.</p>
+  </section>
+
+  <section id="interaction-view" class="view hidden">
+    <div class="panel">
+      <h2>Nhận xét về đề luyện</h2>
+      <p id="review-catalog-status" class="region-status" role="status"></p>
+      <label>Chọn đề<select id="review-quiz" disabled></select></label>
+      <div class="reviewform">
+        <label>Số sao<select id="review-stars"><option value="5">★★★★★ · 5</option><option value="4">★★★★ · 4</option><option value="3">★★★ · 3</option><option value="2">★★ · 2</option><option value="1">★ · 1</option></select></label>
+        <label>Nhận xét<input id="review-comment" maxlength="1000" placeholder="Nội dung học tập hữu ích..."></label>
+        <button type="button" id="save-review" class="primary" disabled>Lưu đánh giá</button>
+      </div>
+      <p id="reviews-status" class="region-status" role="status"></p>
+      <div id="reviews-list" class="feed"></div>
+    </div>
+    <div class="panel">
+      <div class="sectionhead"><h2>Hoạt động học tập</h2><button type="button" class="ghost" id="refresh-activities">Làm mới</button></div>
+      <p id="activity-status" class="region-status" role="status"></p>
+      <div id="activity-list" class="feed"></div>
+    </div>
+  </section>
+
+  <section id="teacher-home-view" class="view hidden">
+    <article class="panel workspace-action">
+      <div class="workspace-action-copy"><h2>Đề của tôi</h2><p>Mở bản nháp để tiếp tục soạn hoặc xem đề đã xuất bản.</p></div>
+      <button id="teacher-create" type="button" class="primary" aria-controls="teacher-view" disabled>Tạo đề mới</button>
+    </article>
+    <p id="teacher-access-status" class="region-status" role="status"></p>
+    <p id="teacher-list-status" class="region-status" role="status"></p>
+    <button id="teacher-list-refresh" class="ghost" type="button">Làm mới danh sách</button>
+    <div id="teacher-quiz-list" class="cards teacher-quiz-list"></div>
+  </section>
+
+  <section id="teacher-view" class="view hidden">
+    <div class="sectionhead">
+      <p id="editor-access-status" class="region-status" role="status"></p>
+      <button type="button" class="ghost hidden" id="editor-access-retry">Kiểm tra lại</button>
+    </div>
+    <form id="teacher-form" class="quiz-editor" novalidate>
+      <div class="sectionhead">
+        <p id="editor-draft-state" role="status"></p>
+        <button type="button" class="ghost hidden" id="editor-reload">Tải bản đã lưu</button>
+      </div>
+      <fieldset id="teacher-fields" class="editor-fields">
+        <section class="panel editor-metadata" aria-labelledby="editor-info">
+          <h2 id="editor-info">Thông tin đề</h2>
+          <label>Tên đề<input id="editor-title" name="title" required placeholder="TOEIC Part 5 — Conditionals" aria-describedby="editor-title-error"></label>
+          <p id="editor-title-error" class="editor-field-error"></p>
+          <div class="formcolumns">
+            <label>Part<select id="editor-part" name="part"><option>5</option><option>6</option><option>7</option><option>1</option><option>2</option><option>3</option><option>4</option></select></label>
+            <label>Quyền truy cập<select id="editor-access" name="premium"><option value="false">FREE</option><option value="true">PRO</option></select></label>
+          </div>
+        </section>
+        <section class="panel editor-import" aria-labelledby="editor-import-title">
+          <h2 id="editor-import-title">Nhập câu hỏi từ CSV</h2>
+          <p id="editor-csv-help" class="muted">CSV UTF-8, tối đa 1 MiB và 200 câu. Part trong tệp phải khớp với đề.</p>
+          <div class="editor-import-controls">
+            <a href="/quiz-import-template.csv" class="ghost editor-download" download>Tải CSV mẫu</a>
+            <label>Chọn tệp CSV<input id="editor-file" type="file" accept=".csv,text/csv" aria-describedby="editor-csv-help"></label>
+          </div>
+          <p id="editor-csv-status" class="region-status" role="status"></p>
+          <ul id="editor-csv-errors" class="editor-error-list hidden" aria-label="Lỗi CSV" tabindex="-1"></ul>
+        </section>
+        <div class="editor-question-layout">
+          <section class="panel editor-question-list" aria-labelledby="editor-question-count">
+            <h2 id="editor-question-count" role="status">Câu hỏi</h2>
+            <button type="button" class="ghost" id="editor-add">Thêm câu hỏi</button>
+            <ol id="editor-questions"></ol>
+          </section>
+          <section class="panel editor-current" aria-labelledby="editor-question-heading">
+            <h2 id="editor-question-heading" tabindex="-1">Câu 1</h2>
+            <div id="editor-question-fields"></div>
+            <div class="view-actions">
+              <button type="button" class="ghost" id="editor-up">↑ Lên</button>
+              <button type="button" class="ghost" id="editor-down">↓ Xuống</button>
+              <button type="button" class="ghost" id="editor-duplicate">Nhân bản</button>
+              <button type="button" class="ghost editor-danger" id="editor-delete">Xóa câu hỏi</button>
+            </div>
+          </section>
+        </div>
+        <div class="panel editor-submit-row">
+          <p class="muted">Có thể lưu nháp khi nội dung chưa hoàn chỉnh.</p>
+          <div class="view-actions">
+            <button id="editor-save" class="ghost" type="button" disabled>Lưu nháp</button>
+            <button id="teacher-submit" class="primary" type="submit">Xem trước đề</button>
+          </div>
+        </div>
+      </fieldset>
+      <p id="teacher-status" class="region-status" role="status" tabindex="-1"></p>
+    </form>
+    <dialog id="editor-csv-dialog" class="editor-dialog" aria-labelledby="editor-csv-preview-title">
+      <h2 id="editor-csv-preview-title">Xem trước CSV</h2>
+      <p id="editor-csv-preview-summary"></p>
+      <div id="editor-csv-preview"></div>
+      <div class="view-actions">
+        <button type="button" class="ghost" id="editor-csv-cancel" autofocus>Hủy</button>
+        <button type="button" class="primary" id="editor-csv-apply">Nhập vào trình soạn</button>
+      </div>
+    </dialog>
+    <dialog id="editor-preview-dialog" class="editor-dialog" aria-labelledby="editor-preview-title">
+      <h2 id="editor-preview-title">Xem trước đề</h2>
+      <div id="editor-preview"></div>
+      <p id="editor-publish-note"></p>
+      <div class="view-actions">
+        <button type="button" class="ghost" id="editor-preview-cancel" autofocus>Quay lại chỉnh sửa</button>
+        <button type="button" class="primary" id="editor-publish" disabled>Xác nhận xuất bản</button>
+      </div>
+    </dialog>
+  </section>
+
+  <section id="admin-home-view" class="view hidden">
+    <article class="panel workspace-action">
+      <div class="workspace-action-copy"><h2>Cấp vai trò cho tài khoản</h2><p>Dùng mã tài khoản để cấp vai trò phù hợp.</p></div>
+      <button id="admin-grant" type="button" class="primary" aria-controls="admin-view">Mở phân quyền</button>
+    </article>
+  </section>
+
+  <section id="admin-view" class="view hidden">
+    <div class="panel">
+      <p>Người dùng cần đăng nhập lại sau khi được cấp vai trò.</p>
+      <form id="admin-form">
+        <label>Mã tài khoản<input name="userId" required spellcheck="false" autocomplete="off"></label>
+        <label>Vai trò<select name="role"><option value="TEACHER">Giáo viên</option><option value="LEARNER">Học viên</option><option value="ADMIN">Quản trị viên</option></select></label>
+        <button id="admin-submit" class="primary" type="submit">Cấp vai trò</button>
+        <p id="admin-status" class="region-status" role="status"></p>
+      </form>
+    </div>
+  </section>
+</div>
+</main></div><script src="/quiz-authoring.js" defer></script><script src="/app.js" defer></script></body></html>

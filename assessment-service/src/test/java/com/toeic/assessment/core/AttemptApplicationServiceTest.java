@@ -5,6 +5,7 @@ import com.toeic.assessment.adapters.security.IdentityClient;
 import com.toeic.assessment.adapters.security.TokenService;
 import com.toeic.assessment.data.jdbc.DailyAttemptQuota;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -12,6 +13,7 @@ import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -110,6 +112,83 @@ class AttemptApplicationServiceTest {
     }
 
     @Test
+    void persistsSnapshotArrayOrderAndKeepsItThroughReadsAnswerAndGrade() {
+        stubAllowedUser();
+        when(identity.requireUser(BEARER)).thenReturn(userId);
+        var first = new QuizClient.QuizQuestion(UUID.fromString("ffffffff-ffff-ffff-ffff-ffffffffffff"),
+                "First in snapshot", Map.of("A", "One", "B", "Two", "C", "Three", "D", "Four"), "B", "Why B");
+        var second = new QuizClient.QuizQuestion(UUID.fromString("00000000-0000-0000-0000-000000000001"),
+                "Second in snapshot", first.options(), "A", "Why A");
+        when(quizzes.snapshot(quizId)).thenReturn(new QuizClient.Snapshot(quizId, false, List.of(first, second)));
+        when(quizzes.entitlement(userId)).thenReturn(new QuizClient.Entitlement("FREE", 10));
+        when(attempts.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        var persisted = new ArrayList<AttemptQuestion>();
+        when(questions.save(any())).thenAnswer(invocation -> {
+            AttemptQuestion question = invocation.getArgument(0);
+            if (!persisted.contains(question)) persisted.add(question);
+            return question;
+        });
+        when(questions.findByAttemptId(any())).thenAnswer(invocation -> List.copyOf(persisted));
+
+        AttemptView opened = service.start(BEARER, quizId);
+        assertEquals(List.of(1, 2), persisted.stream().map(question -> question.position).toList());
+        assertEquals(List.of(first.id(), second.id()), persisted.stream().map(question -> question.questionId).toList());
+        assertEquals(first.correctChoice(), persisted.getFirst().correctChoice);
+        assertEquals(first.explanation(), persisted.getFirst().explanation);
+        assertOrder(opened, List.of(first.id(), second.id()), List.of(1, 2));
+        assertNull(opened.questions().getFirst().explanation());
+
+        var savedAttempt = ArgumentCaptor.forClass(Attempt.class);
+        verify(attempts).save(savedAttempt.capture());
+        Attempt attempt = savedAttempt.getValue();
+        UUID id = opened.id();
+        when(attempts.findById(id)).thenReturn(Optional.of(attempt));
+        when(attempts.lockOwn(id, userId)).thenReturn(Optional.of(attempt));
+        var key = new AttemptQuestionKey();
+        key.attemptId = id;
+        key.questionId = first.id();
+        when(questions.findById(key)).thenReturn(Optional.of(persisted.getFirst()));
+
+        assertEquals(opened, service.get(BEARER, id));
+        assertEquals(opened, service.get(BEARER, id));
+        var answered = service.answer(BEARER, id, first.id(), "B");
+        assertOrder(answered, List.of(first.id(), second.id()), List.of(1, 2));
+        assertEquals("B", answered.questions().getFirst().selectedChoice());
+        assertNull(answered.questions().getFirst().correct());
+        var graded = service.submit(BEARER, id);
+        assertOrder(graded, List.of(first.id(), second.id()), List.of(1, 2));
+        assertEquals("GRADED", graded.status());
+        assertEquals(1, graded.correct());
+        assertEquals("Why B", graded.questions().getFirst().explanation());
+        assertEquals(graded, service.get(BEARER, id));
+        assertEquals(graded, service.submit(BEARER, id));
+        verify(dailyQuota, times(1)).reserve(userId, 10);
+        verify(outbox, times(1)).save(any());
+    }
+
+    @Test
+    void legacyQuestionWithoutPositionKeepsIdentityAndExposesNullPosition() {
+        Attempt attempt = new Attempt(quizId, userId);
+        UUID id = UUID.randomUUID();
+        var legacy = new AttemptQuestion(attempt.attemptId, id, null, "Legacy", "A", "B", "C", "D", "A", "Why");
+        legacy.selectChoice("B");
+        when(identity.requireUser(BEARER)).thenReturn(userId);
+        when(attempts.findById(attempt.attemptId)).thenReturn(Optional.of(attempt));
+        when(questions.findByAttemptId(attempt.attemptId)).thenReturn(List.of(legacy));
+
+        var result = service.get(BEARER, attempt.attemptId).questions().getFirst();
+        assertEquals(id, result.id());
+        assertEquals("B", result.selectedChoice());
+        assertNull(result.position());
+        verify(questions, never()).save(any());
+    }
+
+    private static void assertOrder(AttemptView view, List<UUID> ids, List<Integer> positions) {
+        assertEquals(ids, view.questions().stream().map(AttemptView.Question::id).toList());
+        assertEquals(positions, view.questions().stream().map(AttemptView.Question::position).toList());
+    }
+
+    @Test
     void cannotAnswerAfterGradingAndDoesNotWriteQuestion() {
         Attempt attempt = new Attempt(quizId, userId);
         assertTrue(attempt.grade(List.of()));
@@ -158,7 +237,7 @@ class AttemptApplicationServiceTest {
     void firstSubmitPersistsGradeAndExactlyOneOutboxEvent() {
         Attempt attempt = new Attempt(quizId, userId);
         AttemptQuestion question = new AttemptQuestion(
-                attempt.attemptId, UUID.randomUUID(), "Question?", "A", "B", "C", "D", "A", "Why");
+                attempt.attemptId, UUID.randomUUID(), null, "Question?", "A", "B", "C", "D", "A", "Why");
         attempt.answer(question, "A");
         when(identity.requireUser(BEARER)).thenReturn(userId);
         when(attempts.lockOwn(attempt.attemptId, userId)).thenReturn(Optional.of(attempt));

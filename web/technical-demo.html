@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Minh họa kiến trúc · TOEIC Flow</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <main class="technical-page">
+    <header class="topbar">
+      <h1>Minh họa kiến trúc TOEIC Flow</h1>
+      <a href="/">Về TOEIC Flow</a>
+    </header>
+    <section class="panel" aria-labelledby="architecture-title">
+      <h2 id="architecture-title">Kiến trúc microservices</h2>
+      <div class="arch">
+        <div class="archbox">Giao diện web</div>
+        <div class="arrow" aria-hidden="true">↓</div>
+        <div class="archbox highlighted">Nginx API Gateway</div>
+        <div class="arrow" aria-hidden="true">↓</div>
+        <div class="archservices">
+          <div>Identity<br><small>JWT và RBAC</small></div>
+          <div>Content<br><small>Đề luyện tập</small></div>
+          <div>Assessment<br><small>Lượt làm và chấm bài</small></div>
+          <div>Interaction<br><small>Đánh giá và hoạt động</small></div>
+          <div>Membership<br><small>Gói và quyền lợi</small></div>
+        </div>
+        <p class="dbnote">Mỗi service sở hữu một PostgreSQL riêng. Assessment gửi sự kiện chấm bài qua RabbitMQ tới Interaction.</p>
+      </div>
+    </section>
+    <section class="panel" aria-labelledby="evidence-title">
+      <h2 id="evidence-title">Kịch bản và bằng chứng KTPM–KTHDV</h2>
+      <ol>
+        <li>Đối chiếu quyền giữa tài khoản học viên, giáo viên và quản trị.</li>
+        <li>Nộp lại cùng một bài đã chấm và đối chiếu kết quả được lưu.</li>
+        <li>Đối chiếu quyền mở đề PRO trước và sau khi đổi gói mô phỏng.</li>
+        <li>Xem hồ sơ thử nghiệm giao sự kiện và phục hồi khi dependency gián đoạn.</li>
+      </ol>
+      <ul>
+        <li><a href="https://github.com/chienvoxn/toeic-learning-platform-microservices/blob/e9022b1b3a30dc81d1e4fdbe438dfea2eba93fc9/docs/EXAM_ARCHITECTURE.md">Tài liệu kiến trúc</a></li>
+        <li><a href="https://github.com/chienvoxn/toeic-learning-platform-microservices/blob/e9022b1b3a30dc81d1e4fdbe438dfea2eba93fc9/docs/SUBMISSION_EVIDENCE.md">Bằng chứng theo phiên kiểm thử</a></li>
+      </ul>
+      <p>F-02 ở mức tích hợp: chưa kiểm chứng.</p>
+    </section>
+  </main>
+</body>
+</html>

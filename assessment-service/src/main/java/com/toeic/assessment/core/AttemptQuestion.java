@@ -20,6 +20,9 @@ public class AttemptQuestion {
     @Id
     UUID questionId;
 
+    @Column(updatable = false)
+    Integer position;
+
     @Column(nullable = false, columnDefinition = "text")
     String prompt;
 
@@ -49,6 +52,7 @@ public class AttemptQuestion {
     AttemptQuestion(
             UUID attemptId,
             UUID questionId,
+            Integer position,
             String prompt,
             String optionA,
             String optionB,
@@ -59,6 +63,7 @@ public class AttemptQuestion {
     ) {
         this.attemptId = attemptId;
         this.questionId = questionId;
+        this.position = position;
         this.prompt = prompt;
         this.optionA = optionA;
         this.optionB = optionB;

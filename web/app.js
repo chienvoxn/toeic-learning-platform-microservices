@@ -1,11 +1,67 @@
 "use strict";
 const $=id=>document.getElementById(id);
-const state={token:sessionStorage.getItem('toeic.jwt')||'',user:null,permissions:[],roles:[],active:null};
+const state={token:sessionStorage.getItem('toeic.jwt')||'',user:null,permissions:[],roles:[],active:null,workspace:null,
+  page:null,routeId:null,routePath:'',plan:null,library:null,recent:null,opening:null};
 const attemptEdits = new Map();
+const quizzesById = new Map();
+const questionOrderByQuiz = new Map();
 const html=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-function alertMsg(msg){$('flash').textContent=msg;}
 const regionRequests = new Map();
 let authPending = false;
+let flashTimer;
+let teacherEditor;
+let teacherProbe;
+let navigationRequest = 0;
+const ownedQuizzesPath = '/ms/v1/contents/quizzes/mine';
+const teacherMessages = {
+  checking: 'Đang kiểm tra tính năng quản lý bản nháp…',
+  unverified: 'Chưa xác minh được máy chủ hỗ trợ bản nháp. Việc tạo, lưu và xuất bản đang tạm khóa.',
+  unsupported: 'Phản hồi của máy chủ chưa hỗ trợ quản lý bản nháp. Việc tạo, lưu và xuất bản đang tạm khóa.',
+  unauthenticated: 'Phiên đăng nhập đã hết hạn hoặc không hợp lệ. Bạn cần đăng nhập lại để quản lý bản nháp.',
+  unauthorized: 'Tài khoản này không có quyền quản lý bản nháp.',
+  unavailable: 'Không thể kết nối với dịch vụ nội dung. Hãy thử kiểm tra lại.',
+  timeout: 'Dịch vụ nội dung phản hồi quá thời gian chờ. Hãy thử kiểm tra lại.'
+};
+let teacherAccess = 'unverified';
+
+function alertMsg(message, brief = false) {
+  clearTimeout(flashTimer);
+  $('flash').textContent = message;
+  $('toast').classList.toggle('toast-empty', !message);
+  $('dismiss-toast').classList.toggle('hidden', !message);
+  if (message && brief) flashTimer = setTimeout(() => {
+    if (document.activeElement !== $('dismiss-toast')) alertMsg('');
+  }, 4500);
+}
+
+const roleLabels = {LEARNER: 'Học viên', TEACHER: 'Giáo viên', ADMIN: 'Quản trị viên'};
+const workspaces = {
+  admin: {label: 'Quản trị', role: 'ADMIN', pages: ['admin-home', 'admin']},
+  teacher: {label: 'Giáo viên', role: 'TEACHER', pages: ['teacher-home', 'teacher', 'practice']},
+  learner: {label: 'Học viên', role: 'LEARNER', pages: ['dashboard', 'practice', 'results', 'membership']}
+};
+const pageTitles = {dashboard: 'Tổng quan học tập', practice: 'Luyện thi TOEIC', results: 'Kết quả của tôi',
+  membership: 'Gói thành viên', interaction: 'Đánh giá đề', 'teacher-home': 'Không gian giáo viên',
+  teacher: 'Tạo đề', 'admin-home': 'Trung tâm quản trị', admin: 'Phân quyền', quiz: 'Chi tiết đề',
+  attempt: 'Phòng luyện thi', result: 'Kết quả lượt làm'};
+const can = permission => state.permissions.includes(permission) || state.roles.includes('ADMIN');
+const practicePages = ['quiz', 'attempt', 'result'];
+
+function workspaceOptions() {
+  return [
+    ...(can('rbac:manage') && state.roles.includes('ADMIN') ? ['admin'] : []),
+    ...(can('content:write') ? ['teacher'] : []),
+    ...(state.roles.includes('LEARNER') || can('assessment:submit') ? ['learner'] : [])
+  ];
+}
+
+function visiblePages(workspace) {
+  return workspaces[workspace].pages.filter(page => {
+    if (['practice', 'results'].includes(page)) return can('assessment:submit');
+    if (page === 'membership') return can('membership:read');
+    return true;
+  });
+}
 
 function apiError(status, authenticated) {
   let message = 'Không thể xử lý yêu cầu. Vui lòng thử lại.';
@@ -15,41 +71,168 @@ function apiError(status, authenticated) {
     : 'Email hoặc mật khẩu không đúng.';
   if (status === 403) message = 'Bạn không có quyền thực hiện thao tác này.';
   if (status === 404) message = 'Không tìm thấy dữ liệu yêu cầu.';
+  if (status === 408 || status === 504) message = 'Dịch vụ phản hồi quá thời gian chờ.';
   if (status === 409) message = 'Yêu cầu xung đột với dữ liệu hiện tại.';
   if (status === 429) message = 'Bạn đã hết lượt luyện tập hôm nay.';
-  if (status >= 500) message = 'Máy chủ đang gặp lỗi. Vui lòng thử lại.';
+  if (status >= 500 && status !== 504) message = 'Máy chủ đang gặp lỗi. Vui lòng thử lại.';
   return Object.assign(new Error(message), {status});
 }
 
-async function api(path, options = {}, token = state.token) {
+async function api(path, {expectedStatus, ...options} = {}, token = state.token) {
   const headers = {'Content-Type': 'application/json', ...(token ? {Authorization: 'Bearer ' + token} : {}), ...options.headers};
   let response;
   try {
     response = await fetch(path, {...options, headers});
   } catch {
-    throw apiError(0);
+    throw apiError(options.signal?.reason?.name === 'TimeoutError' ? 408 : 0);
   }
-  if (!response.ok) throw apiError(response.status, Boolean(token));
+  if (!response.ok || (expectedStatus && response.status !== expectedStatus)) {
+    throw apiError(response.status, Boolean(token));
+  }
   const contentType = response.headers.get('content-type') || '';
-  return contentType.includes('json') ? response.json() : null;
+  if (!contentType.includes('json')) return null;
+  try {
+    return await response.json();
+  } catch (error) {
+    if (options.signal?.reason?.name === 'TimeoutError') throw apiError(408);
+    throw error;
+  }
 }
 
-function setTab(tab) {
+function hasUnsavedAnswers() {
+  const edits = attemptEdits.get(state.active?.id);
+  return state.page === 'attempt' && state.routeId === state.active?.id && edits && (edits.submitting ||
+    [...edits.answers.values()].some(answer => answer.pending || answer.failed));
+}
+
+function confirmExit(discardEditor = false) {
+  if (hasUnsavedAnswers() && !globalThis.confirm('Bài đang lưu đáp án hoặc chờ chấm. Nếu rời trang, hãy mở lại lượt làm để kiểm tra trạng thái. Bạn có muốn rời phòng?')) return false;
+  if (!teacherEditor || (state.page !== 'teacher' && !discardEditor)) return true;
+  if (teacherEditor.isSaving()) {
+    alertMsg('Đang lưu đề. Hãy đợi kết quả trước khi rời trang.');
+    return false;
+  }
+  if (!teacherEditor.hasChanges()) return true;
+  return globalThis.confirm(discardEditor
+    ? 'Đề chưa xuất bản sẽ bị bỏ khi đăng xuất. Bạn có muốn đăng xuất?'
+    : 'Đề chưa xuất bản chỉ được giữ trong tab này. Bạn có muốn rời trình soạn?');
+}
+
+function navigate(tab, workspace = state.workspace, replace = false, id = '', attempt = null, teacherResult) {
+  if (!state.user) return;
+  const request = ++navigationRequest;
+  const options = workspaceOptions();
+  const pages = options.includes(workspace) ? visiblePages(workspace) : [];
+  const reviewAllowed = pages.includes('practice') && can('interaction:write');
+  const practiceAllowed = pages.includes('practice') && practicePages.includes(tab) && Boolean(id);
+  const denied = !pages.includes(tab) && !practiceAllowed && !(tab === 'interaction' && reviewAllowed);
+  if (denied) {
+    workspace = options.find(option => state.roles.includes(workspaces[option].role)) ?? options[0];
+    tab = visiblePages(workspace)[0];
+    id = '';
+  }
+  if (tab === 'teacher' && !teacherResult) {
+    const token = state.token;
+    if (!state.page) regionStatus('route-status', teacherMessages.checking);
+    return checkTeacherAccess().then(result => {
+      if (request !== navigationRequest || state.token !== token) return;
+      const access = result || {phase: teacherAccess};
+      const existing = teacherEditor?.isOpen(id) && teacherEditor.hasChanges();
+      if (access.phase !== 'ready' && !existing) {
+        return navigate('teacher-home', workspace, replace, '', null, access);
+      }
+      return navigate(tab, workspace, replace, id, null, access);
+    });
+  }
+  const path = '#/' + workspace + '/' + tab + (id ? '/' + id : '');
+  const replacesEditor = tab === 'teacher' && teacherEditor?.hasChanges() &&
+    !teacherEditor.isSaving() && !teacherEditor.isOpen(id);
+  const allowed = replacesEditor
+    ? globalThis.confirm('Mở đề khác sẽ bỏ phần chưa lưu trong trình soạn. Bạn có muốn tiếp tục?')
+    : attempt || state.routePath === path || confirmExit();
+  if (!allowed) {
+    if (location.hash !== state.routePath) history.pushState(null, '', state.routePath);
+    $('workspace-picker').value = state.workspace;
+    return;
+  }
+  if (state.routePath !== path && $('submit-dialog')?.open) $('submit-dialog').close();
+  if (state.page === 'teacher' && tab !== 'teacher') teacherEditor?.dismissDialogs();
+  if (location.hash !== path) history[replace || denied ? 'replaceState' : 'pushState'](null, '', path);
+  state.workspace = workspace;
+  state.page = tab;
+  state.routeId = id;
+  state.routePath = path;
+  $('workspace-picker').value = workspace;
+  alertMsg('');
+  regionStatus('route-status', denied ? 'Bạn không có quyền mở trang này.' : '', denied);
+  const currentPage = practicePages.includes(tab) ? 'practice'
+    : tab === 'interaction' ? (workspace === 'learner' ? 'results' : 'practice') : tab;
+  const navPages = visiblePages(workspace);
   document.querySelectorAll('.nav').forEach(button => {
-    const current = button.dataset.tab === tab;
-    button.classList.toggle('active', current);
+    const visible = navPages.includes(button.dataset.tab);
+    const current = visible && button.dataset.tab === currentPage;
+    button.classList.toggle('hidden', !visible);
+    if (button.dataset.tab === 'teacher') button.disabled = teacherAccess !== 'ready';
     if (current) button.setAttribute('aria-current', 'page');
     else button.removeAttribute('aria-current');
   });
+  for (const id of ['practice-review', 'results-review']) $(id).classList.toggle('hidden', !reviewAllowed);
+  $('jump-practice').classList.toggle('hidden', !can('assessment:submit'));
+  $('app-shell').classList.toggle('exam-mode', tab === 'attempt');
+  $('attempt-loading').classList.add('hidden');
   document.querySelectorAll('.view').forEach(view => view.classList.toggle('hidden', view.id !== tab + '-view'));
   const title = $('page-title');
-  title.textContent = {dashboard: 'Bảng điều khiển', practice: 'Luyện thi TOEIC', membership: 'Thành viên',
-    interaction: 'Tương tác', teacher: 'Giáo viên', admin: 'Quản trị RBAC', architecture: 'Kiến trúc'}[tab];
-  title.focus();
+  title.textContent = pageTitles[tab];
+  (tab === 'attempt' ? $('exit-attempt') : title).focus();
   if (tab === 'dashboard') return loadHome();
   if (tab === 'practice') return loadPractice();
+  if (tab === 'quiz') return loadQuiz(id);
+  if (tab === 'attempt' || tab === 'result') {
+    if (attempt) showAttempt(attempt);
+    else return loadAttempt(id);
+  }
+  if (tab === 'results') return loadHistory();
   if (tab === 'membership') return loadMembership();
   if (tab === 'interaction') return loadInteraction();
+  if (tab === 'teacher-home') return teacherResult ? renderTeacherQuizzes(teacherResult) : loadTeacherQuizzes();
+  if (tab === 'teacher' && !teacherEditor) {
+    teacherEditor = QuizAuthoring.createEditor({
+      byId: $, escape: html, confirm: message => globalThis.confirm(message), status: regionStatus,
+      load: id => teacherRequest('/ms/v1/contents/quizzes/' + id + '/draft'),
+      save: (draft, body) => {
+        const path = '/ms/v1/contents/quizzes/';
+        return draft ? teacherWrite(path + draft.id + '/draft', {
+          method: 'PUT', body: JSON.stringify({version: draft.version, quiz: JSON.parse(body)})
+        }) : teacherWrite(path + 'drafts', {method: 'POST', body});
+      },
+      publish: draft => teacherWrite('/ms/v1/contents/quizzes/' + draft.id + '/publish', {
+        method: 'POST', body: JSON.stringify({version: draft.version})
+      }),
+      onSaved: quiz => {
+        state.routeId = quiz.id;
+        state.routePath = '#/teacher/teacher/' + quiz.id;
+        history.replaceState(null, '', state.routePath);
+      },
+      onPublished: quiz => {
+        navigate('teacher-home', 'teacher');
+        alertMsg('Đã xuất bản đề “' + quiz.title + '”.', true);
+      }
+    });
+  }
+  if (tab === 'teacher') {
+    teacherEditor.setWriteEnabled(teacherAccess === 'ready');
+    return teacherEditor.open(id);
+  }
+}
+
+function routeFromHash() {
+  if (!state.user) return;
+  const options = workspaceOptions();
+  const workspace = options.find(option => state.roles.includes(workspaces[option].role)) ?? options[0];
+  if (!location.hash) return navigate(visiblePages(workspace)[0], workspace, true);
+  const match = /^#\/([a-z]+)\/([a-z-]+)(?:\/([a-z0-9-]+))?$/i.exec(location.hash);
+  const id = practicePages.includes(match?.[2]) || match?.[2] === 'teacher' ? match?.[3] : '';
+  return navigate(match?.[3] && !id ? undefined : match?.[2], match?.[1] ?? '', true, id);
 }
 
 function authUi() {
@@ -58,22 +241,28 @@ function authUi() {
   $('app-panel').classList.toggle('hidden', !logged);
   $('primary-nav').classList.toggle('hidden', !logged);
   $('logout').classList.toggle('hidden', !logged);
-  $('identity-state').textContent = logged ? state.user.displayName + ' · ' + state.user.role : 'Chưa đăng nhập';
-  $('teacher-tab').classList.toggle('hidden', !logged || !state.permissions.includes('content:write'));
-  $('admin-tab').classList.toggle('hidden', !logged || !state.permissions.includes('rbac:manage'));
+  const roles = Object.keys(roleLabels).filter(role => state.roles.includes(role)).map(role => roleLabels[role]);
+  $('identity-state').textContent = logged ? [state.user.displayName, ...roles].join(' · ') : 'Chưa đăng nhập';
+  const options = logged ? workspaceOptions() : [];
+  $('workspace-picker').innerHTML = options.map(key => `<option value="${key}">${workspaces[key].label}</option>`).join('');
+  $('workspace-switch').classList.toggle('hidden', options.length < 2);
 }
 
 async function enterSession(token, user) {
   const access = await api('/ms/v1/identity/rbac/me', {}, token);
+  // Identity validated the token. Its claims cap UI access until the next sign-in.
+  const payload = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+  const claims = JSON.parse(atob(payload));
+  state.roles = (access.roles || []).filter(role => claims.roles.includes(role));
+  state.permissions = (access.permissions || []).filter(permission => claims.permissions.includes(permission));
+  if (!workspaceOptions().length) throw apiError(403, true);
   state.token = token;
   state.user = user;
-  state.permissions = access.permissions || [];
-  state.roles = access.roles || [];
   sessionStorage.setItem('toeic.jwt', token);
   $('restore-session').classList.add('hidden');
   $('welcome').textContent = 'Xin chào, ' + user.displayName;
   authUi();
-  setTab('dashboard');
+  routeFromHash();
 }
 
 async function authenticate(action) {
@@ -84,7 +273,7 @@ async function authenticate(action) {
   alertMsg('Đang xác thực…');
   try {
     await action();
-    alertMsg('Đã đăng nhập thành công.');
+    alertMsg('');
   } catch (error) {
     alertMsg(error.message);
   } finally {
@@ -141,140 +330,531 @@ function showAuthForm(name) {
 $('show-login').onclick = () => showAuthForm('login');
 $('show-register').onclick = () => showAuthForm('register');
 $('logout').onclick = () => {
+  if (!confirmExit(true)) return;
   state.token = '';
   state.user = null;
+  state.roles = [];
+  state.permissions = [];
+  state.workspace = null;
   state.active = null;
+  state.page = null;
+  state.routeId = null;
+  state.routePath = '';
+  state.plan = state.library = state.recent = state.opening = null;
+  teacherProbe = null;
+  setTeacherAccess('unverified');
+  navigationRequest++;
+  quizzesById.clear();
+  questionOrderByQuiz.clear();
   attemptEdits.clear();
+  regionRequests.clear();
   sessionStorage.removeItem('toeic.jwt');
-  for (const id of ['attempt-area', 'attempt-list', 'activity-list', 'reviews-list', 'review-quiz']) $(id).innerHTML = '';
+  history.replaceState(null, '', location.pathname + location.search);
+  $('page-title').textContent = 'Đăng nhập';
+  $('app-shell').classList.toggle('exam-mode', false);
+  $('home-resume').classList.add('hidden');
+  for (const id of ['quiz-search', 'quiz-part', 'quiz-plan']) $(id).value = '';
+  regionStatus('route-status', '');
+  for (const id of ['attempt-area', 'result-area', 'quiz-detail', 'practice-catalog', 'home-quizzes', 'attempt-list',
+    'activity-list', 'reviews-list', 'review-quiz', 'teacher-quiz-list']) $(id).innerHTML = '';
   for (const id of ['stat-attempts', 'stat-plan', 'plan-current', 'attempt-open-status']) $(id).textContent = '—';
+  $('stat-plan').classList.toggle('plan-pro', false);
+  $('stat-plan').classList.toggle('plan-free', false);
+  for (const id of ['home-history-detail', 'home-membership-detail']) $(id).textContent = '';
+  for (const id of ['home-history-status', 'home-membership-status']) {
+    regionStatus(id, '');
+  }
+  teacherEditor?.reset();
+  $('admin-form').reset();
+  $('admin-submit').disabled = false;
+  regionStatus('teacher-status', '');
+  regionStatus('admin-status', '');
+  $('review-stars').value = '5';
   $('attempt-area').classList.add('hidden');
   $('save-review').disabled = true;
   $('review-quiz').disabled = true;
   $('review-comment').value = '';
   authUi();
   showAuthForm('login');
-  alertMsg('Đã đăng xuất khỏi giao diện demo. JWT cũ sẽ hết hạn sau 30 phút.');
+  alertMsg('Đã đăng xuất.', true);
+};
+globalThis.addEventListener('hashchange', routeFromHash);
+globalThis.addEventListener('offline', () => {
+  if (!state.user || !can('content:write')) return;
+  teacherProbe = null;
+  setTeacherAccess('unavailable');
+});
+globalThis.addEventListener('beforeunload', event => {
+  if (!hasUnsavedAnswers() && !teacherEditor?.hasChanges() && !teacherEditor?.isSaving()) return;
+  event.preventDefault();
+  event.returnValue = true;
+});
+$('skip-main').onclick = event => {
+  event.preventDefault();
+  if (state.page === 'attempt') ($('attempt-title') || $('exit-attempt')).focus();
+  else $('page-title').focus();
+};
+$('workspace-picker').onchange = event => {
+  const workspace = event.target.value;
+  if (workspaceOptions().includes(workspace)) return navigate(visiblePages(workspace)[0], workspace);
+};
+$('dismiss-toast').onclick = () => {
+  alertMsg('');
+  if (state.user) $('page-title').focus();
+  else $('login-email').focus();
 };
 document.querySelectorAll('.nav').forEach(button => {
-  button.onclick = () => { if (state.user) return setTab(button.dataset.tab); };
+  button.onclick = () => navigate(button.dataset.tab);
 });
-$('jump-practice').onclick = () => setTab('practice');
+$('jump-practice').onclick = () => navigate('practice');
+$('teacher-create').onclick = () => navigate('teacher');
+$('teacher-list-refresh').onclick = loadTeacherQuizzes;
+$('editor-access-retry').onclick = checkTeacherAccess;
+$('admin-grant').onclick = () => navigate('admin');
+$('practice-review').onclick = $('results-review').onclick = () => navigate('interaction');
 $('refresh-home').onclick = loadHome;
 $('refresh-practice').onclick = loadPractice;
+$('refresh-history').onclick = loadHistory;
+$('quiz-back').onclick = $('exit-attempt').onclick = () => navigate('practice');
+$('retry-quiz').onclick = () => loadQuiz(state.routeId);
+$('retry-attempt').onclick = () => loadAttempt(state.routeId);
+$('quiz-search').oninput = $('quiz-part').onchange = $('quiz-plan').onchange = renderLibrary;
 
-function regionStatus(id, message, error = false) {
+function regionStatus(id, message, error = false, phase = '') {
   const status = $(id);
   status.textContent = message;
   status.classList.toggle('region-error', error);
+  status.classList.toggle('region-loading', phase === 'loading');
+  status.classList.toggle('region-empty', phase === 'empty');
 }
 
-async function loadRegion(id, label, path, render) {
+function setTeacherAccess(phase) {
+  teacherAccess = phase;
+  const ready = phase === 'ready';
+  const checking = phase === 'checking';
+  const message = teacherMessages[phase] || '';
+  const guidance = message && !checking
+    ? message + ' Nội dung đang soạn vẫn được giữ trong tab này.' : message;
+  regionStatus('teacher-access-status', message, !ready && !checking, checking ? 'loading' : '');
+  regionStatus('editor-access-status', guidance, !ready && !checking, checking ? 'loading' : '');
+  $('teacher-create').disabled = !ready;
+  $('teacher-list-refresh').disabled = checking;
+  $('editor-access-retry').classList.toggle('hidden', ready || checking);
+  document.querySelectorAll('.nav').forEach(button => {
+    if (button.dataset.tab === 'teacher') button.disabled = !ready;
+  });
+  $('teacher-quiz-list').querySelectorAll('.own-quiz').forEach(button => {
+    if (button.dataset.draft === 'true') button.disabled = !ready;
+  });
+  teacherEditor?.setWriteEnabled(ready);
+}
+
+function teacherFailure(status) {
+  if (status === 401) return 'unauthenticated';
+  if (status === 403) return 'unauthorized';
+  if (status === 408 || status === 504) return 'timeout';
+  if (status === 0 || status >= 500) return 'unavailable';
+  return 'unverified';
+}
+
+function isOwnedQuiz(quiz) {
+  return !!quiz && typeof quiz.id === 'string' && quiz.id.length > 0 && typeof quiz.title === 'string'
+    && Number.isInteger(quiz.part) && quiz.part >= 1 && quiz.part <= 7 && typeof quiz.premium === 'boolean'
+    && Number.isSafeInteger(quiz.count) && quiz.count >= 0 && Number.isSafeInteger(quiz.version)
+    && quiz.version >= 0 && ['DRAFT', 'PUBLISHED'].includes(quiz.status);
+}
+
+function checkTeacherAccess() {
+  if (!state.user || !state.token) return Promise.resolve({phase: 'unauthenticated'});
+  if (!can('content:write')) {
+    setTeacherAccess('unauthorized');
+    return Promise.resolve({phase: 'unauthorized'});
+  }
+  if (teacherProbe?.token === state.token) return teacherProbe.promise;
+  const probe = {token: state.token};
+  teacherProbe = probe;
+  setTeacherAccess('checking');
+  probe.promise = (async () => {
+    let result;
+    try {
+      const quizzes = await api(ownedQuizzesPath, {
+        expectedStatus: 200, cache: 'no-store', redirect: 'error', signal: AbortSignal.timeout(5000)
+      }, probe.token);
+      // An empty owner list is a valid V3 response. HTTP errors never identify a version.
+      result = Array.isArray(quizzes) && quizzes.every(isOwnedQuiz) ? {phase: 'ready', quizzes}
+        : {phase: Array.isArray(quizzes) ? 'unsupported' : 'unverified'};
+    } catch (error) {
+      result = {phase: error.name === 'TimeoutError' ? 'timeout' : teacherFailure(error.status)};
+    }
+    if (teacherProbe !== probe || state.token !== probe.token) return null;
+    teacherProbe = null;
+    setTeacherAccess(result.phase);
+    return result;
+  })();
+  return probe.promise;
+}
+
+async function teacherRequest(path, options = {}) {
   const token = state.token;
-  const request = Symbol();
-  regionRequests.set(id, request);
-  regionStatus(id, 'Đang tải ' + label + '…');
-  const isCurrent = () => state.token === token && regionRequests.get(id) === request;
   try {
-    const data = await api(path);
-    if (isCurrent()) regionStatus(id, render(data) || '');
+    return await api(path, {...options, signal: AbortSignal.timeout(5000)}, token);
   } catch (error) {
-    if (isCurrent()) regionStatus(id, `Không tải được ${label}. ${error.message}`, true);
+    const phase = error.name === 'TimeoutError' ? 'timeout' : teacherFailure(error.status);
+    if (state.token === token && phase !== 'unverified') {
+      teacherProbe = null;
+      setTeacherAccess(phase);
+    }
+    throw error;
   }
 }
 
-function card(q) {
-  return `<article class="quizcard"><span class="pill ${q.premium ? 'premium' : ''}">PART ${html(q.part)} · ${q.premium ? 'PRO' : 'FREE'}</span><h3>${html(q.title)}</h3><p>${html(q.count)} câu hỏi · Mẫu bài TOEIC</p><button type="button" class="primary startquiz" data-id="${html(q.id)}" data-premium="${q.premium === true}">Bắt đầu làm bài</button></article>`;
+async function teacherWrite(path, options) {
+  if (!state.user || !state.token) throw apiError(401, true);
+  if (state.page !== 'teacher' || !can('content:write')) throw apiError(403, true);
+  const token = state.token;
+  const route = state.routePath;
+  const access = await checkTeacherAccess();
+  if (state.token !== token || state.routePath !== route || !can('content:write')) throw apiError(403, true);
+  if (access?.phase !== 'ready' || teacherAccess !== 'ready') {
+    throw new Error('Chưa gửi yêu cầu. ' + (teacherMessages[teacherAccess] || teacherMessages.unverified));
+  }
+  return teacherRequest(path, options);
+}
+
+function renderTeacherQuizzes(result) {
+  if (!result || state.page !== 'teacher-home') return;
+  const list = $('teacher-quiz-list');
+  const quizzes = result.phase === 'ready' ? result.quizzes : [];
+  list.innerHTML = quizzes.map(quiz => {
+    const draft = quiz.status === 'DRAFT';
+    const action = draft || can('assessment:submit')
+      ? `<button type="button" class="ghost own-quiz" data-id="${html(quiz.id)}" data-draft="${draft}">${draft ? 'Mở bản nháp' : 'Xem đề'}</button>`
+      : '';
+    return `<article class="quizcard library-card">
+      <span class="pill ${quiz.premium ? 'premium' : ''}">Part ${html(quiz.part)} · ${quiz.premium ? 'PRO' : 'FREE'}</span>
+      <h3>${html(quiz.title || 'Đề chưa đặt tên')}</h3><p>${html(quiz.count)} câu · ${draft ? 'Bản nháp' : 'Đã xuất bản'}</p>
+      ${action}</article>`;
+  }).join('');
+  list.querySelectorAll('.own-quiz').forEach(button => {
+    button.onclick = () => navigate(button.dataset.draft === 'true' ? 'teacher' : 'quiz', 'teacher', false, button.dataset.id);
+  });
+  const empty = result.phase === 'ready' && !quizzes.length;
+  regionStatus('teacher-list-status', empty ? 'Bạn chưa có đề. Chọn Tạo đề mới để bắt đầu.' : '', false, empty ? 'empty' : '');
+}
+
+function loadTeacherQuizzes() {
+  $('teacher-quiz-list').innerHTML = '';
+  regionStatus('teacher-list-status', '');
+  return checkTeacherAccess().then(renderTeacherQuizzes);
+}
+
+
+async function loadRegion(id, label, path, render, cachedMetric) {
+  const token = state.token;
+  const request = Symbol();
+  regionRequests.set(id, request);
+  regionStatus(id, 'Đang tải ' + label + '…', false, 'loading');
+  const isCurrent = () => state.token === token && regionRequests.get(id) === request;
+  try {
+    const data = await api(path);
+    if (isCurrent()) {
+      const message = render(data) || '';
+      regionStatus(id, message, false, message ? 'empty' : '');
+    }
+  } catch (error) {
+    if (isCurrent()) {
+      const cached = cachedMetric && !['', '—'].includes($(cachedMetric).textContent);
+      const previous = cached ? ' Đang hiển thị dữ liệu tải gần nhất.' : '';
+      regionStatus(id, `Không tải được ${label}. ${error.message}${previous}`, true);
+    }
+  }
+}
+
+function rememberQuizzes(quizzes) {
+  for (const quiz of quizzes) quizzesById.set(quiz.id, quiz);
+}
+
+function rememberQuizDetail(detail) {
+  rememberQuizzes([detail.quiz]);
+  questionOrderByQuiz.set(detail.quiz.id, new Map(detail.questions.map((question, index) => [question.id, index])));
+}
+
+function quizAccess(quiz) {
+  if (!quiz.premium || state.plan === 'PRO') return 'Có thể luyện';
+  return state.plan === 'FREE' ? 'Cần gói PRO' : 'Đang xác minh quyền truy cập';
+}
+
+function card(quiz) {
+  return `<article class="quizcard library-card">
+    <span class="pill ${quiz.premium ? 'premium' : ''}">PART ${html(quiz.part)} · ${quiz.premium ? 'PRO' : 'FREE'}</span>
+    <h3>${html(quiz.title)}</h3>
+    <p>${html(quiz.count)} câu · ${quizAccess(quiz)}</p>
+    <button type="button" class="ghost open-quiz" data-id="${html(quiz.id)}" aria-label="Xem chi tiết: ${html(quiz.title)}">Xem chi tiết</button>
+  </article>`;
 }
 
 function renderCatalog(id, quizzes) {
   const root = $(id);
   root.innerHTML = quizzes.map(card).join('');
-  root.querySelectorAll('.startquiz').forEach(button => {
-    button.onclick = () => {
-      setTab('practice');
-      return startAttempt(button.dataset.id, button.dataset.premium === 'true');
-    };
+  root.querySelectorAll('.open-quiz').forEach(button => {
+    button.onclick = () => navigate('quiz', state.workspace, false, button.dataset.id);
   });
-  return quizzes.length ? '' : 'Chưa có đề luyện tập.';
+}
+
+function renderResume() {
+  const resume = $('home-resume');
+  resume.classList.toggle('hidden', !state.recent || !can('assessment:submit'));
+  if (!state.recent || !can('assessment:submit')) return;
+  const attempt = state.recent;
+  const title = quizzesById.get(attempt.quizId)?.title || 'Đề luyện tập';
+  resume.innerHTML = `<div><h2>Tiếp tục lượt đang làm</h2><p>${html(title)}</p></div>
+    <button type="button" class="primary resume-attempt">Tiếp tục làm</button>`;
+  resume.querySelectorAll('.resume-attempt').forEach(button => {
+    button.onclick = () => navigate('attempt', state.workspace, false, attempt.id);
+  });
 }
 
 function loadHome() {
+  let suggested;
   return Promise.all([
     loadRegion('home-catalog-status', 'danh mục đề', '/ms/v1/contents/quizzes', quizzes => {
+      rememberQuizzes(quizzes);
       $('stat-quizzes').textContent = quizzes.length;
-      return renderCatalog('home-quizzes', quizzes);
-    }),
+      suggested = quizzes.slice(0, 3);
+      renderCatalog('home-quizzes', suggested);
+      renderResume();
+      return quizzes.length ? '' : 'Chưa có đề luyện tập.';
+    }, 'stat-quizzes'),
     loadRegion('home-history-status', 'số lượt luyện tập', '/ms/v1/attempts', attempts => {
       $('stat-attempts').textContent = attempts.length;
+      const graded = attempts.filter(attempt => attempt.status === 'GRADED').length;
+      const inProgress = attempts.filter(attempt => attempt.status === 'IN_PROGRESS');
+      state.recent = inProgress[0] ?? null;
+      renderResume();
+      $('home-history-detail').textContent = attempts.length
+        ? `${graded} đã chấm · ${inProgress.length} đang làm`
+        : '';
       return attempts.length ? '' : 'Bạn chưa có lượt luyện tập.';
-    }),
-    loadRegion('home-membership-status', 'gói hiện tại', '/api/v1/memberships/me', showMembership)
+    }, 'stat-attempts'),
+    loadRegion('home-membership-status', 'gói hiện tại', '/api/v1/memberships/me', member => {
+      showMembership(member);
+      if (suggested) renderCatalog('home-quizzes', suggested);
+    }, 'stat-plan')
   ]);
+}
+
+function renderLibrary() {
+  if (!state.library) return;
+  const query = ($('quiz-search').value || '').trim().toLocaleLowerCase('vi');
+  const part = $('quiz-part').value;
+  const plan = $('quiz-plan').value;
+  const matches = state.library.filter(quiz => quiz.title.toLocaleLowerCase('vi').includes(query)
+    && (!part || String(quiz.part) === part) && (!plan || plan === (quiz.premium ? 'PRO' : 'FREE')));
+  renderCatalog('practice-catalog', matches);
+  regionStatus('library-count', !state.library.length ? '' : matches.length
+    ? `${matches.length} / ${state.library.length} đề` : 'Không tìm thấy đề phù hợp.', false, matches.length ? '' : 'empty');
 }
 
 function loadPractice() {
   return Promise.all([
-    loadRegion('practice-catalog-status', 'danh mục đề', '/ms/v1/contents/quizzes', quizzes => renderCatalog('practice-catalog', quizzes)),
+    loadRegion('practice-catalog-status', 'danh mục đề', '/ms/v1/contents/quizzes', quizzes => {
+      rememberQuizzes(quizzes);
+      state.library = quizzes;
+      const parts = [...new Set(quizzes.map(quiz => quiz.part))].sort((a, b) => a - b);
+      const select = $('quiz-part');
+      const selected = select.value;
+      select.innerHTML = '<option value="">Tất cả Part</option>' + parts.map(part =>
+        `<option value="${html(part)}">Part ${html(part)}</option>`).join('');
+      select.value = parts.includes(Number(selected)) ? selected : '';
+      renderLibrary();
+      return quizzes.length ? '' : 'Chưa có đề luyện tập.';
+    }),
+    loadRegion('practice-plan-status', 'quyền truy cập đề PRO', '/api/v1/memberships/me', member => {
+      showMembership(member);
+      renderLibrary();
+    })
+  ]);
+}
+
+async function loadQuiz(id) {
+  const route = state.routePath;
+  let quiz;
+  let accessReady = false;
+  const area = $('quiz-detail');
+  area.innerHTML = '';
+  $('retry-quiz').classList.add('hidden');
+  regionStatus('attempt-open-status', '');
+  function render() {
+    if (state.routePath !== route || !quiz) return;
+    const locked = quiz.premium && (!accessReady || state.plan !== 'PRO');
+    const membership = locked && visiblePages('learner').includes('membership');
+    const accessLabel = quiz.premium && !accessReady ? 'Quyền truy cập chưa được xác minh' : quizAccess(quiz);
+    area.innerHTML = `<article class="panel quiz-overview">
+      <span class="pill ${quiz.premium ? 'premium' : ''}">Part ${html(quiz.part)} · ${quiz.premium ? 'PRO' : 'FREE'}</span>
+      <h2>${html(quiz.title)}</h2><p>${html(quiz.count)} câu hỏi · ${accessLabel}</p>
+      ${locked ? (membership ? '<button class="ghost" type="button" id="quiz-membership">Xem gói thành viên</button>' : '')
+        : '<button class="primary" type="button" id="start-quiz">Bắt đầu làm bài</button>'}
+    </article>`;
+    if (membership) $('quiz-membership').onclick = () => navigate('membership', 'learner');
+    if (!locked) {
+      const button = $('start-quiz');
+      button.disabled = Boolean(state.opening);
+      button.onclick = () => startAttempt(id, quiz.premium);
+    }
+  }
+  const token = state.token;
+  const catalog = loadRegion('quiz-detail-status', 'thông tin đề', '/ms/v1/contents/quizzes/' + id, detail => {
+    quiz = detail.quiz;
+    rememberQuizDetail(detail);
+    render();
+  }).then(() => {
+    if (state.token === token && state.routePath === route && !quiz) $('retry-quiz').classList.remove('hidden');
+  });
+  const access = loadRegion('quiz-plan-status', 'quyền truy cập đề PRO', '/api/v1/memberships/me', member => {
+    accessReady = true;
+    showMembership(member);
+    render();
+  });
+  await Promise.all([catalog, access]);
+  if (state.token === token && state.routePath === route && quiz?.premium && !accessReady) {
+    $('retry-quiz').classList.remove('hidden');
+  }
+}
+
+function dateLabel(value) {
+  const date = new Date(value);
+  return value && Number.isFinite(date.getTime()) ? date.toLocaleString('vi-VN', {
+    dateStyle: 'medium', timeStyle: 'short'
+  }) : '';
+}
+
+function loadHistory() {
+  let history;
+  const render = () => {
+    if (!history) return;
+    const list = $('attempt-list');
+    list.innerHTML = history.map(attempt => {
+      const graded = attempt.status === 'GRADED';
+      const quiz = quizzesById.get(attempt.quizId);
+      const detail = graded ? `${html(attempt.correct)}/${html(attempt.total)} câu đúng` : `${html(attempt.total)} câu`;
+      const started = dateLabel(attempt.createdAt);
+      return `<div class="feeditem history-row">
+        <div><b>${html(quiz?.title || 'Đề luyện tập')}</b>
+        <br>${graded ? 'Đã chấm' : 'Đang làm'} · ${detail}${started ? `<br><small>Bắt đầu ${html(started)}</small>` : ''}</div>
+        <button type="button" data-id="${html(attempt.id)}" data-page="${graded ? 'result' : 'attempt'}" class="ghost openattempt">${graded ? 'Xem kết quả' : 'Tiếp tục làm'}</button>
+      </div>`;
+    }).join('');
+    list.querySelectorAll('.openattempt').forEach(button => {
+      button.onclick = () => navigate(button.dataset.page, state.workspace, false, button.dataset.id);
+    });
+  };
+  return Promise.all([
     loadRegion('practice-history-status', 'lịch sử làm bài', '/ms/v1/attempts', attempts => {
-      const list = $('attempt-list');
-      list.innerHTML = attempts.map(a => `<div class="feeditem"><b>${html(a.status)}</b> · ${html(a.correct ?? '—')}/${html(a.total)} câu · <button type="button" data-id="${html(a.id)}" class="ghost openattempt">Xem chi tiết</button></div>`).join('');
-      list.querySelectorAll('.openattempt').forEach(button => { button.onclick = () => loadAttempt(button.dataset.id); });
+      history = attempts;
+      render();
       return attempts.length ? '' : 'Chưa có lượt làm bài nào.';
+    }),
+    loadRegion('history-catalog-status', 'tên đề từ thư viện', '/ms/v1/contents/quizzes', quizzes => {
+      rememberQuizzes(quizzes);
+      render();
     })
   ]);
 }
 
 async function startAttempt(id, premium) {
+  if (state.opening) return;
   const token = state.token;
+  const route = state.routePath;
+  const request = Symbol();
+  const isCurrent = () => state.token === token && state.routePath === route && state.opening === request;
+  state.opening = request;
+  const button = $('start-quiz');
+  if (button) button.disabled = true;
   regionStatus('attempt-open-status', 'Đang mở lượt luyện tập…');
   try {
     const attempt = await api('/ms/v1/attempts', {method: 'POST', body: JSON.stringify({quizId: id})});
-    if (state.token !== token) return;
-    renderAttempt(attempt);
-    regionStatus('attempt-open-status', 'Đã mở lượt luyện tập.');
+    if (isCurrent()) renderAttempt(attempt);
   } catch (error) {
     let message = error.message;
     // Assessment uses the same 403 for permission and entitlement failures.
-    if (error.status === 403 && premium && state.token === token
-      && (state.permissions.includes('assessment:submit') || state.roles.includes('ADMIN'))) {
+    if (error.status === 403 && premium && isCurrent() && can('assessment:submit')) {
       try {
         const member = await api('/api/v1/memberships/me');
-        if (member?.planCode === 'FREE') message = 'Đề này yêu cầu gói PRO. Xem quyền lợi trong mục Gói thành viên.';
+        if (member?.planCode === 'FREE') {
+          message = 'Đề này yêu cầu gói PRO. Xem quyền lợi trong mục Gói thành viên.';
+        }
       } catch (membershipError) {
         if (membershipError.status === 401) message = membershipError.message;
       }
     }
-    if (state.token === token) regionStatus('attempt-open-status', 'Không thể bắt đầu lượt luyện tập. ' + message, true);
+    if (isCurrent()) regionStatus('attempt-open-status', 'Không thể bắt đầu lượt luyện tập. ' + message, true);
+  } finally {
+    if (state.opening === request) {
+      state.opening = null;
+      const currentButton = $('start-quiz');
+      if (currentButton) currentButton.disabled = false;
+    }
   }
 }
 
 async function loadAttempt(id) {
   const token = state.token;
-  regionStatus('attempt-open-status', 'Đang tải lượt luyện tập…');
+  const route = state.routePath;
+  const request = Symbol();
+  regionRequests.set('attempt-load-status', request);
+  const isCurrent = () => state.token === token && state.routePath === route &&
+    regionRequests.get('attempt-load-status') === request;
+  $('attempt-loading').classList.remove('hidden');
+  $('retry-attempt').classList.add('hidden');
+  $('attempt-area').classList.add('hidden');
+  $('result-area').classList.add('hidden');
+  regionStatus('attempt-load-status', 'Đang tải lượt luyện tập…', false, 'loading');
   try {
     const attempt = await api('/ms/v1/attempts/' + id);
-    if (state.token !== token) return;
-    renderAttempt(attempt);
-    regionStatus('attempt-open-status', '');
+    if (isCurrent() && state.user && attempt.quizId && !questionOrderByQuiz.has(attempt.quizId)) {
+      try {
+        const detail = await api('/ms/v1/contents/quizzes/' + attempt.quizId, {signal: AbortSignal.timeout(1500)});
+        if (isCurrent()) rememberQuizDetail(detail);
+      } catch {
+        // The snapshot remains usable when the catalog is unavailable.
+      }
+    }
+    if (isCurrent()) renderAttempt(attempt);
   } catch (error) {
-    if (state.token === token) regionStatus('attempt-open-status', 'Không thể mở lượt luyện tập. ' + error.message, true);
+    if (isCurrent()) {
+      regionStatus('attempt-load-status', 'Không thể mở lượt luyện tập. ' + error.message, true);
+      $('retry-attempt').classList.remove('hidden');
+    }
   }
 }
+
 function updateAttemptControls(attemptId, edits) {
   const attempt = state.active;
-  if (attempt?.id !== attemptId || attempt.status === 'GRADED') return;
+  if (attempt?.id !== attemptId || attempt.status === 'GRADED' ||
+    (state.user && (state.page !== 'attempt' || state.routeId !== attemptId))) return;
 
   const pending = [...edits.answers.values()].some(answer => answer.pending);
   const failed = attempt.questions.flatMap((q, i) => edits.answers.get(q.id)?.failed ? [i + 1] : []);
   const submit = $('submit-attempt');
   submit.disabled = edits.submitting || pending || failed.length > 0;
-  submit.textContent = edits.submitting ? 'Đang nộp bài…' : 'Nộp bài và chấm điểm';
+  submit.textContent = edits.submitting ? 'Đang nộp bài…' : 'Nộp bài';
+  const answered = attempt.questions.filter(question => selectedChoice(question, edits)).length;
+  $('attempt-progress').textContent = `${answered}/${attempt.questions.length} đã trả lời · ${attempt.questions.length - answered} chưa trả lời`;
+  document.querySelectorAll('#question-map .question-jump').forEach((button, index) => {
+    const question = attempt.questions[index];
+    const selected = Boolean(selectedChoice(question, edits));
+    const flagged = edits.flagged.has(question.id);
+    button.classList.toggle('answered', selected);
+    button.classList.toggle('flagged', flagged);
+    if (edits.index === index) button.setAttribute('aria-current', 'step');
+    else button.removeAttribute('aria-current');
+    button.setAttribute('aria-label', `Câu ${index + 1}, ${selected ? 'đã trả lời' : 'chưa trả lời'}${flagged ? ', đánh dấu xem lại' : ''}`);
+  });
   $('retry-answers').classList.toggle('hidden', failed.length === 0);
   const errorMessages = [...new Set([...edits.answers.values()].filter(answer => answer.failed).map(answer => answer.error))];
   regionStatus('answer-save-status', failed.length
     ? `Không lưu được đáp án ở câu ${failed.join(', ')}. ${errorMessages.join(' ')} Hãy thử lưu lại trước khi nộp bài.`
-    : pending ? 'Đang lưu đáp án…' : 'Lựa chọn được lưu tự động từng câu.', failed.length > 0);
+    : pending ? 'Đang lưu đáp án…' : answered ? 'Đã lưu các đáp án đã chọn.' : 'Chưa có đáp án. Lựa chọn sẽ được lưu tự động.', failed.length > 0);
   document.querySelectorAll('#attempt-area input[type=radio]').forEach(input => {
     input.disabled = edits.submitting;
   });
@@ -308,68 +888,222 @@ async function saveAnswer(attemptId, questionId, edits, answer) {
   }
 }
 
-function renderAttempt(a) {
-  const graded = a.status === 'GRADED';
-  if (!graded && state.active?.id === a.id && state.active.status === 'GRADED') return;
-  state.active = a;
-  if (graded) attemptEdits.delete(a.id);
-  if (!graded && !attemptEdits.has(a.id)) {
-    attemptEdits.set(a.id, {answers: new Map(), submitting: false});
-  }
-  const edits = attemptEdits.get(a.id);
-  const area = $('attempt-area');
-  area.classList.remove('hidden');
-  area.innerHTML = `<div class="sectionhead"><div><span class="eyebrow">ATTEMPT ${html(a.id.slice(0,8))}</span><h3 id="attempt-title" tabindex="-1">${graded?'Kết quả: '+a.correct+'/'+a.total:'Đang làm bài · '+a.total+' câu'}</h3></div><span class="pill">${html(a.status)}</span></div>`
-    + a.questions.map((q, i) => {
-      const selected = edits?.answers.get(q.id)?.choice ?? q.selectedChoice;
-      const options = Object.entries(q.choices).map(([key, value]) =>
-        `<label class="option"><input type="radio" name="q-${html(q.id)}" value="${html(key)}" ${selected === key ? 'checked' : ''} ${graded ? 'disabled' : ''}> ${html(key)}. ${html(value)}</label>`
-      ).join('');
-      const result = graded ? `<p class="${q.correct?'statusgood':'statusbad'}">${q.correct?'Đúng':'Sai hoặc bỏ trống'} · ${html(q.explanation)}</p>` : '';
-      return `<fieldset class="question"><legend>Câu ${i + 1}. ${html(q.prompt)}</legend><div class="options">${options}</div>${result}</fieldset>`;
-    }).join('')
-    + (graded ? '<p class="statusgood">Bài đã chấm. Nộp lại sẽ trả kết quả đã lưu.</p>' : `
-      <button type="button" class="primary" id="submit-attempt" aria-describedby="answer-save-status">Nộp bài và chấm điểm</button>
-      <button type="button" class="ghost hidden" id="retry-answers">Thử lưu lại đáp án</button>
-      <p class="region-status" id="answer-save-status" role="status"></p>`);
+function selectedChoice(question, edits) {
+  return edits.answers.get(question.id)?.choice ?? question.selectedChoice;
+}
 
-  if (!graded) {
+function renderAttempt(attempt) {
+  if (attempt.status !== 'GRADED' && state.active?.id === attempt.id && state.active.status === 'GRADED') {
+    attempt = state.active;
+  }
+  const page = attempt.status === 'GRADED' ? 'result' : 'attempt';
+  if (state.user && (state.page !== page || state.routeId !== attempt.id)) {
+    const replace = ['attempt', 'result'].includes(state.page);
+    return navigate(page, state.workspace, replace, attempt.id, attempt);
+  }
+  showAttempt(attempt);
+}
+
+function showAttempt(attempt) {
+  state.active = attempt;
+  if (!attempt.questions.every(question => Object.hasOwn(question, 'position'))) {
+    const positions = questionOrderByQuiz.get(attempt.quizId);
+    const position = question => positions?.get(question.id) ?? Number.MAX_SAFE_INTEGER;
+    attempt.questions = [...attempt.questions].sort((a, b) => position(a) - position(b) || a.id.localeCompare(b.id));
+  }
+  $('attempt-loading').classList.add('hidden');
+  if (attempt.status === 'GRADED') {
+    attemptEdits.delete(attempt.id);
+    showResult(attempt);
+  } else {
+    showExam(attempt);
+  }
+}
+
+function attemptHeading(attempt) {
+  const quiz = quizzesById.get(attempt.quizId);
+  return `<p id="attempt-part" class="eyebrow">${quiz ? 'Part ' + html(quiz.part) : 'Không có thông tin Part'}</p>
+    <h2 id="attempt-title" tabindex="-1">${html(quiz?.title || 'Đề luyện tập')}</h2>`;
+}
+
+function showExam(attempt) {
+  if (!attemptEdits.has(attempt.id)) {
+    attemptEdits.set(attempt.id, {answers: new Map(), flagged: new Set(), index: 0, submitting: false});
+  }
+  const edits = attemptEdits.get(attempt.id);
+  const area = $('attempt-area');
+  $('result-area').innerHTML = '';
+  area.classList.remove('hidden');
+  area.innerHTML = `<header class="exam-heading">${attemptHeading(attempt)}
+      <p id="attempt-progress" class="muted"></p>
+    </header>
+    <div class="exam-layout">
+      <div class="exam-main">
+        <div class="exam-question panel" id="question-slot"></div>
+        <div class="exam-navigation">
+          <button type="button" class="ghost" id="prev-question">← Câu trước</button>
+          <button type="button" class="ghost" id="next-question">Câu tiếp theo →</button>
+        </div>
+      </div>
+      <div class="exam-map">
+        <button type="button" class="ghost question-toggle" id="question-toggle" aria-controls="question-map" aria-expanded="false">Danh sách câu</button>
+        <aside class="panel question-map" id="question-map" aria-labelledby="question-map-title">
+          <h3 id="question-map-title">Danh sách câu</h3>
+          <div class="question-grid">${attempt.questions.map((_, index) =>
+            `<button type="button" class="ghost question-jump">${index + 1}</button>`).join('')}</div>
+          <p class="muted">✓ Đã trả lời · ⚑ Xem lại</p>
+        </aside>
+      </div>
+    </div>
+    <div class="panel exam-footer">
+      <p class="region-status" id="answer-save-status" role="status"></p>
+      <button type="button" class="ghost hidden" id="retry-answers">Thử lưu lại đáp án</button>
+      <button type="button" class="primary" id="submit-attempt" aria-describedby="answer-save-status">Nộp bài</button>
+      <p class="region-status" id="submit-status" role="status"></p>
+    </div>
+    <dialog id="submit-dialog" aria-labelledby="confirm-title" aria-describedby="submit-summary">
+      <h3 id="confirm-title">Xác nhận nộp bài</h3>
+      <p id="submit-summary"></p>
+      <div class="view-actions">
+        <button type="button" class="ghost" id="cancel-submit" autofocus>Quay lại</button>
+        <button type="button" class="primary" id="confirm-submit">Xác nhận nộp</button>
+      </div>
+    </dialog>`;
+
+  function showQuestion(index, focus = false) {
+    edits.index = index;
+    const question = attempt.questions[index];
+    edits.questionId = question.id;
+    const selected = selectedChoice(question, edits);
+    const options = ['A', 'B', 'C', 'D'].filter(key => Object.hasOwn(question.choices, key)).map(key =>
+      `<label class="option"><input type="radio" name="q-${html(question.id)}" value="${key}" ${selected === key ? 'checked' : ''}> <span>${key}. ${html(question.choices[key])}</span></label>`
+    ).join('');
+    $('question-slot').innerHTML = `<fieldset class="question">
+      <legend id="exam-question-title" tabindex="-1">Câu ${index + 1}. ${html(question.prompt)}</legend>
+      <div class="options">${options}</div>
+    </fieldset>
+    <button type="button" class="ghost flag-question" id="flag-question" aria-pressed="${edits.flagged.has(question.id)}">Đánh dấu xem lại</button>`;
+    $('prev-question').disabled = index === 0;
+    $('next-question').disabled = index === attempt.questions.length - 1;
+    $('flag-question').onclick = () => {
+      if (edits.flagged.has(question.id)) edits.flagged.delete(question.id);
+      else edits.flagged.add(question.id);
+      $('flag-question').setAttribute('aria-pressed', String(edits.flagged.has(question.id)));
+      updateAttemptControls(attempt.id, edits);
+    };
     document.querySelectorAll('#attempt-area input[type=radio]').forEach(input => {
       input.onchange = () => {
-        if (state.active !== a || edits.submitting) return;
-        const questionId = input.name.slice(2);
-        const answer = edits.answers.get(questionId) ?? {pending: false, failed: false};
+        if (state.active !== attempt || edits.submitting) return;
+        const answer = edits.answers.get(question.id) ?? {pending: false, failed: false};
         answer.choice = input.value;
-        edits.answers.set(questionId, answer);
-        return saveAnswer(a.id, questionId, edits, answer);
+        edits.answers.set(question.id, answer);
+        return saveAnswer(attempt.id, question.id, edits, answer);
       };
     });
-    $('retry-answers').onclick = () => Promise.all([...edits.answers]
-      .filter(([, answer]) => answer.failed)
-      .map(([questionId, answer]) => saveAnswer(a.id, questionId, edits, answer)));
-    $('submit-attempt').onclick = async () => {
-      if (state.active !== a || edits.submitting || [...edits.answers.values()].some(answer => answer.pending || answer.failed)) return;
-      edits.submitting = true;
-      updateAttemptControls(a.id, edits);
-      try {
-        const updated = await api(`/ms/v1/attempts/${a.id}/submit`, {method: 'POST'});
-        if (attemptEdits.get(a.id) !== edits) return;
-        if (state.active?.id === a.id) renderAttempt(updated);
-        else attemptEdits.delete(a.id);
-        await loadPractice();
-      } catch (error) {
-        if (state.active?.id === a.id) alertMsg(`Không thể nộp bài: ${error.message}`);
-      } finally {
-        edits.submitting = false;
-        if (attemptEdits.get(a.id) === edits) updateAttemptControls(a.id, edits);
-      }
-    };
-    updateAttemptControls(a.id, edits);
+    updateAttemptControls(attempt.id, edits);
+    if (focus) $('exam-question-title').focus?.();
   }
+
+  function toggleMap(open) {
+    $('question-toggle').setAttribute('aria-expanded', String(open));
+    $('question-map').classList.toggle('map-open', open);
+  }
+
+  $('question-toggle').onclick = () => toggleMap($('question-toggle').getAttribute('aria-expanded') !== 'true');
+  document.querySelectorAll('#question-map .question-jump').forEach((button, index) => {
+    button.onclick = () => {
+      toggleMap(false);
+      showQuestion(index, true);
+    };
+  });
+  $('prev-question').onclick = () => showQuestion(edits.index - 1, true);
+  $('next-question').onclick = () => showQuestion(edits.index + 1, true);
+  $('retry-answers').onclick = () => Promise.all([...edits.answers]
+    .filter(([, answer]) => answer.failed)
+    .map(([questionId, answer]) => saveAnswer(attempt.id, questionId, edits, answer)));
+
+  const dialog = $('submit-dialog');
+  const isActive = () => state.active?.id === attempt.id &&
+    (!state.user || (state.page === 'attempt' && state.routeId === attempt.id));
+  const canSubmit = () => state.active === attempt && isActive() &&
+    !edits.submitting && ![...edits.answers.values()].some(answer => answer.pending || answer.failed);
+  $('submit-attempt').onclick = () => {
+    if (!canSubmit() || dialog.open) return;
+    const unanswered = attempt.questions.filter(question => !selectedChoice(question, edits)).length;
+    $('submit-summary').textContent = `Bạn còn ${unanswered} câu bỏ trống. Sau khi nộp, bạn sẽ chuyển sang xem kết quả.`;
+    dialog.showModal();
+  };
+  $('cancel-submit').onclick = () => dialog.close();
+  $('confirm-submit').onclick = async () => {
+    if (!dialog.open || !canSubmit()) return;
+    edits.submitting = true;
+    dialog.close();
+    updateAttemptControls(attempt.id, edits);
+    regionStatus('submit-status', 'Đang chấm bài…');
+    try {
+      const updated = await api(`/ms/v1/attempts/${attempt.id}/submit`, {method: 'POST'});
+      if (attemptEdits.get(attempt.id) !== edits) return;
+      if (isActive()) renderAttempt(updated);
+      else attemptEdits.delete(attempt.id);
+    } catch (error) {
+      if (isActive()) regionStatus('submit-status', 'Không thể nộp bài. ' + error.message, true);
+    } finally {
+      edits.submitting = false;
+      if (attemptEdits.get(attempt.id) === edits) updateAttemptControls(attempt.id, edits);
+    }
+  };
+  const previousIndex = attempt.questions.findIndex(question => question.id === edits.questionId);
+  if (attempt.questions.length) showQuestion(previousIndex === -1 ? 0 : previousIndex);
+  else updateAttemptControls(attempt.id, edits);
   $('attempt-title').focus?.();
 }
+
+function showResult(attempt) {
+  const area = $('result-area');
+  $('attempt-area').classList.add('hidden');
+  $('attempt-area').innerHTML = '';
+  area.classList.remove('hidden');
+  const correct = attempt.correct;
+  const unanswered = attempt.questions.filter(question => !question.selectedChoice).length;
+  const incorrect = attempt.total - correct - unanswered;
+  const accuracy = attempt.total ? Math.round(correct * 100 / attempt.total) + '%' : '—';
+  area.innerHTML = `<section class="panel result-summary" aria-labelledby="attempt-title">
+    ${attemptHeading(attempt)}
+    <p class="result-score">Kết quả: ${html(correct)}/${html(attempt.total)} câu đúng</p>
+    <dl class="result-metrics">
+      <div><dt>Đúng</dt><dd class="statusgood">${html(correct)}</dd></div>
+      <div><dt>Sai</dt><dd class="statusbad">${html(incorrect)}</dd></div>
+      <div><dt>Bỏ trống</dt><dd>${html(unanswered)}</dd></div>
+      <div><dt>Tỷ lệ đúng</dt><dd>${html(accuracy)}</dd></div>
+    </dl>
+    <div class="view-actions"><button type="button" id="result-practice" class="primary">Luyện đề khác</button>
+    <button type="button" id="result-history" class="ghost">Về lịch sử</button></div>
+  </section>
+  <section class="result-review" aria-labelledby="review-heading"><h2 id="review-heading">Xem lại từng câu</h2>
+    ${attempt.questions.map((question, index) => {
+      const selected = question.selectedChoice;
+      const outcome = !selected ? 'Bỏ trống' : question.correct ? 'Đúng' : 'Sai';
+      const status = !selected ? '' : question.correct ? 'statusgood' : 'statusbad';
+      const answer = selected ? selected + '. ' + (question.choices[selected] ?? '') : 'Chưa chọn';
+      return `<details class="panel result-question"><summary><span>Câu ${index + 1}. ${html(question.prompt)}</span>
+        <strong class="${status}">${outcome}</strong></summary>
+        <p>Lựa chọn của bạn: ${html(answer)}</p>
+        ${question.explanation ? `<p><strong>Giải thích</strong> · ${html(question.explanation)}</p>` : ''}
+      </details>`;
+    }).join('')}
+  </section>`;
+  $('result-practice').onclick = () => navigate('practice');
+  $('result-history').onclick = () => navigate('results', 'learner');
+  $('attempt-title').focus?.();
+}
+
 function showMembership(member) {
-  $('stat-plan').textContent = member.planCode;
+  state.plan = member.planCode;
+  const plan = $('stat-plan');
+  plan.textContent = member.planCode;
+  plan.classList.toggle('plan-pro', member.planCode === 'PRO');
+  plan.classList.toggle('plan-free', member.planCode === 'FREE');
+  $('home-membership-detail').textContent = `Giới hạn ${member.maxPracticePerDay.toLocaleString('vi-VN')} lượt/ngày`;
   $('plan-current').textContent = `Gói hiện tại: ${member.planCode} · ${member.maxPracticePerDay} lượt/ngày.`;
 }
 
@@ -410,9 +1144,12 @@ function loadInteraction() {
       return quizzes.length ? '' : 'Chưa có đề để đánh giá.';
     }).then(() => reviewsReady),
     loadRegion('activity-status', 'hoạt động học tập', '/api/v1/interactions/activities/me', activities => {
-      $('activity-list').innerHTML = activities.map(a =>
-        `<div class="feeditem">${html(a.kind)} · ${html(a.attemptId)} · ${html(a.recordedAt)}</div>`).join('');
-      return activities.length ? '' : 'Chưa có hoạt động được xử lý. Hoạt động có thể xuất hiện sau khi bài được chấm.';
+      $('activity-list').innerHTML = activities.map(activity => {
+        const label = activity.kind === 'ATTEMPT_GRADED' ? 'Đã chấm bài luyện tập' : 'Hoạt động học tập';
+        const date = dateLabel(activity.recordedAt);
+        return `<div class="feeditem">${label}${date ? ' · ' + html(date) : ''}</div>`;
+      }).join('');
+      return activities.length ? '' : 'Chưa có hoạt động học tập.';
     })
   ]);
 }
@@ -446,7 +1183,7 @@ $('save-review').onclick = async () => {
       stars: Number($('review-stars').value), comment: $('review-comment').value
     })});
     if (state.token !== token) return;
-    alertMsg('Đã lưu đánh giá.');
+    alertMsg('Đã lưu đánh giá.', true);
     if ($('review-quiz').value === id) await loadReviews();
   } catch (error) {
     if (state.token === token) alertMsg('Không thể lưu đánh giá. ' + error.message);
@@ -455,5 +1192,30 @@ $('save-review').onclick = async () => {
 
 restoreSession();
 
-$('teacher-form').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target);const question={prompt:f.get('prompt'),a:f.get('a'),b:f.get('b'),c:f.get('c'),d:f.get('d'),answer:f.get('answer'),explanation:f.get('explanation')};try{const q=await api('/ms/v1/contents/quizzes',{method:'POST',body:JSON.stringify({title:f.get('title'),part:Number(f.get('part')),premium:f.get('premium')==='true',questions:[question]})});alertMsg('Đã xuất bản đề '+q.title);e.target.reset();}catch(err){alertMsg(err.message)}};
-$('admin-form').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target);try{const r=await api('/ms/v1/identity/admin/users/'+encodeURIComponent(f.get('userId'))+'/roles',{method:'POST',body:JSON.stringify({role:f.get('role')})});alertMsg('Đã cấp quyền: '+r.roles.join(', '));}catch(err){alertMsg(err.message)}};
+async function submitWorkspaceForm(event, permission, statusId, save) {
+  event.preventDefault();
+  if (!state.user || !can(permission)) return;
+  const form = event.target;
+  const button = form.querySelector('button[type="submit"]');
+  if (button.disabled) return;
+  const token = state.token;
+  button.disabled = true;
+  regionStatus(statusId, 'Đang lưu…');
+  try {
+    const message = await save(new FormData(form));
+    if (state.token !== token) return;
+    regionStatus(statusId, message);
+    form.reset();
+  } catch (error) {
+    if (state.token === token) regionStatus(statusId, error.message, true);
+  } finally {
+    if (state.token === token) button.disabled = false;
+  }
+}
+
+$('admin-form').onsubmit = event => submitWorkspaceForm(event, 'rbac:manage', 'admin-status', async form => {
+  const result = await api('/ms/v1/identity/admin/users/' + encodeURIComponent(form.get('userId').trim()) + '/roles',
+    {method: 'POST', body: JSON.stringify({role: form.get('role')})});
+  const roles = result.roles.map(role => roleLabels[role]).filter(Boolean).join(', ');
+  return 'Vai trò hiện tại: ' + roles + '. Người dùng cần đăng nhập lại để nhận quyền mới.';
+});

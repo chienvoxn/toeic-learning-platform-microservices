@@ -42,6 +42,7 @@ public class AttemptApplicationService {
         return questions.findByAttemptId(attemptId).stream()
                 .map(q -> new AttemptView.Question(
                         q.questionId,
+                        q.position,
                         q.prompt,
                         Map.of(
                                 "A", q.optionA,
@@ -100,10 +101,13 @@ public class AttemptApplicationService {
         dailyQuota.reserve(userId, entitlement.dailyLimit());
 
         var attempt = attempts.save(new Attempt(quizId, userId));
+        // Both Content versions define order by the snapshot array.
+        int position = 1;
         for (var question : snapshot.questions()) {
             questions.save(new AttemptQuestion(
                     attempt.attemptId,
                     question.id(),
+                    position++,
                     question.prompt(),
                     question.options().get("A"),
                     question.options().get("B"),
