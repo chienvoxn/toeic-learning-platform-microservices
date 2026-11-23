@@ -17,7 +17,7 @@ def req(method, path, payload=None, token=None, expected=(200,)):
         headers["Authorization"] = "Bearer " + token
     request = Request(BASE + path, data=data, headers=headers, method=method)
     try:
-        with urlopen(request, timeout=15) as response:
+        with urlopen(request, timeout=45) as response:
             status = response.status
             body = response.read().decode()
     except HTTPError as error:

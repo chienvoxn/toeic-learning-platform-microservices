@@ -1,0 +1,50 @@
+Git HEAD: ff9955bb5dd4577396c2ef4eb18f66f4b8fae380
+2026-11-23T18:14:38.109+00:00 QA-03 Gateway=http://127.0.0.1:8088
+2026-11-23T18:14:38.922+00:00 Initial running services: assessment-db, assessment-service, content-db, content-service, gateway, identity-db, identity-service, interaction-db, interaction-service, membership-db, membership-service, rabbitmq
+2026-11-23T18:14:42.416+00:00 RabbitMQ binding: exchange=toeic.events routing_key=attempt.graded queue=interaction.attempt-graded
+2026-11-23T18:14:42.895+00:00 A stop requested: interaction-service
+2026-11-23T18:14:46.718+00:00 A confirmed stopped: interaction-service
+2026-11-23T18:14:49.506+00:00 A outage baseline queue={'ready': 0, 'unacked': 0, 'consumers': 0}
+Attempt ID: e13fc3bc-4e65-4dde-b1ce-91377bc8ec4b
+Saved choice A for question 6e133728-7747-4dea-acb8-8cbb4671766b; status=IN_PROGRESS
+2026-11-23T18:14:54.976+00:00 A submit requested for e13fc3bc-4e65-4dde-b1ce-91377bc8ec4b
+2026-11-23T18:14:55.038+00:00 A submit HTTP=200; 63.0ms
+2026-11-23T18:14:55.038+00:00 A submit status=GRADED; score=1/4
+2026-11-23T18:14:57.304+00:00 A outage poll 1: Assessment SQL={'status': 'GRADED', 'correct': 1, 'graded': True, 'outbox': [{'eventId': '46d0ad29-4460-4982-a936-1310dd581557', 'published': False, 'type': 'AttemptGraded'}]}; Interaction SQL=[]; queue={'ready': 1, 'unacked': 0, 'consumers': 0}
+2026-11-23T18:15:02.219+00:00 A outage poll 2: Assessment SQL={'status': 'GRADED', 'correct': 1, 'graded': True, 'outbox': [{'eventId': '46d0ad29-4460-4982-a936-1310dd581557', 'published': True, 'type': 'AttemptGraded'}]}; Interaction SQL=[]; queue={'ready': 1, 'unacked': 0, 'consumers': 0}
+2026-11-23T18:15:02.635+00:00 Restore interaction-service: docker compose start (try 1)
+2026-11-23T18:15:04.692+00:00 Restore interaction-service: Compose reports running/healthy
+2026-11-23T18:15:05.721+00:00 A recovery poll 1: Assessment SQL={'status': 'GRADED', 'correct': 1, 'graded': True, 'outbox': [{'eventId': '46d0ad29-4460-4982-a936-1310dd581557', 'published': True, 'type': 'AttemptGraded'}]}; Interaction SQL=[]; activity HTTP=502, matching event=False
+2026-11-23T18:15:10.053+00:00 A recovery poll 2: Assessment SQL={'status': 'GRADED', 'correct': 1, 'graded': True, 'outbox': [{'eventId': '46d0ad29-4460-4982-a936-1310dd581557', 'published': True, 'type': 'AttemptGraded'}]}; Interaction SQL=[]; activity HTTP=502, matching event=False
+2026-11-23T18:15:13.459+00:00 A recovery poll 3: Assessment SQL={'status': 'GRADED', 'correct': 1, 'graded': True, 'outbox': [{'eventId': '46d0ad29-4460-4982-a936-1310dd581557', 'published': True, 'type': 'AttemptGraded'}]}; Interaction SQL=[]; activity HTTP=502, matching event=False
+2026-11-23T18:15:16.566+00:00 A recovery poll 4: Assessment SQL={'status': 'GRADED', 'correct': 1, 'graded': True, 'outbox': [{'eventId': '46d0ad29-4460-4982-a936-1310dd581557', 'published': True, 'type': 'AttemptGraded'}]}; Interaction SQL=[]; activity HTTP=502, matching event=False
+2026-11-23T18:15:20.433+00:00 A recovery poll 5: Assessment SQL={'status': 'GRADED', 'correct': 1, 'graded': True, 'outbox': [{'eventId': '46d0ad29-4460-4982-a936-1310dd581557', 'published': True, 'type': 'AttemptGraded'}]}; Interaction SQL=[]; activity HTTP=502, matching event=False
+2026-11-23T18:15:24.346+00:00 A recovery poll 6: Assessment SQL={'status': 'GRADED', 'correct': 1, 'graded': True, 'outbox': [{'eventId': '46d0ad29-4460-4982-a936-1310dd581557', 'published': True, 'type': 'AttemptGraded'}]}; Interaction SQL=[{'eventId': '46d0ad29-4460-4982-a936-1310dd581557', 'attemptId': 'e13fc3bc-4e65-4dde-b1ce-91377bc8ec4b', 'kind': 'ATTEMPT_GRADED'}]; activity HTTP=200, matching event=True
+2026-11-23T18:15:26.922+00:00 A final queue={'ready': 0, 'unacked': 0, 'consumers': 1}; submit-to-activity=29.36s
+2026-11-23T18:15:26.922+00:00 A PASS: attemptId=e13fc3bc-4e65-4dde-b1ce-91377bc8ec4b; eventId=46d0ad29-4460-4982-a936-1310dd581557
+2026-11-23T18:15:27.329+00:00 B stop requested: rabbitmq
+2026-11-23T18:15:30.481+00:00 B confirmed stopped: rabbitmq
+2026-11-23T18:15:30.481+00:00 B outage baseline queue=broker stopped
+Attempt ID: 506f0947-d916-4ba7-9da8-9a2ef2142352
+Saved choice A for question 6e133728-7747-4dea-acb8-8cbb4671766b; status=IN_PROGRESS
+2026-11-23T18:15:33.390+00:00 B submit requested for 506f0947-d916-4ba7-9da8-9a2ef2142352
+2026-11-23T18:15:33.431+00:00 B submit HTTP=200; 47.0ms
+2026-11-23T18:15:33.432+00:00 B submit status=GRADED; score=1/4
+2026-11-23T18:15:34.270+00:00 B outage poll 1: Assessment SQL={'status': 'GRADED', 'correct': 1, 'graded': True, 'outbox': [{'eventId': '94895ba3-5a76-4415-a4a0-293ad2d906d6', 'published': False, 'type': 'AttemptGraded'}]}; Interaction SQL=[]; queue=broker stopped
+2026-11-23T18:15:37.221+00:00 B outage poll 2: Assessment SQL={'status': 'GRADED', 'correct': 1, 'graded': True, 'outbox': [{'eventId': '94895ba3-5a76-4415-a4a0-293ad2d906d6', 'published': False, 'type': 'AttemptGraded'}]}; Interaction SQL=[]; queue=broker stopped
+2026-11-23T18:15:40.224+00:00 B outage poll 3: Assessment SQL={'status': 'GRADED', 'correct': 1, 'graded': True, 'outbox': [{'eventId': '94895ba3-5a76-4415-a4a0-293ad2d906d6', 'published': False, 'type': 'AttemptGraded'}]}; Interaction SQL=[]; queue=broker stopped
+2026-11-23T18:15:43.107+00:00 B outage poll 4: Assessment SQL={'status': 'GRADED', 'correct': 1, 'graded': True, 'outbox': [{'eventId': '94895ba3-5a76-4415-a4a0-293ad2d906d6', 'published': False, 'type': 'AttemptGraded'}]}; Interaction SQL=[]; queue=broker stopped
+2026-11-23T18:15:43.676+00:00 B publisher retry lines observed: 0; exception types=[]
+2026-11-23T18:15:43.677+00:00 Restore rabbitmq: docker compose start (try 1)
+2026-11-23T18:15:51.114+00:00 Restore rabbitmq: Compose reports running/healthy
+2026-11-23T18:15:51.973+00:00 B recovery poll 1: Assessment SQL={'status': 'GRADED', 'correct': 1, 'graded': True, 'outbox': [{'eventId': '94895ba3-5a76-4415-a4a0-293ad2d906d6', 'published': False, 'type': 'AttemptGraded'}]}; Interaction SQL=[]; activity HTTP=200, matching event=False
+2026-11-23T18:15:54.656+00:00 B recovery poll 2: Assessment SQL={'status': 'GRADED', 'correct': 1, 'graded': True, 'outbox': [{'eventId': '94895ba3-5a76-4415-a4a0-293ad2d906d6', 'published': False, 'type': 'AttemptGraded'}]}; Interaction SQL=[]; activity HTTP=200, matching event=False
+2026-11-23T18:15:57.266+00:00 B recovery poll 3: Assessment SQL={'status': 'GRADED', 'correct': 1, 'graded': True, 'outbox': [{'eventId': '94895ba3-5a76-4415-a4a0-293ad2d906d6', 'published': False, 'type': 'AttemptGraded'}]}; Interaction SQL=[]; activity HTTP=200, matching event=False
+2026-11-23T18:16:00.034+00:00 B recovery poll 4: Assessment SQL={'status': 'GRADED', 'correct': 1, 'graded': True, 'outbox': [{'eventId': '94895ba3-5a76-4415-a4a0-293ad2d906d6', 'published': False, 'type': 'AttemptGraded'}]}; Interaction SQL=[]; activity HTTP=200, matching event=False
+2026-11-23T18:16:02.888+00:00 B recovery poll 5: Assessment SQL={'status': 'GRADED', 'correct': 1, 'graded': True, 'outbox': [{'eventId': '94895ba3-5a76-4415-a4a0-293ad2d906d6', 'published': False, 'type': 'AttemptGraded'}]}; Interaction SQL=[]; activity HTTP=200, matching event=False
+2026-11-23T18:16:05.537+00:00 B recovery poll 6: Assessment SQL={'status': 'GRADED', 'correct': 1, 'graded': True, 'outbox': [{'eventId': '94895ba3-5a76-4415-a4a0-293ad2d906d6', 'published': True, 'type': 'AttemptGraded'}]}; Interaction SQL=[{'eventId': '94895ba3-5a76-4415-a4a0-293ad2d906d6', 'attemptId': '506f0947-d916-4ba7-9da8-9a2ef2142352', 'kind': 'ATTEMPT_GRADED'}]; activity HTTP=200, matching event=True
+2026-11-23T18:16:06.770+00:00 B final queue={'ready': 0, 'unacked': 0, 'consumers': 1}; submit-to-activity=32.14s
+2026-11-23T18:16:06.770+00:00 B PASS: attemptId=506f0947-d916-4ba7-9da8-9a2ef2142352; eventId=94895ba3-5a76-4415-a4a0-293ad2d906d6
+2026-11-23T18:16:07.082+00:00 Final running services: assessment-db, assessment-service, content-db, content-service, gateway, identity-db, identity-service, interaction-db, interaction-service, membership-db, membership-service, rabbitmq
+2026-11-23T18:16:07.082+00:00 QA-03 summary: A=PASS; B=PASS; services restored=True; distinct attempt/event IDs=True
+QA03 EXIT CODE: 0
