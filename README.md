@@ -84,7 +84,7 @@ python tests/smoke.py
 
 Smoke bao gồm đăng ký, lưu đáp án, nộp lặp, ownership, entitlement PRO khi bật demo và activity. Quota, concurrent submit, fault injection và k6 có kịch bản riêng dưới [tests](tests/).
 
-[CI run 45022782408](https://github.com/chienvoxn/toeic-learning-platform-microservices/actions/runs/45022782408) đạt 6/6 job tại [revision 730dd5c](https://github.com/chienvoxn/toeic-learning-platform-microservices/commit/730dd5cca4a9f8690720b4379bda8458e64707e0). Năm job Maven chạy `clean verify`; job thứ sáu kiểm tra cú pháp JavaScript và `docker compose config --quiet`. Lịch sử build image, runtime, smoke và thử nghiệm QA có mốc riêng trong [Validation status](docs/VALIDATION_STATUS.md).
+[CI run 45250496826](https://github.com/chienvoxn/toeic-learning-platform-microservices/actions/runs/45250496826) đạt 6/6 job trên [revision 47a94aa](https://github.com/chienvoxn/toeic-learning-platform-microservices/commit/47a94aaac6b6f6e289003ac9745fb3f2b801f07a). Năm job Maven chạy `clean verify`; job thứ sáu kiểm tra cú pháp JavaScript và `docker compose config --quiet`. Lịch sử build image, runtime, smoke và thử nghiệm QA có mốc riêng trong [Validation status](docs/VALIDATION_STATUS.md).
 
 - [Audit KTPM/KTHDV](docs/FINAL_AUDIT_KTPM_KTHDV.md) và [bộ hình, số liệu QA-01–04](docs/SUBMISSION_EVIDENCE.md).
 - [Kiến trúc ADD, arc42, C4 và QA](docs/EXAM_ARCHITECTURE.md), [ADR](docs/ADR_MVP.md) và [Assessment DDD](docs/ASSESSMENT_DDD.md).
@@ -114,4 +114,4 @@ Các thao tác API dùng trong demo và smoke test.
 | Xem gói / chuyển gói demo | `GET /api/v1/memberships/me`, `PUT /api/v1/memberships/me` |
 | Lưu review / xem activity | `PUT /api/v1/interactions/contents/{id}/reviews/me`, `GET /api/v1/interactions/activities/me` |
 
-Gateway chặn các tuyến snapshot và entitlement nội bộ. API danh mục công khai chỉ cung cấp metadata. Assessment giữ snapshot riêng và chỉ trả kết quả của attempt cho chủ sở hữu. Cấu hình JWT HS256 dùng chung khóa và cơ chế tự chuyển PRO phục vụ demo cục bộ. Outbox hiện đánh dấu đã publish sau khi lời gọi RabbitTemplate trả về, trước khi có publisher confirms.
+Gateway chặn các tuyến snapshot và entitlement nội bộ. API danh mục công khai chỉ cung cấp metadata. Assessment giữ snapshot riêng và chỉ trả kết quả của attempt cho chủ sở hữu. Cấu hình JWT HS256 dùng chung khóa và cơ chế tự chuyển PRO phục vụ demo cục bộ. Outbox chỉ đánh dấu `published=true` sau khi nhận correlated publisher ACK từ RabbitMQ mà không có mandatory return. NACK, NO_ROUTE, timeout hoặc lỗi kết nối giữ sự kiện ở trạng thái pending để retry; vì broker ACK và cập nhật SQL không nguyên tử, hệ thống bảo đảm at-least-once delivery kết hợp consumer idempotency theo eventId, không phải exactly-once delivery.

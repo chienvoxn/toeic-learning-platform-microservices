@@ -10,16 +10,16 @@ EXIT_CODE=0
 --- Docker Compose services ---
 NAME                                            IMAGE                                                                     COMMAND                  SERVICE               CREATED        STATUS                       PORTS
 toeic-microservices-mvp-assessment-db-1         postgres:17-alpine                                                        "docker-entrypoint.s…"   assessment-db         2 days ago     Up 2 hours (healthy)         5432/tcp
-toeic-microservices-mvp-assessment-service-1    sha256:09193db187d857f0592e25d66e5933c4f856ab9fd0a47efa29daf540f31d49d9   "java -jar /app/app.…"   assessment-service    7 hours ago    Up 2 hours                   
+toeic-microservices-mvp-assessment-service-1    sha256:09193db187d857f0592e25d66e5933c4f856ab9fd0a47efa29daf540f31d49d9   "java -jar /app/app.…"   assessment-service    7 hours ago    Up 2 hours
 toeic-microservices-mvp-content-db-1            postgres:17-alpine                                                        "docker-entrypoint.s…"   content-db            2 days ago     Up 2 hours (healthy)         5432/tcp
-toeic-microservices-mvp-content-service-1       sha256:398d707a578920922ab2b66768e9ea36633ef09f61b229cdfd58a7008542cdfa   "java -jar /app/app.…"   content-service       7 hours ago    Up 2 hours                   
+toeic-microservices-mvp-content-service-1       sha256:398d707a578920922ab2b66768e9ea36633ef09f61b229cdfd58a7008542cdfa   "java -jar /app/app.…"   content-service       7 hours ago    Up 2 hours
 toeic-microservices-mvp-gateway-1               nginx:1.27-alpine                                                         "/docker-entrypoint.…"   gateway               39 hours ago   Up 2 hours                   127.0.0.1:8088->8088/tcp
 toeic-microservices-mvp-identity-db-1           postgres:17-alpine                                                        "docker-entrypoint.s…"   identity-db           2 days ago     Up 2 hours (healthy)         5432/tcp
-toeic-microservices-mvp-identity-service-1      sha256:bd4b69dd53367c1631457eb340082f5559b0847cac165c18c1215cf892db922d   "java -jar /app/app.…"   identity-service      27 hours ago   Up 2 hours                   
+toeic-microservices-mvp-identity-service-1      sha256:bd4b69dd53367c1631457eb340082f5559b0847cac165c18c1215cf892db922d   "java -jar /app/app.…"   identity-service      27 hours ago   Up 2 hours
 toeic-microservices-mvp-interaction-db-1        postgres:17-alpine                                                        "docker-entrypoint.s…"   interaction-db        2 days ago     Up 2 hours (healthy)         5432/tcp
-toeic-microservices-mvp-interaction-service-1   sha256:58b287db4d8b58a977a60997615fd3819012067debc7de764363e57fd169d11c   "java -jar /app/app.…"   interaction-service   7 hours ago    Up About an hour             
+toeic-microservices-mvp-interaction-service-1   sha256:58b287db4d8b58a977a60997615fd3819012067debc7de764363e57fd169d11c   "java -jar /app/app.…"   interaction-service   7 hours ago    Up About an hour
 toeic-microservices-mvp-membership-db-1         postgres:17-alpine                                                        "docker-entrypoint.s…"   membership-db         2 days ago     Up 2 hours (healthy)         5432/tcp
-toeic-microservices-mvp-membership-service-1    sha256:cf52bcca19155a1aadeb94c4b1ac391be1746c5c4e4d18e6cff34f4a187eb3d8   "java -jar /app/app.…"   membership-service    31 hours ago   Up 2 hours                   
+toeic-microservices-mvp-membership-service-1    sha256:cf52bcca19155a1aadeb94c4b1ac391be1746c5c4e4d18e6cff34f4a187eb3d8   "java -jar /app/app.…"   membership-service    31 hours ago   Up 2 hours
 toeic-microservices-mvp-rabbitmq-1              rabbitmq:3.13-management-alpine                                           "docker-entrypoint.s…"   rabbitmq              2 days ago     Up About an hour (healthy)   127.0.0.1:15672->15672/tcp
 EXIT_CODE=0
 --- Running container count ---
