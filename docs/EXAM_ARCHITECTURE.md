@@ -1,5 +1,7 @@
 # TOEIC Learning Platform — Microservices MVP Architecture (ADD + arc42 + C4)
 
+> **Current verification (24/11/2026).** [Code baseline `2e2681e`](https://github.com/chienvoxn/toeic-learning-platform-microservices/commit/2e2681eab644f805f6765bb2969126a641088020) and [CI run #7](https://github.com/chienvoxn/toeic-learning-platform-microservices/actions/runs/45244105920) (6/6 PASS). F-02 PostgreSQL, RabbitMQ and combined fixture groups passed locally on checkout `ff9955b`; their full Maven console logs are not yet archived in Git. [QA-03 A/B evidence on `ff9955b`](evidence/qa03-fault-injection-20261124-011437.txt) is archived in the baseline.
+
 **Status:** Five-service demo implemented. See [validation status](VALIDATION_STATUS.md) for prior checks and pending experiments. **Scope:** a bounded exam demonstration, not full original TOEIC feature parity.
 
 ## 1. arc42 — Introduction and goals
@@ -217,7 +219,7 @@ sequenceDiagram
  alt A - Interaction stopped, RabbitMQ available
    P->>Q: Send AttemptGraded to toeic.events with attempt.graded
    Note over Q: Durable interaction.attempt-graded queue holds the message
-   P->>DB: Mark published=true after the send call returns
+   P->>DB: After positive correlated ACK without return, mark published=true
    O->>X: Restart Interaction
  else B - RabbitMQ stopped, Interaction running
    P-xQ: Send attempt fails while the broker is stopped
@@ -225,7 +227,7 @@ sequenceDiagram
    O->>Q: Restart RabbitMQ
    P->>DB: A later poll reads the same pending eventId
    P->>Q: Send the same AttemptGraded event
-   P->>DB: Mark published=true after the send call returns
+   P->>DB: After positive correlated ACK without return, mark published=true
  end
  Q->>X: Deliver through interaction.attempt-graded
  X->>XD: Check eventId and insert ATTEMPT_GRADED if absent
@@ -236,7 +238,7 @@ sequenceDiagram
  G-->>L: Activity visible
 ```
 
-The publisher polls with a 3 s fixed delay and leaves a row pending when sending throws. It sets `published` after `convertAndSend` returns. Publisher confirms are absent, so recovery evidence requires the matching event ID in SQL and the API. The stored run observed the match after about **12.70 s** for A and **16.17 s** for B, measured from the point Compose reported the restarted dependency running or healthy. The submit calls returned HTTP 200 in 94.0 ms and 93.0 ms respectively. [Fault injection log](evidence/qa03-fault-injection-20261122-134619.txt) · [OutboxPublisher](../assessment-service/src/main/java/com/toeic/assessment/adapters/messaging/OutboxPublisher.java) · [ActivityConsumer](../interaction-service/src/main/java/com/toeic/interaction/adapters/messaging/ActivityConsumer.java)
+The publisher polls with a 3 s fixed delay. It uses mandatory routing and correlated publisher confirms: only a positive broker ACK without a returned message allows `published=true`. A NACK, `NO_ROUTE`, timeout or connection failure leaves the row pending; a failed database mark-published commit *after* a broker ACK can cause redelivery, which Interaction deduplicates by event ID. The latest QA-03 A/B run on checkout `ff9955b` observed HTTP 200 grading during both outages and matching activities after recovery: **29.36 s** (A) and **32.14 s** (B), measured *from submit to activity*. The older run reported **12.70 s** and **16.17 s** *from Compose restoration to observation*; these are different timing origins. [Latest QA-03 log](evidence/qa03-fault-injection-20261124-011437.txt) · [Archived QA-03 log](evidence/qa03-fault-injection-20261122-134619.txt) · [OutboxPublisher](../assessment-service/src/main/java/com/toeic/assessment/adapters/messaging/OutboxPublisher.java) · [ActivityConsumer](../interaction-service/src/main/java/com/toeic/interaction/adapters/messaging/ActivityConsumer.java)
 
 ## 7. arc42 — Deployment view (Docker Compose)
 
@@ -282,9 +284,9 @@ Use the [six-field QA-01 to QA-04 definitions](#quality-attribute-scenarios) and
 2. **Symmetric signing key shared with all services**: change to RS256/EdDSA JWKS and key rotation.
 3. **No instant token revocation**: short-lived 30min token; implement central revocation/version check if required.
 4. **Demo-only membership plan upgrade**: users can self-activate PRO when flag is true; never accept as paid entitlement.
-5. **Outbox publisher confirmations not implemented**: broker accepted/ack not tracked; use confirms and retry-safe transitions.
+5. **Outbox is at-least-once, not exactly-once**: correlated broker confirms and mandatory returns are implemented, but broker ACK and SQL `published` commit are not atomic. Retry may produce duplicates; Interaction deduplicates by event ID. Multi-publisher coordination and DLQ remain out of scope.
 6. **Assessment dependency boundaries**. The application and domain share the core package, and the application depends on concrete HTTP, JWT and JDBC adapters. [Assessment DDD review](ASSESSMENT_DDD.md#8-giới-hạn-và-cải-tiến-sau-mvp)
-7. **Runtime evidence scope**. QA-01 was recorded at `aa43453`. The archived QA-02, QA-03 and QA-04 runs predate the package refactor. The linked logs support their own run conditions. A clean full-stack rebuild at the submission revision remains unverified. [Validation status](VALIDATION_STATUS.md)
+7. **Runtime evidence scope**. QA-01 and the archived QA-02/QA-04 runs have their own recorded environments and revision metadata. New QA-03 A/B and F-02 groups were run at checkout `ff9955b`; QA-03 evidence is committed in baseline `2e2681e`, but complete F-02 console logs have not yet been archived. CI at `2e2681e` passed 6/6 jobs and does not itself run external integration/fault-injection fixtures. [Validation status](VALIDATION_STATUS.md)
 
 ## 12. arc42 — Glossary
 

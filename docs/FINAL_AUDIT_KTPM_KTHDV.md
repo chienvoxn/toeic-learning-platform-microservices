@@ -2,6 +2,21 @@
 
 **Cập nhật audit** 22/11/2026 · **Nhánh** `refactor/remaining-layered-services` · **Revision mã trên GitHub và CI** `730dd5c` · **Build/runtime cục bộ đã lưu** `41b192d` · **Baseline audit ban đầu** `2fd4ed8`
 
+## Audit supplement — current baseline, 24/11/2026
+
+**Current verified code:** [`2e2681eab644f805f6765bb2969126a641088020`](https://github.com/chienvoxn/toeic-learning-platform-microservices/commit/2e2681eab644f805f6765bb2969126a641088020), `refactor/remaining-layered-services`. [CI run #7](https://github.com/chienvoxn/toeic-learning-platform-microservices/actions/runs/45244105920) completed **6/6 PASS**. The old revision references in the historical matrix are retained as per-run provenance; do not treat them as current baseline.
+
+| Requirement / evidence | Current status | Scope and remaining action |
+|---|---|---|
+| K07, E04: GitHub baseline and CI | **PASS for code CI** | Run #7 at `2e2681e`, 6/6 jobs. F-02 and QA-03 are separate local live tests. |
+| K12, E08: QA-03 availability | **PASS** | [24/11 A/B evidence](evidence/qa03-fault-injection-20261124-011437.txt), test checkout `ff9955b`: 200 and persisted grade in both outages, restored activity in SQL and API, 12/12 services running, exit 0. A 29.36 s, B 32.14 s submit-to-activity. |
+| F-02 PostgreSQL/RabbitMQ/combined | **PASS locally, raw archive pending** | PostgreSQL 1/1, RabbitMQ 4/4 plus ACK-only 1/1, combined 2/2 all passed on `ff9955b`; complete Maven console logs not yet committed. |
+| ADR-003: outbox publisher confirmation | **Implemented** | Correlated ACKs and mandatory returns, NACK/timeout handling, separate publisher connection and reset; broker ACK cannot atomically commit SQL mark-published. |
+| K08: official `entrypoints/core/data` boilerplate | **PARTIAL / P0** | Layered packages exist in five services, but exact match with instructor boilerplate has not been confirmed. |
+| K14, E10: final report and demo images | **PARTIAL / P1** | Mermaid diagrams, ERDs, RBAC and k6 chart available; report assembly, demo rehearsal and live screenshots remain. |
+
+---
+
 ## 1. Executive Summary
 
 - **KTHDV Hướng 3.** Audit ban đầu xác nhận năm database riêng bằng truy vấn chỉ đọc. ERD theo năm database và sơ đồ RBAC đã được đối chiếu với Flyway và mã Identity. Phạm vi ACL của rubric và hồ sơ demo vẫn cần bổ sung theo ma trận.

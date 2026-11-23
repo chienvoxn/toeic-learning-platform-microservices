@@ -1,8 +1,26 @@
 # Validation status — TOEIC Microservices MVP
 
-The verified GitHub code baseline is `730dd5cca4a9f8690720b4379bda8458e64707e0` on `refactor/remaining-layered-services`. The submission documentation and Compose filename change are local working-tree updates. Older runs retain the checkout recorded in their own evidence.
+The current verified code baseline is [`2e2681eab644f805f6765bb2969126a641088020`](https://github.com/chienvoxn/toeic-learning-platform-microservices/commit/2e2681eab644f805f6765bb2969126a641088020) on `refactor/remaining-layered-services`. Historical sections below retain their own older revision and run conditions.
 
-## Phase 1–3B source checkpoint
+## Current baseline and live verification (24/11/2026)
+
+[CI run #7](https://github.com/chienvoxn/toeic-learning-platform-microservices/actions/runs/45244105920) on `2e2681e` finished successfully with **6/6 jobs**. These CI jobs validate build, tests, JavaScript and Compose configuration; they **do not** run F-02 or QA-03.
+
+| Scope | Latest result | Source and limitation |
+|---|---|---|
+| F-02 PostgreSQL real transaction race | **PASS 1/1** | Local Maven/PostgreSQL 17 fixture on checkout `ff9955b`; one transaction inserts, competing transaction no-ops. Raw Maven log not yet archived. |
+| F-02 RabbitMQ mandatory ACK/return/NACK/retry | **PASS 4/4** (ACK-only additionally **1/1**) | Local Maven/RabbitMQ 3.13 fixture on `ff9955b`; confirms, routing returns, NACK and withheld confirm/connection reset. Full log not yet archived. |
+| F-02 combined outbox retry → idempotent activity | **PASS 2/2** | Two Maven JVM runs on `ff9955b`; broker ACK then simulated SQL mark-published commit failure, duplicate delivery and exactly one projected activity by event ID. Raw log not yet archived. |
+| QA-03 A: Interaction outage | **PASS** | [24/11 evidence](evidence/qa03-fault-injection-20261124-011437.txt), HEAD recorded as `ff9955b`; grading HTTP 200, grade persisted, activity recovered via SQL and API; 29.36 s submit-to-activity. |
+| QA-03 B: RabbitMQ outage | **PASS** | Same log; grading HTTP 200 while broker down, outbox pending, activity recovered; 32.14 s submit-to-activity. Retry warning count was 0 in sampled log; not evidence of retry count. |
+| QA-03 restoration | **PASS** | 12/12 services restored; distinct A/B event IDs, exit code 0. |
+| Final code baseline CI | **PASS 6/6** | [GitHub Actions run #7](https://github.com/chienvoxn/toeic-learning-platform-microservices/actions/runs/45244105920). |
+
+**Interpretation:** The `NOT VERIFIED` and `PARTIAL` statements in historical checkpoints below describe those earlier revisions only. External integration fixtures and fault injection remain distinct from CI. Boilerplate verification, final report assembly and live demo screenshots remain outstanding.
+
+---
+
+## Historical Phase 1–3B source checkpoint
 
 **PARTIAL / NOT READY for demo deployment.** This checkpoint covers the local Phase 1–3B changes above `e9022b1`, including Assessment question order preservation.
 
@@ -10,7 +28,7 @@ The verified GitHub code baseline is `730dd5cca4a9f8690720b4379bda8458e64707e0` 
 - Content V3 passed 3/3 in the earlier isolated PostgreSQL 18 run. The subsequently added transaction rollback and publish response-loss tests are pending execution.
 - Content V3 and Assessment V4 are pending migration on the demo. The PostgreSQL 17 migration and rollback drill, the live Content → Assessment flow and F-02 integration remain **NOT VERIFIED** for this checkpoint.
 
-## Verification at 730dd5c and submission checks
+## Historical verification at 730dd5c and submission checks
 
 | Scope | Result and evidence |
 |---|---|

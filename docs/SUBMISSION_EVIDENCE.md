@@ -1,5 +1,16 @@
 # Bộ bằng chứng nộp KTPM / KTHDV
 
+## Newest verified baseline and local integration evidence — 24/11/2026
+
+- **Code baseline:** [`2e2681eab644f805f6765bb2969126a641088020`](https://github.com/chienvoxn/toeic-learning-platform-microservices/commit/2e2681eab644f805f6765bb2969126a641088020), branch `refactor/remaining-layered-services`.
+- **GitHub CI:** [Microservices MVP CI run #7](https://github.com/chienvoxn/toeic-learning-platform-microservices/actions/runs/45244105920), **6/6 PASS**, triggered by push. CI does **not** itself execute external F-02 or QA-03 tests.
+- **F-02 local integration (checkout `ff9955b`):** PostgreSQL **1/1 PASS**, RabbitMQ **4/4 PASS** (additional routed-ACK **1/1 PASS**), combined Assessment and Interaction handoff **2/2 PASS**. Terminal logs were reviewed; complete raw Maven logs **not yet archived** in Git, so do not present these as CI jobs.
+- **QA-03 A/B (checkout `ff9955b`):** [24/11 fault injection log](evidence/qa03-fault-injection-20261124-011437.txt) includes Git HEAD, HTTP 200 during both outages, stored grades, matching event IDs across Outbox / Interaction SQL / authenticated API, **A=PASS, B=PASS**, all 12 services restored and exit code 0. Submit-to-activity measurements: **A 29.36 s, B 32.14 s**. These do not have the same starting point as older post-restoration measurements. The outage B warning count was 0; no claim about the number of actual retries.
+- **Delivery guarantee:** Publisher uses correlated confirms and mandatory returns. Broker ACK plus SQL `published=true` update are non-atomic; duplicate messages can occur, and Interaction deduplicates on event ID. Describe this as *at-least-once with idempotent processing*, not exactly-once delivery. [ADR-003](ADR_MVP.md#adr-003--rabbitmq--transactional-outbox).
+
+### Historical evidence retained with original timestamps and SHA
+
+
 Revision mã đã xác minh trên GitHub là `730dd5cca4a9f8690720b4379bda8458e64707e0`, nhánh `refactor/remaining-layered-services`. CI 45022782408 hoàn tất thành công 6/6 job ngày 22/11/2026 lúc 19:32:34 ICT (12:32:34 UTC theo GitHub). Các số đo QA bên dưới thuộc các lần chạy lịch sử. SHA là checkout được ghi trong log, trừ QA-02 thiếu metadata này. [Revision](https://github.com/chienvoxn/toeic-learning-platform-microservices/commit/730dd5cca4a9f8690720b4379bda8458e64707e0) · [CI](https://github.com/chienvoxn/toeic-learning-platform-microservices/actions/runs/45022782408) · [Phạm vi validation](VALIDATION_STATUS.md).
 
 ## QA-01–04
