@@ -161,11 +161,13 @@ export function TeacherQuizzesPage() {
                             </Button>
                           </Link>
                         ) : (
-                          <Link to={`/quizzes/${quiz.id}`}>
-                            <Button variant="ghost" size="sm" className="h-7 text-xs text-slate-600">
-                              <ExternalLink className="h-3 w-3 mr-1" /> Xem
-                            </Button>
-                          </Link>
+                          <div className="inline-flex items-center gap-1.5">
+                            <Link to={`/quizzes/${quiz.id}`}>
+                              <Button variant="outline" size="sm" className="h-7 text-xs text-blue-700 border-blue-200 hover:bg-blue-50">
+                                <ExternalLink className="h-3 w-3 mr-1" /> Luyện thi thực tế
+                              </Button>
+                            </Link>
+                          </div>
                         )}
                       </td>
                     </tr>

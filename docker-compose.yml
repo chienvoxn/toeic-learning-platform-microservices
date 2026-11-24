@@ -103,6 +103,8 @@ services:
     build: ./content-service
     environment:
       { <<: *app, DB_URL: "jdbc:postgresql://content-db:5432/content_db" }
+    volumes:
+      - content_media:/var/toeic/media
     depends_on: { content-db: { condition: service_healthy } }
   membership-service:
     build: ./membership-service
@@ -140,6 +142,7 @@ services:
 volumes:
   identity_data:
   content_data:
+  content_media:
   assessment_data:
   membership_data:
   interaction_data:

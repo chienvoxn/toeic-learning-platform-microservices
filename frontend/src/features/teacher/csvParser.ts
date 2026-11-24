@@ -71,24 +71,40 @@ export function parseQuestionCsv(csvContent: string): CsvParseResult {
     const rowNum = i + 1;
     const cols = parseLine(validLines[i]);
 
-    if (cols.length < 7) {
-      errors.push(`Dòng ${rowNum}: Cần tối thiểu 7 cột (prompt, a, b, c, d, answer, explanation). Hiện có ${cols.length} cột.`);
+    if (cols.length < 6) {
+      errors.push(`Dòng ${rowNum}: Cần tối thiểu 6 cột (prompt, a, b, c, [d], answer, explanation). Hiện có ${cols.length} cột.`);
       continue;
     }
 
-    const [prompt, a, b, c, d, rawAnswer, explanation] = cols;
+    let prompt = '';
+    let a = '';
+    let b = '';
+    let c = '';
+    let d: string | null = null;
+    let rawAnswer = '';
+    let explanation = '';
+
+    if (cols.length === 6) {
+      // 3 choices (Part 2): prompt, a, b, c, answer, explanation
+      [prompt, a, b, c, rawAnswer, explanation] = cols;
+    } else {
+      [prompt, a, b, c, d, rawAnswer, explanation] = cols;
+      if (d && !d.trim()) d = null;
+    }
+
     const answer = rawAnswer ? rawAnswer.trim().toUpperCase() : '';
 
     if (!prompt) {
       errors.push(`Dòng ${rowNum}: Nội dung câu hỏi (prompt) không được để trống.`);
       continue;
     }
-    if (!a || !b || !c || !d) {
-      errors.push(`Dòng ${rowNum}: Các lựa chọn A, B, C, D không được để trống.`);
+    if (!a || !b || !c) {
+      errors.push(`Dòng ${rowNum}: Các lựa chọn A, B, C không được để trống.`);
       continue;
     }
-    if (answer && !['A', 'B', 'C', 'D'].includes(answer)) {
-      errors.push(`Dòng ${rowNum}: Đáp án đúng phải là một trong [A, B, C, D] hoặc để trống (nếu là nháp). Nhận được: '${answer}'`);
+    const validLetters = d ? ['A', 'B', 'C', 'D'] : ['A', 'B', 'C'];
+    if (answer && !validLetters.includes(answer)) {
+      errors.push(`Dòng ${rowNum}: Đáp án đúng phải là một trong [${validLetters.join(', ')}] hoặc để trống (nếu là nháp). Nhận được: '${answer}'`);
       continue;
     }
 
@@ -97,7 +113,7 @@ export function parseQuestionCsv(csvContent: string): CsvParseResult {
       a,
       b,
       c,
-      d,
+      d: d || '',
       answer,
       explanation: explanation || '',
     });

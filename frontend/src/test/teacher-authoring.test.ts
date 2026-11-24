@@ -39,13 +39,26 @@ describe('CSV Question Parsing and Validation Unit Tests', () => {
     expect(result.errors[0]).toContain("Đáp án đúng phải là một trong [A, B, C, D]");
   });
 
-  it('rejects rows with fewer than 7 required columns', () => {
+  it('rejects rows with fewer than 6 required columns', () => {
     const csvData = `prompt,a,b,c,d,answer,explanation
 "Incomplete row with only 3 columns","choice a","choice b"`;
 
     const result = parseQuestionCsv(csvData);
     expect(result.success).toBe(false);
-    expect(result.errors[0]).toContain("Cần tối thiểu 7 cột");
+    expect(result.errors[0]).toContain("Cần tối thiểu 6 cột");
+  });
+
+  it('parses 6-column Part 2 CSV row with 3 choices (A, B, C) properly', () => {
+    const csvData = `prompt,a,b,c,answer,explanation
+"Where is the meeting?","In Room 302","At 3 PM","Yes, I did","A","Room 302 is the location"`;
+    const result = parseQuestionCsv(csvData);
+    expect(result.success).toBe(true);
+    expect(result.questions).toHaveLength(1);
+    expect(result.questions[0].a).toBe('In Room 302');
+    expect(result.questions[0].b).toBe('At 3 PM');
+    expect(result.questions[0].c).toBe('Yes, I did');
+    expect(result.questions[0].d).toBe('');
+    expect(result.questions[0].answer).toBe('A');
   });
 
   it('handles empty or blank CSV inputs', () => {
@@ -64,7 +77,7 @@ describe('Quiz Draft Authoring and Publishing Business Invariants', () => {
           q.a.trim() !== '' &&
           q.b.trim() !== '' &&
           q.c.trim() !== '' &&
-          q.d.trim() !== '' &&
+          Boolean(q.d?.trim()) &&
           ['A', 'B', 'C', 'D'].includes(q.answer) &&
           q.explanation.trim() !== ''
       );

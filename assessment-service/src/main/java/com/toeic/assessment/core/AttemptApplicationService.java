@@ -40,20 +40,26 @@ public class AttemptApplicationService {
 
     private List<AttemptView.Question> projection(UUID attemptId, boolean graded) {
         return questions.findByAttemptId(attemptId).stream()
-                .map(q -> new AttemptView.Question(
-                        q.questionId,
-                        q.position,
-                        q.prompt,
-                        Map.of(
-                                "A", q.optionA,
-                                "B", q.optionB,
-                                "C", q.optionC,
-                                "D", q.optionD
-                        ),
-                        q.selectedChoice,
-                        graded ? q.correctChoice.equals(q.selectedChoice) : null,
-                        graded ? q.explanation : null
-                ))
+                .map(q -> {
+                    Map<String, String> choices = new java.util.LinkedHashMap<>();
+                    if (q.optionA != null) choices.put("A", q.optionA);
+                    if (q.optionB != null) choices.put("B", q.optionB);
+                    if (q.optionC != null) choices.put("C", q.optionC);
+                    if (q.optionD != null && !q.optionD.isBlank()) choices.put("D", q.optionD);
+                    return new AttemptView.Question(
+                            q.questionId,
+                            q.position,
+                            q.prompt,
+                            choices,
+                            q.selectedChoice,
+                            graded ? q.correctChoice.equals(q.selectedChoice) : null,
+                            graded ? q.explanation : null,
+                            q.passageText,
+                            q.audioUrl,
+                            q.imageUrl,
+                            q.groupId
+                    );
+                })
                 .toList();
     }
 
@@ -114,7 +120,11 @@ public class AttemptApplicationService {
                     question.options().get("C"),
                     question.options().get("D"),
                     question.correctChoice(),
-                    question.explanation()
+                    question.explanation(),
+                    question.passageText(),
+                    question.audioUrl(),
+                    question.imageUrl(),
+                    question.groupId()
             ));
         }
 

@@ -13,6 +13,7 @@ import org.springframework.data.repository.query.Param;
 
 public interface QuizRepo extends JpaRepository<Quiz, UUID> {
     List<Quiz> findByPublishedTrueOrderByPartAsc();
+    List<Quiz> findByPublishedTrueOrderByTitleAsc();
     List<Quiz> findByOwnerUserIdOrderByTitleAscQuizIdAsc(UUID owner);
     Optional<Quiz> findByQuizIdAndOwnerUserId(UUID id, UUID owner);
 

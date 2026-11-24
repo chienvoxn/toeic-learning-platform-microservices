@@ -11,7 +11,6 @@ import { RoleGuard } from '@/components/navigation/RoleGuard';
 import { PageLoading } from '@/components/feedback/PageLoading';
 
 // Route-level Lazy Loading for bundle optimization & code splitting
-const DesignSystemPreview = lazy(() => import('@/pages/DesignSystemPreview').then(m => ({ default: m.DesignSystemPreview })));
 const LandingPage = lazy(() => import('@/pages/public/LandingPage').then(m => ({ default: m.LandingPage })));
 const CatalogPage = lazy(() => import('@/pages/public/CatalogPage').then(m => ({ default: m.CatalogPage })));
 const QuizDetailPage = lazy(() => import('@/pages/public/QuizDetailPage').then(m => ({ default: m.QuizDetailPage })));
@@ -49,7 +48,7 @@ export const router = createBrowserRouter([
     ),
     children: [
       { index: true, element: <LandingPage /> },
-      { path: 'preview', element: <DesignSystemPreview /> },
+      { path: 'preview', element: <Navigate to="/" replace /> },
       { path: 'quizzes', element: <CatalogPage /> },
       { path: 'quizzes/:id', element: <QuizDetailPage /> },
       { path: 'pricing', element: <PricingPage /> },
@@ -98,12 +97,12 @@ export const router = createBrowserRouter([
     ],
   },
 
-  // Teacher routes (requires content:write permission)
+  // Teacher routes (requires content:write or TEACHER role)
   {
     path: '/teacher',
     element: (
       <ProtectedRoute>
-        <RoleGuard requiredPermission="content:write">
+        <RoleGuard requiredRole="TEACHER">
           <Suspense fallback={<PageLoading />}>
             <TeacherLayout />
           </Suspense>
@@ -119,12 +118,12 @@ export const router = createBrowserRouter([
     ],
   },
 
-  // Admin routes (requires rbac:manage permission)
+  // Admin routes (requires rbac:manage or ADMIN role)
   {
     path: '/admin',
     element: (
       <ProtectedRoute>
-        <RoleGuard requiredPermission="rbac:manage">
+        <RoleGuard requiredRole="ADMIN">
           <Suspense fallback={<PageLoading />}>
             <AdminLayout />
           </Suspense>
@@ -139,13 +138,9 @@ export const router = createBrowserRouter([
     ],
   },
 
-  // Catch-all
+  // Global fallback
   {
     path: '*',
-    element: (
-      <Suspense fallback={<PageLoading />}>
-        <NotFoundPage />
-      </Suspense>
-    ),
+    element: <Navigate to="/404" replace />,
   },
 ]);

@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Alert } from '@/components/feedback/Alert';
 import { SkeletonLoader } from '@/components/feedback/SkeletonLoader';
 import { CsvImportModal } from '@/features/teacher/CsvImportModal';
+import { LearnerPreviewModal } from '@/features/teacher/LearnerPreviewModal';
 import {
   Save,
   Send,
@@ -20,7 +21,8 @@ import {
   AlertTriangle,
   CheckCircle2,
   ChevronUp,
-  ChevronDown
+  ChevronDown,
+  Eye
 } from 'lucide-react';
 
 export function QuizEditPage() {
@@ -39,6 +41,7 @@ export function QuizEditPage() {
   // Status & Feedback state
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isCsvModalOpen, setIsCsvModalOpen] = useState(false);
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [conflictError, setConflictError] = useState<string | null>(null);
@@ -211,17 +214,24 @@ export function QuizEditPage() {
     if (!title.trim()) return 'Tiêu đề đề thi không được để trống.';
     if (questions.length === 0) return 'Đề thi phải có ít nhất 1 câu hỏi để xuất bản.';
 
+    const isPart2 = part === 2;
     for (let i = 0; i < questions.length; i++) {
       const q = questions[i];
       if (!q.prompt.trim()) return `Câu #${i + 1}: Nội dung câu hỏi còn trống.`;
-      if (!q.a.trim() || !q.b.trim() || !q.c.trim() || !q.d.trim())
-        return `Câu #${i + 1}: Các lựa chọn A, B, C, D không được để trống.`;
-      if (!q.answer || !['A', 'B', 'C', 'D'].includes(q.answer))
-        return `Câu #${i + 1}: Chưa chọn đáp án đúng (A, B, C, hoặc D).`;
+      if (!q.a.trim() || !q.b.trim() || !q.c.trim() || (!isPart2 && !q.d?.trim()))
+        return `Câu #${i + 1}: Các lựa chọn ${isPart2 ? 'A, B, C' : 'A, B, C, D'} không được để trống.`;
+      if (!q.answer || (isPart2 ? !['A', 'B', 'C'].includes(q.answer) : !['A', 'B', 'C', 'D'].includes(q.answer)))
+        return `Câu #${i + 1}: Chưa chọn đáp án đúng (${isPart2 ? 'A, B, hoặc C' : 'A, B, C, hoặc D'}).`;
       if (!q.explanation.trim()) return `Câu #${i + 1}: Lời giải thích không được để trống khi xuất bản.`;
+      if (part >= 1 && part <= 4 && !q.audioUrl?.trim()) {
+        return `Câu #${i + 1}: Phần thi Listening (Part ${part}) cần có đường dẫn Audio hợp lệ.`;
+      }
+      if (part === 1 && !q.imageUrl?.trim()) {
+        return `Câu #${i + 1}: Part 1 Photographs cần có hình ảnh minh họa.`;
+      }
     }
     return null;
-  }, [title, questions]);
+  }, [title, questions, part]);
 
   if (isLoading) {
     return (
@@ -283,6 +293,15 @@ export function QuizEditPage() {
 
         {/* Action Buttons */}
         <div className="flex items-center gap-2.5">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsPreviewModalOpen(true)}
+            className="text-xs text-indigo-700 border-indigo-200 hover:bg-indigo-50"
+          >
+            <Eye className="h-3.5 w-3.5 mr-1.5" /> Xem trước (Learner)
+          </Button>
+
           <Button
             variant="outline"
             size="sm"
@@ -424,7 +443,7 @@ export function QuizEditPage() {
                 {questions.map((q, idx) => {
                   const isActive = idx === activeQuestionIdx;
                   const isComplete =
-                    q.prompt.trim() && q.a.trim() && q.b.trim() && q.c.trim() && q.d.trim() && q.answer;
+                    q.prompt.trim() && q.a.trim() && q.b.trim() && q.c.trim() && (part === 2 || Boolean(q.d?.trim())) && q.answer;
 
                   return (
                     <div
@@ -513,6 +532,128 @@ export function QuizEditPage() {
                 </div>
               </div>
 
+              {/* TOEIC Media & Passage Fields */}
+              <div className="space-y-4 p-4 rounded-xl bg-slate-50 border border-slate-200">
+                <span className="text-xs font-bold text-slate-800 uppercase tracking-wider block">
+                  Đa phương tiện & Đoạn văn (Part {part})
+                </span>
+
+                {/* Audio for Listening Parts (1-4) */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-700 flex items-center justify-between">
+                    <span>Đường dẫn Audio (Listening Parts 1-4)</span>
+                    <span className="text-[11px] text-slate-400 font-normal">Tự tải lên hoặc dán URL</span>
+                  </label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={activeQuestion.audioUrl || ''}
+                      onChange={(e) => handleUpdateActiveQuestion('audioUrl', e.target.value)}
+                      placeholder="/ms/v1/contents/media/... hoặc URL âm thanh"
+                      className="text-xs font-mono"
+                    />
+                    <label className="shrink-0 cursor-pointer">
+                      <input
+                        type="file"
+                        accept="audio/*"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          const formData = new FormData();
+                          formData.append('file', file);
+                          try {
+                            const res = await fetch('/ms/v1/contents/media/upload', {
+                              method: 'POST',
+                              body: formData,
+                              headers: {
+                                Authorization: `Bearer ${localStorage.getItem('toeic_auth_token') || ''}`,
+                              },
+                            });
+                            if (!res.ok) throw new Error('Upload thất bại (' + res.status + ')');
+                            const data = await res.json();
+                            handleUpdateActiveQuestion('audioUrl', data.url);
+                          } catch (err: unknown) {
+                            alert('Lỗi upload audio: ' + (err instanceof Error ? err.message : String(err)));
+                          }
+                        }}
+                      />
+                      <Button variant="outline" size="sm" type="button" className="text-xs pointer-events-none">
+                        Tải file Audio
+                      </Button>
+                    </label>
+                  </div>
+                  {activeQuestion.audioUrl && (
+                    <audio controls src={activeQuestion.audioUrl} className="w-full h-8 mt-1" />
+                  )}
+                </div>
+
+                {/* Image for Part 1 (Photographs) */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-700 flex items-center justify-between">
+                    <span>Hình ảnh mô tả (Part 1 Photographs)</span>
+                    <span className="text-[11px] text-slate-400 font-normal">PNG, JPEG, WebP</span>
+                  </label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={activeQuestion.imageUrl || ''}
+                      onChange={(e) => handleUpdateActiveQuestion('imageUrl', e.target.value)}
+                      placeholder="/ms/v1/contents/media/... hoặc URL hình ảnh"
+                      className="text-xs font-mono"
+                    />
+                    <label className="shrink-0 cursor-pointer">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          const formData = new FormData();
+                          formData.append('file', file);
+                          try {
+                            const res = await fetch('/ms/v1/contents/media/upload', {
+                              method: 'POST',
+                              body: formData,
+                              headers: {
+                                Authorization: `Bearer ${localStorage.getItem('toeic_auth_token') || ''}`,
+                              },
+                            });
+                            if (!res.ok) throw new Error('Upload thất bại (' + res.status + ')');
+                            const data = await res.json();
+                            handleUpdateActiveQuestion('imageUrl', data.url);
+                          } catch (err: unknown) {
+                            alert('Lỗi upload ảnh: ' + (err instanceof Error ? err.message : String(err)));
+                          }
+                        }}
+                      />
+                      <Button variant="outline" size="sm" type="button" className="text-xs pointer-events-none">
+                        Tải ảnh
+                      </Button>
+                    </label>
+                  </div>
+                  {activeQuestion.imageUrl && (
+                    <div className="mt-2 max-h-40 rounded-lg overflow-hidden border border-slate-200 p-1 flex justify-center bg-white">
+                      <img src={activeQuestion.imageUrl} alt="Xem trước" className="max-h-36 object-contain" />
+                    </div>
+                  )}
+                </div>
+
+                {/* Passage Text for Part 6 & 7 (or conversation/talk text) */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-700 flex items-center justify-between">
+                    <span>Đoạn văn đọc hiểu (Reading Passage - Part 6 & 7)</span>
+                    <span className="text-[11px] text-slate-400 font-normal">Tùy chọn</span>
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={activeQuestion.passageText || ''}
+                    onChange={(e) => handleUpdateActiveQuestion('passageText', e.target.value)}
+                    placeholder="Dán nội dung đoạn văn, email, bài báo đọc hiểu vào đây..."
+                    className="w-full rounded-md border border-slate-200 bg-white p-2.5 text-xs text-slate-800 font-serif"
+                  />
+                </div>
+              </div>
+
               {/* Prompt Input */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-800">
@@ -527,12 +668,12 @@ export function QuizEditPage() {
                 />
               </div>
 
-              {/* 4 Choices */}
+              {/* Choices (3 for Part 2, 4 for other parts) */}
               <div className="space-y-3">
                 <label className="text-xs font-bold text-slate-800">
-                  4 Phương án lựa chọn & Chọn đáp án đúng <span className="text-rose-500">*</span>
+                  {part === 2 ? '3 Phương án lựa chọn (Part 2: A - C)' : '4 Phương án lựa chọn (A - D)'} & Chọn đáp án đúng <span className="text-rose-500">*</span>
                 </label>
-                {(['a', 'b', 'c', 'd'] as const).map((optKey) => {
+                {(part === 2 ? (['a', 'b', 'c'] as const) : (['a', 'b', 'c', 'd'] as const)).map((optKey) => {
                   const letter = optKey.toUpperCase() as 'A' | 'B' | 'C' | 'D';
                   const isCorrect = activeQuestion.answer === letter;
 
@@ -551,7 +692,7 @@ export function QuizEditPage() {
                         {letter}
                       </button>
                       <Input
-                        value={activeQuestion[optKey]}
+                        value={activeQuestion[optKey] || ''}
                         onChange={(e) => handleUpdateActiveQuestion(optKey, e.target.value)}
                         placeholder={`Lựa chọn ${letter}...`}
                         className={`text-sm ${isCorrect ? 'border-blue-300 bg-blue-50/20' : ''}`}
@@ -586,6 +727,16 @@ export function QuizEditPage() {
           )}
         </div>
       </div>
+
+      {/* Learner Preview Modal (Zero Quota) */}
+      <LearnerPreviewModal
+        isOpen={isPreviewModalOpen}
+        onClose={() => setIsPreviewModalOpen(false)}
+        title={title}
+        part={part}
+        premium={premium}
+        questions={questions}
+      />
 
       {/* CSV Import Modal */}
       <CsvImportModal

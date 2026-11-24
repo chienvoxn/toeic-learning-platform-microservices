@@ -2,10 +2,14 @@ export interface AttemptQuestion {
   id: string;
   position: number;
   prompt: string;
-  choices: Record<'A' | 'B' | 'C' | 'D', string>;
+  choices: Record<string, string>;
   selectedChoice: string | null;
   correct: boolean | null;       // Null when IN_PROGRESS, boolean when GRADED
   explanation: string | null;   // Null when IN_PROGRESS, string when GRADED
+  passageText?: string | null;
+  audioUrl?: string | null;
+  imageUrl?: string | null;
+  groupId?: string | null;
 }
 
 export interface AttemptView {

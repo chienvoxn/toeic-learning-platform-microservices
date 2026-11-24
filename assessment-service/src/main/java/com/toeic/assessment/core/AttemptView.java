@@ -15,13 +15,29 @@ public record AttemptView(
         OffsetDateTime createdAt,
         List<Question> questions
 ) {
-    record Question(
+    public record Question(
             UUID id,
             Integer position,
             String prompt,
             Map<String, String> choices,
             String selectedChoice,
             Boolean correct,
-            String explanation
-    ) {}
+            String explanation,
+            String passageText,
+            String audioUrl,
+            String imageUrl,
+            UUID groupId
+    ) {
+        public Question(
+                UUID id,
+                Integer position,
+                String prompt,
+                Map<String, String> choices,
+                String selectedChoice,
+                Boolean correct,
+                String explanation
+        ) {
+            this(id, position, prompt, choices, selectedChoice, correct, explanation, null, null, null, null);
+        }
+    }
 }

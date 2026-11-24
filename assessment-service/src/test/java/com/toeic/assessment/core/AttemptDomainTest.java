@@ -68,4 +68,20 @@ class AttemptDomainTest {
 
         assertThrows(IllegalArgumentException.class, () -> attempt.answer(question, "E"));
     }
+
+    @Test
+    void part2ThreeChoiceQuestionRejectsChoiceD() {
+        Attempt attempt = new Attempt(UUID.randomUUID(), UUID.randomUUID());
+        AttemptQuestion part2Question = new AttemptQuestion(
+                attempt.attemptId,
+                UUID.randomUUID(),
+                1,
+                "Part 2 question", "Choice A", "Choice B", "Choice C", null,
+                "B", "Explanation", null, "/media/p2.mp3", null, null
+        );
+
+        attempt.answer(part2Question, "C");
+        assertEquals("C", part2Question.selectedChoice);
+        assertThrows(IllegalArgumentException.class, () -> attempt.answer(part2Question, "D"));
+    }
 }

@@ -40,8 +40,20 @@ public class AttemptQuestion {
     @Column(name = "option_c", nullable = false)
     String optionC;
 
-    @Column(name = "option_d", nullable = false)
+    @Column(name = "option_d")
     String optionD;
+
+    @Column(name = "passage_text", columnDefinition = "text")
+    String passageText;
+
+    @Column(name = "audio_url", length = 512)
+    String audioUrl;
+
+    @Column(name = "image_url", length = 512)
+    String imageUrl;
+
+    @Column(name = "group_id")
+    UUID groupId;
 
     @Column(nullable = false, columnDefinition = "text")
     String explanation;
@@ -59,7 +71,11 @@ public class AttemptQuestion {
             String optionC,
             String optionD,
             String correctChoice,
-            String explanation
+            String explanation,
+            String passageText,
+            String audioUrl,
+            String imageUrl,
+            UUID groupId
     ) {
         this.attemptId = attemptId;
         this.questionId = questionId;
@@ -71,11 +87,31 @@ public class AttemptQuestion {
         this.optionD = optionD;
         this.correctChoice = correctChoice;
         this.explanation = explanation;
+        this.passageText = passageText;
+        this.audioUrl = audioUrl;
+        this.imageUrl = imageUrl;
+        this.groupId = groupId;
+    }
+
+    AttemptQuestion(
+            UUID attemptId,
+            UUID questionId,
+            Integer position,
+            String prompt,
+            String optionA,
+            String optionB,
+            String optionC,
+            String optionD,
+            String correctChoice,
+            String explanation
+    ) {
+        this(attemptId, questionId, position, prompt, optionA, optionB, optionC, optionD, correctChoice, explanation, null, null, null, null);
     }
 
     void selectChoice(String choice) {
-        if (!ALLOWED_CHOICES.contains(choice)) {
-            throw new IllegalArgumentException("Choice must be A, B, C, or D");
+        Set<String> valid = (optionD == null || optionD.isBlank()) ? Set.of("A", "B", "C") : ALLOWED_CHOICES;
+        if (!valid.contains(choice)) {
+            throw new IllegalArgumentException("Choice must be in " + valid);
         }
         selectedChoice = choice;
     }

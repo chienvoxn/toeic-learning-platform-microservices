@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/api-client';
 import { MembershipView } from '@/types/membership';
 import { useAuth } from '@/features/auth/AuthContext';
+import { WorkspaceSwitcher } from '@/components/navigation/WorkspaceSwitcher';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -17,12 +18,14 @@ import {
   Menu, 
   X,
   ExternalLink,
-  Sparkles
+  Sparkles,
+  BookOpenCheck,
+  ShieldAlert
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function LearnerLayout() {
-  const { user, logout } = useAuth();
+  const { user, logout, hasRole } = useAuth();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -34,9 +37,9 @@ export function LearnerLayout() {
   });
 
   const navItems = [
-    { label: 'Tổng quan', path: '/learner/dashboard', icon: LayoutDashboard },
-    { label: 'Kho đề thi', path: '/learner/quizzes', icon: BookOpen },
-    { label: 'Lịch sử thi', path: '/learner/history', icon: History },
+    { label: 'Tổng quan học tập', path: '/learner/dashboard', icon: LayoutDashboard },
+    { label: 'Kho đề thi TOEIC', path: '/learner/quizzes', icon: BookOpen },
+    { label: 'Lịch sử luyện đề', path: '/learner/history', icon: History },
     { label: 'Gói hội viên', path: '/learner/membership', icon: Award },
     { label: 'Tài khoản cá nhân', path: '/learner/profile', icon: User },
   ];
@@ -65,6 +68,41 @@ export function LearnerLayout() {
             </div>
           </Link>
         </div>
+
+        {/* Quick Multi-role Switch Banner if Teacher or Admin */}
+        {(hasRole('TEACHER') || hasRole('ADMIN')) && (
+          <div className="px-4 pt-3 pb-1">
+            <div className="p-2.5 rounded-xl bg-blue-50/60 border border-blue-100 space-y-1.5">
+              <span className="text-[10px] font-bold text-blue-900 uppercase tracking-wider block">
+                Chuyển nhanh không gian
+              </span>
+              <div className="flex flex-col gap-1">
+                {hasRole('TEACHER') && (
+                  <Link
+                    to="/teacher/dashboard"
+                    className="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-white hover:bg-blue-100/50 text-blue-700 text-xs font-semibold border border-blue-200/60 shadow-2xs transition-colors"
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <BookOpenCheck className="h-3.5 w-3.5 text-blue-600" /> Giảng viên
+                    </span>
+                    <span className="text-[10px] text-blue-500">Sang soạn đề →</span>
+                  </Link>
+                )}
+                {hasRole('ADMIN') && (
+                  <Link
+                    to="/admin/dashboard"
+                    className="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-white hover:bg-rose-50 text-rose-700 text-xs font-semibold border border-rose-200/60 shadow-2xs transition-colors"
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <ShieldAlert className="h-3.5 w-3.5 text-rose-600" /> Quản trị
+                    </span>
+                    <span className="text-[10px] text-rose-500">Quản trị viên →</span>
+                  </Link>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Navigation List */}
         <nav className="p-4 space-y-1.5 flex-1 overflow-y-auto">
@@ -121,18 +159,21 @@ export function LearnerLayout() {
           </div>
           <span className="font-bold text-base text-slate-900">TOEIC Master</span>
         </Link>
-        <button
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="p-2 rounded-lg text-slate-600 hover:bg-slate-100"
-          aria-label="Toggle Navigation Menu"
-        >
-          {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-        </button>
+        <div className="flex items-center gap-2">
+          <WorkspaceSwitcher currentWorkspace="learner" compact />
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="p-2 rounded-lg text-slate-600 hover:bg-slate-100"
+            aria-label="Toggle Navigation Menu"
+          >
+            {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile Navigation Drawer */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-b border-slate-200 bg-white px-4 py-4 space-y-2 z-40">
+        <div className="md:hidden border-b border-slate-200 bg-white px-4 py-4 space-y-2 z-40 animate-in fade-in">
           {navItems.map((item) => (
             <Link
               key={item.path}
@@ -168,6 +209,9 @@ export function LearnerLayout() {
           </div>
 
           <div className="flex items-center gap-3">
+            {/* Live Workspace Switcher */}
+            <WorkspaceSwitcher currentWorkspace="learner" />
+
             {membership?.planCode === 'PRO' ? (
               <Badge variant="pro" className="gap-1 text-xs">
                 <Sparkles className="h-3 w-3" /> Thành viên PRO

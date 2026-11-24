@@ -162,7 +162,7 @@ export function ExamResultDetailPage() {
                 <div className="space-y-4">
                   {/* Question Prompt */}
                   <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-start gap-3">
+                    <div className="flex items-start gap-3 flex-1">
                       <span className={`h-7 w-7 rounded-lg font-bold text-xs flex items-center justify-center shrink-0 mt-0.5 ${
                         isUnanswered
                           ? 'bg-slate-100 text-slate-600'
@@ -172,9 +172,31 @@ export function ExamResultDetailPage() {
                       }`}>
                         {q.position}
                       </span>
-                      <p className="text-base font-semibold text-slate-900 leading-relaxed">
-                        {q.prompt}
-                      </p>
+                      <div className="space-y-3 flex-1">
+                        {/* Audio preview in review */}
+                        {q.audioUrl && (
+                          <div className="p-3 bg-blue-50/70 border border-blue-200/80 rounded-xl space-y-1">
+                            <span className="text-[11px] font-bold text-blue-900 uppercase tracking-wider block">Nghe lại Audio câu hỏi:</span>
+                            <audio controls src={q.audioUrl} className="w-full h-8" />
+                          </div>
+                        )}
+                        {/* Image preview in review */}
+                        {q.imageUrl && (
+                          <div className="rounded-xl overflow-hidden border border-slate-200 max-h-64 flex justify-center bg-slate-50 p-2">
+                            <img src={q.imageUrl} alt="Ảnh câu hỏi" className="max-h-60 object-contain rounded-lg" />
+                          </div>
+                        )}
+                        {/* Passage text in review */}
+                        {q.passageText && (
+                          <div className="p-3 bg-amber-50/50 border border-amber-200 rounded-xl text-xs md:text-sm font-serif whitespace-pre-wrap text-slate-800">
+                            <span className="text-[11px] font-bold text-amber-900 uppercase tracking-wider block font-sans mb-1">Đoạn văn đọc hiểu:</span>
+                            {q.passageText}
+                          </div>
+                        )}
+                        <p className="text-base font-semibold text-slate-900 leading-relaxed">
+                          {q.prompt}
+                        </p>
+                      </div>
                     </div>
 
                     <div className="shrink-0">

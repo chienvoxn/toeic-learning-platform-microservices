@@ -9,7 +9,11 @@ export interface QuizView {
 export interface PublicQuestion {
   id: string;
   prompt: string;
-  choices: Record<'A' | 'B' | 'C' | 'D', string>;
+  choices: Record<string, string>;
+  passageText?: string | null;
+  audioUrl?: string | null;
+  imageUrl?: string | null;
+  groupId?: string | null;
 }
 
 export interface QuizDetail {
@@ -22,9 +26,13 @@ export interface QuestionInput {
   a: string;
   b: string;
   c: string;
-  d: string;
+  d?: string | null;
   answer: string;
   explanation: string;
+  passageText?: string | null;
+  audioUrl?: string | null;
+  imageUrl?: string | null;
+  groupId?: string | null;
 }
 
 export interface QuizInput {

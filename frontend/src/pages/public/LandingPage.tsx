@@ -75,8 +75,8 @@ export function LandingPage() {
               <p className="text-xs text-slate-500 font-medium">Chấm điểm tự động</p>
             </div>
             <div className="p-4 rounded-xl bg-white border border-slate-200/80 shadow-xs">
-              <p className="text-2xl font-black text-slate-900">200 Câu</p>
-              <p className="text-xs text-slate-500 font-medium">Dung lượng đề chuẩn</p>
+              <p className="text-2xl font-black text-slate-900">Luyện tập</p>
+              <p className="text-xs text-slate-500 font-medium">Theo từng Part & Bộ đề</p>
             </div>
             <div className="p-4 rounded-xl bg-white border border-slate-200/80 shadow-xs">
               <p className="text-2xl font-black text-emerald-600">FREE</p>
@@ -86,11 +86,11 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* 2. Format 7 Phần Thi TOEIC Chuẩn ETS */}
+      {/* 2. Format 7 Phần Thi TOEIC Quốc Tế */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center space-y-3 mb-10">
           <Badge variant="outline" className="text-primary border-primary/20">Cấu Trúc Đề Thi</Badge>
-          <h2 className="text-3xl font-bold text-slate-900 tracking-tight">7 Phần Thi TOEIC Bám Sát Format Thực Tế</h2>
+          <h2 className="text-3xl font-bold text-slate-900 tracking-tight">7 Phần Thi TOEIC Quốc Tế Đầy Đủ</h2>
           <p className="text-sm text-slate-500 max-w-xl mx-auto">
             Học viên có thể chọn luyện tập từng Part riêng lẻ hoặc thực hiện bài thi tổng hợp.
           </p>

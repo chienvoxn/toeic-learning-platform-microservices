@@ -3,6 +3,7 @@ export interface UserView {
   email: string;
   displayName: string;
   role: 'LEARNER' | 'TEACHER' | 'ADMIN';
+  roles?: string[];
 }
 
 export interface Session {
