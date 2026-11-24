@@ -1,68 +1,109 @@
 ---
 name: toeic-test-strategy
 description: >-
-  Áp dụng khi implement feature mới, fix bug, hoặc quyết định scope regression.
-  Hướng dẫn chọn loại test phù hợp và tránh chạy thừa test không cần thiết.
+  Chiến lược kiểm thử toàn diện cho hệ thống TOEIC Microservices (5 Spring Boot services, React frontend, Legacy web, RabbitMQ outbox, và Gateway).
+  Hướng dẫn chọn đúng cấp độ kiểm thử trong Test Pyramid, lệnh chạy test theo service và kịch bản nghiệm thu QA-01 đến QA-04.
 ---
 
-# Test Strategy — TOEIC Microservices
+# Chiến lược Kiểm thử — TOEIC Microservices
 
-## Test Pyramid
+## 1. Test Pyramid
 
 ```
-        [E2E / Playwright]      ← tests/*.test.cjs — chỉ khi UI thay đổi
-       [Smoke / Python]         ← tests/smoke.py — sau thay đổi cross-service
-      [Integration / IT]        ← F02*IT.java, F02InteractionPostgresIT — khi DB/broker thay đổi
-     [Application Service]      ← AttemptApplicationServiceTest — khi use case logic thay đổi
-    [Domain Unit]               ← AttemptDomainTest, ContentReviewTest — khi domain thay đổi
+          [E2E / Playwright]         ← tests/*.test.cjs — khi luồng UI/E2E thay đổi
+         [Smoke / Python Integration]← tests/smoke.py — sau thay đổi liên service qua Gateway
+        [Integration Tests / Spring] ← *IT.java (F02*IT, Postgres, RabbitMQ) — khi DB/Outbox đổi
+       [Application Service Tests]   ← *ApplicationServiceTest — khi logic điều phối/quota đổi
+      [Domain Unit Tests / Java]     ← *DomainTest — khi luật nghiệp vụ/aggregate đổi
+     [Frontend Tests / Vitest / npm] ← cd frontend && npm test — khi React components/hooks đổi
 ```
 
-## Chọn test theo thay đổi
+---
 
-| Thay đổi | Test tối thiểu | Test đầy đủ |
+## 2. Chọn Cấp độ Kiểm thử theo Thay đổi
+
+| Phạm vi thay đổi | Kiểm thử tối thiểu bắt buộc | Kiểm thử hồi quy đầy đủ |
 |---|---|---|
-| Domain logic (Attempt, ContentReview) | `AttemptDomainTest` | + `AttemptApplicationServiceTest` |
-| Application Service / quota / outbox | `AttemptApplicationServiceTest` | + smoke.py |
-| Outbox publisher / RabbitMQ | `OutboxPublisherTest` | + `F02RabbitPublisherIT`, `F02OutboxRetryIT` |
-| Controller / API path | `QuizAuthoringTest` (Content) | + smoke.py |
-| Cross-service flow | smoke.py | + concurrent submit + quota |
-| UI / frontend | `node --check web/app.js` | + `attempt_frontend.test.cjs` |
-| Migration / schema | Verify SQL offline | + full compose restart test |
+| **Domain Logic** (`Attempt`, `ContentReview`) | `AttemptDomainTest` | + `AttemptApplicationServiceTest` |
+| **Use Case / Quota / Outbox** | `AttemptApplicationServiceTest` | + `python tests/smoke.py` |
+| **RabbitMQ Publisher / Outbox Worker** | `OutboxPublisherTest` | + `F02RabbitPublisherIT`, `F02OutboxRetryIT` |
+| **Content Service** | `QuizAuthoringTest` | + `python tests/smoke.py` |
+| **Identity Service (Auth / RBAC)** | `IdentityAuthTest` (nếu có) | + `python tests/smoke.py` (QA-01) |
+| **Cross-service Flow** (Gateway, Token, Quota) | `python tests/smoke.py` | + `test_concurrent_submit.py` + `test_quota_concurrency.py` |
+| **Modern Frontend (`frontend/`)** | `cd frontend && npm run typecheck && npm test` | + `npm run lint` + `npm run build` |
+| **Legacy Web (`web/`)** | `node --check web/app.js` | + `attempt_frontend.test.cjs` |
+| **Database Migration (`V{n}__*.sql`)** | Kiểm tra cú pháp SQL offline | + Test chạy trên container PostgreSQL riêng |
 
-## Lệnh test theo service
+---
+
+## 3. Lệnh Chạy Kiểm thử Cụ thể
+
+### Backend Services (Maven)
+Chạy tại thư mục gốc repository microservices:
 
 ```powershell
-# Domain + Application Service (không cần Spring, DB, broker)
-cd assessment-service
-mvn test -pl . -Dtest="AttemptDomainTest,AttemptApplicationServiceTest" -q
+# 1. Assessment Service: Domain & Application Service (chạy nhanh, không cần DB/Docker)
+mvn test -pl assessment-service -Dtest="AttemptDomainTest,AttemptApplicationServiceTest" -q
 
-# Content authoring
-cd content-service
-mvn test -pl . -Dtest="QuizAuthoringTest" -q
-
-# Integration tests (cần Docker)
+# 2. Assessment Service: Outbox & RabbitMQ Integration (yêu cầu Docker)
 mvn test -pl assessment-service -Dtest="F02OutboxRetryIT,F02RabbitPublisherIT" -q
 
-# Smoke (cần Compose stack chạy)
-$env:GATEWAY_URL = "http://127.0.0.1:8088"
-python tests/smoke.py
+# 3. Content Service: Quiz authoring & validation
+mvn test -pl content-service -Dtest="QuizAuthoringTest" -q
 
-# Frontend syntax check
-node --check web/app.js
+# 4. Identity Service: IAM & RBAC
+mvn test -pl identity-service -q
+
+# 5. Interaction Service: Reviews & Activities
+mvn test -pl interaction-service -q
+
+# 6. Membership Service: Entitlements
+mvn test -pl membership-service -q
 ```
 
-## QA Scenarios — scope kiểm chứng
+### Modern React Frontend (`frontend/`)
+```powershell
+cd frontend
+npm run lint         # Kiểm tra cú pháp và code style ESLint 9
+npm run typecheck    # Kiểm tra kiểu TypeScript (tsc --noEmit)
+npm run test         # Chạy unit tests với Vitest
+npm run build        # Build thử bản production
+cd ..
+```
 
-| Scenario | Script | Điều kiện chạy |
+### Legacy Web Frontend (`web/`)
+```powershell
+node --check web/app.js
+node --check web/quiz-authoring.js
+```
+
+### Smoke Test Liên Dịch vụ qua Gateway (Python)
+Yêu cầu Docker Compose stack đang hoạt động (`docker compose ps` báo healthy):
+```powershell
+$env:GATEWAY_URL = "http://127.0.0.1:8088"
+python tests/smoke.py
+```
+
+---
+
+## 4. Kịch bản Nghiệm thu Kiến trúc (QA Scenarios)
+
+| Scenario | Mục tiêu kiểm chứng | Công cụ / Script |
 |---|---|---|
-| QA-01 · RBAC | Manual + smoke | Khi thay đổi auth/authz |
-| QA-02 · Concurrent submit | `tests/test_concurrent_submit.py` | Khi thay đổi Assessment submit |
-| QA-03 · Fault injection | `tests/fault_injection.md` | Khi thay đổi Outbox/RabbitMQ |
-| QA-04 · Performance | `tests/load.js` (k6) | Khi thay đổi Content list path |
+| **QA-01: RBAC Enforcement** | Đảm bảo tài khoản `LEARNER` không thể tạo quiz (nhận 403 Forbidden). | `python tests/smoke.py` |
+| **QA-02: Concurrent Submit** | 10 request nộp bài đồng thời cùng 1 attempt: Đảm bảo chấm điểm 1 lần duy nhất, kết quả nhất quán, chỉ tạo 1 outbox event. | `python tests/test_concurrent_submit.py` |
+| **QA-03: Fault Injection** | Khi RabbitMQ hoặc Interaction Service tạm dừng: Assessment vẫn chấm và lưu điểm thành công; outbox retry tự động khi dependency phục hồi. | Xem `tests/fault_injection.md` |
+| **QA-04: Performance & Load** | Đo tải qua Gateway: 50 VU trong 60 giây, p95 < 500ms, tỷ lệ lỗi < 1%. | `k6 run tests/load.js` |
 
-## Quy tắc
+---
 
-- Chạy focused tests trước; chỉ chạy full smoke khi thay đổi cross-service.
-- Không khai báo "test passed" nếu chưa thực sự chạy.
-- Ghi SHA, môi trường, lệnh và kết quả khi lưu evidence.
-- Dùng tài khoản email riêng cho mỗi lần chạy test có ghi dữ liệu.
+## 5. Quy tắc Báo cáo Bằng chứng Kiểm thử (Evidence)
+
+- Không bao giờ tuyên bố "đã test thành công" nếu chưa thực sự chạy lệnh và có kết quả output.
+- Báo cáo kết quả theo mẫu chuẩn:
+  ```
+  Phạm vi thay đổi: [tên service / frontend]
+  Lệnh kiểm thử đã chạy: [lệnh cụ thể]
+  Kết quả: PASS (hoặc FAIL kèm nguyên nhân)
+  Rủi ro còn lại / Phần chưa kiểm tra: [ghi rõ nếu chưa có môi trường Docker live]
+  ```

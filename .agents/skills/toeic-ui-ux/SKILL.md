@@ -1,30 +1,76 @@
 ---
 name: toeic-ui-ux
 description: >-
-  Thiết kế và kiểm tra web TOEIC Flow khi làm dashboard Learner, màn luyện đề, form tạo đề Teacher, quản trị RBAC, hệ thống thiết kế hoặc visual QA. Tập trung vào thao tác, responsive và khả năng tiếp cận trên frontend tĩnh.
+  Thiết kế và kiểm tra frontend TOEIC Microservices (React 18 TypeScript trong frontend/ và Vanilla JS tĩnh trong web/).
+  Áp dụng khi phát triển dashboard Learner, giao diện luyện thi TOEIC, màn hình tạo đề Teacher, quản trị RBAC,
+  hệ thống thiết kế Tailwind CSS / Radix UI, và Visual QA responsive trên Nginx Gateway.
 ---
 
-# Giao diện TOEIC Flow
+# Giao diện & Trải nghiệm Người dùng — TOEIC Microservices
 
-## Hệ thiết kế
+Hệ thống hỗ trợ 2 nền tảng frontend kết nối đồng nhất qua Nginx Gateway (cổng `8088`):
+1. **Modern React Frontend** tại [`frontend/`](../../../frontend/) (React 18 + TS + Tailwind + Vite).
+2. **Legacy Demo Web** tại [`web/`](../../../web/) (Vanilla JS + HTML5 + CSS3).
 
-- Dùng [HTML](../../../web/index.html), [CSS](../../../web/style.css) và [JavaScript](../../../web/app.js) thuần, Nginx cùng origin và `api()` hiện có. Cải tiến giao diện trong framework hiện tại. Khi đổi markup, đối chiếu `id`, `data-tab` và handler.
-- Khi chuẩn hóa CSS, dùng custom properties theo vai trò cho nền trang, surface, chữ, chữ phụ, viền, hành động chính, focus và trạng thái. Lấy màu hiện có làm điểm xuất phát cho nền `#f4f7fc`, chữ `#15233c` và sidebar `#10234a`. Kiểm tra tương phản trên từng cặp màu thực tế.
-- Giữ system font với bản tiếng Việt, phân cấp tiêu đề trang, tiêu đề khu vực, nội dung và nhãn. Dùng thang spacing 4/8/12/16/24/32 px làm mặc định khi chuẩn hóa và tái sử dụng panel, card, nút chính/phụ, form, thông báo và badge trạng thái. Viết nhãn tiếng Việt ngắn, giữ tiếng Anh trong câu hỏi TOEIC.
+---
 
-## Luồng theo vai trò
+## 1. Nền tảng Modern React Frontend (`frontend/`)
 
-| Vai trò | Trải nghiệm cần kiểm tra |
-| --- | --- |
-| Learner | Phân biệt FREE/PRO, mở hoặc tiếp tục lượt hiện có, lưu đáp án, nộp, xem kết quả và lịch sử của mình. Báo lỗi lưu từng câu, giữ câu trả lời khi thử lại và chờ lần lưu pending hoàn tất trước khi nộp. Chỉ hiển thị điểm và lời giải sau `GRADED`. |
-| Teacher | Form tạo đề rõ Part, quyền truy cập, câu hỏi, lựa chọn A–D, đáp án và giải thích. Hiển thị lỗi tại trường liên quan, giữ nội dung nếu yêu cầu ghi thất bại và xác nhận xuất bản bằng phản hồi từ API. |
-| Admin | Hiển thị thao tác theo permission, làm rõ UUID và vai trò đích trước khi gửi, hiển thị kết quả từ API và hướng dẫn tài khoản được cấp quyền đăng nhập lại để nhận claim mới. |
+### Kiến trúc & Thư viện cốt lõi
+- **Routing**: `react-router-dom` v7 với các tuyến phân quyền:
+  - Public: `/login`, `/register`, `/quizzes` (catalog tự do)
+  - Protected (Learner): `/dashboard`, `/attempts/:id`, `/attempts/:id/result`, `/profile`
+  - Protected (Teacher): `/teacher/quizzes/new`, `/teacher/quizzes/mine`, `/teacher/quizzes/:id/edit`
+  - Protected (Admin): `/admin/users`, `/admin/rbac`, `/admin/quizzes`
+- **Server State & Caching**: `@tanstack/react-query` v5:
+  - Cache quiz catalog, profile, attempt details.
+  - Tự động invalidate và refetch sau mutation (nộp bài, tạo quiz, đổi role).
+- **UI Components & Icons**: Radix UI Primitives (`@radix-ui/*`) + `lucide-react` icons.
+- **Form & Validation**: `react-hook-form` tích hợp `zod` schema resolver.
+- **Styling**: Tailwind CSS với các utility classes chuẩn, hỗ trợ dark/light tokens và responsive breakpoints (`sm: 640px`, `md: 768px`, `lg: 1024px`, `xl: 1280px`).
 
-- Backend quyết định quyền và entitlement. Dùng dữ liệu API cho điểm, tiến độ, số lượt, trạng thái gói và activity. Cấm thêm mock data để giả kết quả nghiệp vụ. Khi thiếu dữ liệu, hiển thị empty state có hành động phù hợp. Đánh dấu đổi gói là demo và cho phép làm mới activity đến bất đồng bộ.
-- Hiển thị loading, empty, lỗi, thành công và trạng thái đang ghi. Giữ lỗi 401/403/429 theo ngữ cảnh thao tác và cho phép thử lại khi phù hợp. Dùng `textContent` hoặc escape đúng ngữ cảnh khi hiển thị dữ liệu từ API.
+### Quy chuẩn kiểm tra chất lượng (Verification Gate)
+Trước khi đóng task trên `frontend/`, bắt buộc chạy:
+```powershell
+cd frontend
+npm run lint         # ESLint 9
+npm run typecheck    # tsc --noEmit (0 TypeScript error)
+npm run test         # Vitest (100% test pass)
+npm run build        # Production build verification
+```
 
-## Visual QA
+---
 
-- Kiểm tra ở 320 CSS px, tablet và desktop. Thử câu hỏi dài, tên đề dài, bảng/lịch sử, form và điều hướng. Kiểm tra không tràn ngang ngoài vùng cuộn chủ đích, thao tác chính dễ thấy và đủ lớn trên cảm ứng.
-- Kiểm tra bàn phím, thứ tự tab, focus khi đổi màn hình hoặc hiện lỗi, label, `fieldset`/`legend` cho nhóm đáp án và thông báo qua `#flash` hoặc vùng live phù hợp. Dùng chữ cùng màu cho trạng thái, tương phản chữ thường tối thiểu 4,5:1.
-- Nếu sửa JS, chạy `node --check web/app.js`. Khi Gateway sẵn sàng, đối chiếu ảnh hoặc quan sát trình duyệt theo các vai trò và trạng thái đã sửa. Ghi viewport, vai trò, trạng thái đã kiểm tra và phần chưa quan sát. [Kịch bản demo](../../../README.md#4-kịch-bản-demo-learner--teacher--admin)
+## 2. Nền tảng Legacy Demo Web (`web/`)
+
+- Dùng [HTML](../../../web/index.html), [CSS](../../../web/style.css), [JavaScript](../../../web/app.js) và [quiz-authoring.js](../../../web/quiz-authoring.js).
+- Tất cả API calls đều gọi qua hàm wrapper `api(path, options)` gắn Bearer token tự động qua Nginx Gateway.
+- **Chống XSS**: Sử dụng `textContent` hoặc hàm escape `html(...)`. Tuyệt đối không gán `innerHTML` trực tiếp chuỗi chưa kiểm duyệt từ API.
+- Bảng màu gốc: Nền `#f4f7fc`, chữ `#15233c`, sidebar `#10234a`, accent `#009DFF`, warning `#F59E0B`, success `#10B981`.
+- Kiểm tra cú pháp bắt buộc:
+  ```powershell
+  node --check web/app.js
+  node --check web/quiz-authoring.js
+  ```
+
+---
+
+## 3. Luồng Nghiệp vụ theo Vai trò (Learner, Teacher, Admin)
+
+| Vai trò | Trải nghiệm cần đảm bảo trên UI |
+|---|---|
+| **Learner** | - Phân biệt rõ đề FREE và đề PRO (kèm nhãn kim cương / badge PRO).<br>- Làm bài thi: Đồng hồ đếm ngược, lưu tạm đáp án từng câu (autosave) qua `PUT /ms/v1/attempts/{id}/answers/{questionId}`.<br>- Nộp bài thi qua `POST /ms/v1/attempts/{id}/submit`, hiển thị điểm số TOEIC và chi tiết giải thích sau khi trạng thái là `GRADED`.<br>- Xử lý quota: Khi hết 10 lượt/ngày (FREE), hiển thị popup nâng cấp gói PRO hoặc thông báo lỗi HTTP 429 thân thiện. |
+| **Teacher** | - Trình tạo đề thi: Chọn Part 1-7, tiêu đề, giới hạn thời gian, cờ `premium` (chỉ PRO mới làm được).<br>- Quản lý câu hỏi, 4 lựa chọn A-D, chọn đáp án đúng và nhập giải thích chi tiết.<br>- Hỗ trợ cả 2 chế độ: Lưu nháp (`DRAFT`) hoặc Xuất bản ngay (`PUBLISHED`).<br>- Giữ nguyên form dữ liệu nếu request ghi lên server bị lỗi mạng. |
+| **Admin** | - Quản lý người dùng: Xem danh sách tài khoản, UUID, email, quyền hiện tại qua `/ms/v1/identity/admin/users`.<br>- Phân quyền RBAC: Cấp hoặc thu hồi role (`LEARNER`, `TEACHER`, `ADMIN`) qua `POST /ms/v1/identity/admin/users/{id}/roles`.<br>- Hướng dẫn tài khoản được phân quyền đăng nhập lại để nhận claim JWT mới. |
+
+---
+
+## 4. Visual QA & Tiêu chuẩn Tiếp cận (Accessibility)
+
+- **Responsive**: Kiểm tra hiển thị chuẩn ở độ phân giải 320px (mobile nhỏ), 768px (tablet) và 1280px+ (desktop).
+- **State Handling**: Bắt buộc có đầy đủ 4 trạng thái:
+  1. *Loading State*: Skeleton shimmer hoặc spinner loading rõ ràng.
+  2. *Error State*: Thông báo lỗi tương ứng với HTTP code (401, 403, 404, 429, 500) kèm nút thử lại (Retry).
+  3. *Empty State*: Card trống lịch thiệp kèm nút gợi ý hành động (ví dụ: "Chưa có bài thi nào, hãy bắt đầu ngay").
+  4. *Success State*: Thông báo lưu thành công và cập nhật UI tức thì.
+- **Độ tương phản**: Tỷ lệ tương phản chữ/nền tối thiểu 4.5:1 đối với văn bản thông thường.

@@ -42,9 +42,10 @@ Always load `toeic-planning` first to scope the task, and `toeic-verification` l
 | Security change | `toeic-mvp-guardian` + `toeic-security-checklist` |
 | Cross-service change | `toeic-mvp-guardian` + `toeic-domain-business` + `toeic-architecture-qa` |
 | Debugging | `toeic-debugging-guide` + `toeic-mvp-guardian` |
-| Code review | `toeic-code-review` |
+| Code review / PR audit | `code-review` / `toeic-code-review` |
+| Testing / Regression check | `testing-workflow` + `toeic-test-strategy` |
 | Full MVP review / audit | `toeic-mvp-guardian` + `toeic-ui-ux` + `toeic-domain-business` + `toeic-architecture-qa` |
-| Any task (end) | `toeic-verification` |
+| Any task (end) | `toeic-verification` / `testing-workflow` |
 
 Skills live at `.agents/skills/<name>/SKILL.md`. Load the applicable set for the task; for tasks spanning categories, use their combined set.
 

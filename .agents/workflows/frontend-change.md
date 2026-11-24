@@ -1,40 +1,50 @@
 ---
 name: frontend-change
-description: Workflow cho thay đổi frontend (web/index.html, web/app.js, web/style.css).
+description: Workflow chuẩn cho thay đổi frontend (bao gồm React 18 frontend/ và Legacy web/).
 ---
 
-# Frontend Change Workflow
+# Quy trình Thay đổi Frontend — TOEIC Microservices
 
-## Steps
+## 1. Nền tảng Modern React Frontend (`frontend/`)
 
-1. **Plan** (`toeic-planning`)
-   - Xác định: màn hình / component / luồng vai trò bị ảnh hưởng.
-   - Confirm: không dùng mock data thay API thật.
+### Các bước thực hiện:
+1. **Lập kế hoạch (Planning)**:
+   - Xác định: Page, component, hook hoặc API service bị ảnh hưởng trong `frontend/src/`.
+   - Đối chiếu API Gateway contract trong `gateway/nginx.conf` (`/ms/v1/...` hoặc `/api/v1/...`).
+2. **Cài đặt & Triển khai (Implementation)**:
+   - Dùng TanStack Query cho data fetching / cache revalidation.
+   - Dùng Tailwind CSS và Radix UI cho styling & components.
+   - Form validation bằng `react-hook-form` + `zod`.
+   - Đảm bảo 4 trạng thái bắt buộc: `loading`, `error`, `empty`, `success`.
+3. **Kiểm tra chất lượng cục bộ (Verification Gate)**:
+   ```powershell
+   cd frontend
+   npm run lint         # ESLint 9
+   npm run typecheck    # TypeScript compiler check
+   npm run test         # Vitest unit & integration tests
+   npm run build        # Build kiểm tra production bundle
+   cd ..
+   ```
+   *Bắt buộc cả 4 lệnh đều PASS trước khi kết thúc task.*
 
-2. **Baseline** (`toeic-mvp-guardian`)
-   - Liệt kê `id`, `data-tab`, và event handlers sẽ thay đổi.
+---
 
-3. **Implement** (`toeic-ui-ux`)
-   - Dùng `textContent` hoặc `html()` escape cho user data.
-   - Dùng `api()` wrapper — không gọi `fetch` trực tiếp.
-   - Giữ CSS custom properties hiện có; không thêm framework.
-   - Viết nhãn tiếng Việt ngắn gọn.
+## 2. Nền tảng Legacy Web (`web/`)
 
-4. **Syntax check** (bắt buộc)
+### Các bước thực hiện:
+1. **Lập kế hoạch & Baseline**:
+   - Xác định file thay đổi: `web/index.html`, `web/app.js`, `web/quiz-authoring.js`, `web/style.css`.
+   - Liệt kê các `id`, `data-tab`, và event handlers liên quan.
+2. **Triển khai (Implementation)**:
+   - Dùng hàm `api()` wrapper có sẵn để gọi Gateway — không gọi `fetch` trực tiếp với URL hard-coded.
+   - Chống XSS: Luôn dùng `textContent` hoặc hàm escape `html()` cho user data; không gán `innerHTML` trực tiếp dữ liệu thô từ API.
+   - Giữ các biến CSS custom properties gốc.
+3. **Kiểm tra cú pháp (Syntax Check)**:
    ```powershell
    node --check web/app.js
+   node --check web/quiz-authoring.js
    ```
-   Phải PASS trước khi tiếp tục.
-
-5. **Visual QA** (`toeic-ui-ux` → Visual QA)
-   - Kiểm tra 320px, tablet, desktop.
-   - Keyboard navigation, focus order, ARIA labels.
-   - Contrast ratio >= 4.5:1 cho body text.
-
-6. **API integration verify**
-   - Mọi UI state (loading, error, empty, success) được xử lý.
-   - 401/403/429 hiển thị đúng context.
-
-7. **Verification** (`toeic-verification`)
-   - `node --check web/app.js` PASS (paste output).
-   - Nếu stack đang chạy: quan sát theo vai trò Learner/Teacher/Admin.
+   *Bắt buộc cả 2 lệnh syntax check đều PASS.*
+4. **Visual QA**:
+   - Kiểm tra hiển thị responsive (320px mobile, 768px tablet, 1280px+ desktop).
+   - Kiểm tra contrast text, focus tab, ARIA labels.
