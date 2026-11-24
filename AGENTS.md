@@ -54,4 +54,5 @@ Skills live at `.agents/skills/<name>/SKILL.md`. Load the applicable set for the
 - Keep tool outputs short; inspect errors rather than printing full logs.
 - Report only: changed files, tests, failures, remaining risks.
 - Preserve evidence for architecture quality scenarios (SHA, timestamp, command, result).
-- `node --check web/app.js` before closing any frontend task.
+- Legacy frontend (`web/`): `node --check web/app.js` before closing task.
+- New React frontend (`frontend/`): `npm run lint`, `npm run typecheck`, `npm run build`, and relevant tests before closing task.

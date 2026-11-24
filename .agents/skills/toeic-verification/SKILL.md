@@ -15,8 +15,9 @@ description: >-
 | Task type | Verify tối thiểu |
 |---|---|
 | Backend logic change | Chạy relevant unit test; paste output tóm tắt |
-| Controller / API change | `node --check web/app.js` nếu có frontend; test endpoint (curl hoặc test file) |
-| Frontend change | `node --check web/app.js` PASS |
+| Controller / API change | `node --check web/app.js` (nếu chạm `web/`) hoặc verify API DTO (`frontend/`); test endpoint |
+| Legacy frontend change (`web/`) | `node --check web/app.js` PASS |
+| New React frontend change (`frontend/`) | `npm run lint && npm run typecheck && npm run test` PASS |
 | Cross-service change | `python tests/smoke.py` PASS |
 | Outbox / messaging change | `OutboxPublisherTest` + `F02RabbitPublisherIT` PASS |
 | Agent config (skills/rules/AGENTS.md) | Verify file tồn tại; đọc lại nội dung key |
