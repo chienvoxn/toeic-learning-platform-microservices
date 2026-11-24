@@ -16,12 +16,15 @@ Java 21 · Spring Boot 4.1.1 · PostgreSQL 17 · RabbitMQ 3.13 · Nginx 1.27 · 
 
 ## Working Rules
 
-- Read only files relevant to the current task.
-- Prefer small changes in one service per task.
+- Use `main` as the default development branch; do not create or switch branches unless explicitly requested.
+- Preserve existing user changes; never reset, clean, or run destructive Git commands.
+- Never use `git add .`; stage only specific, scoped files. Never automatically commit or push.
+- Make small, scoped, independently verifiable changes (prefer one service per task).
+- Read only files relevant to the current task; avoid unnecessary audits and context loading.
+- Run relevant tests before proposing commits for user approval.
 - Never change business behavior during package refactoring.
 - Do not modify database migrations without explicit instruction.
 - Never run `docker compose down -v` or delete volumes.
-- Do not commit or push without explicit instruction.
 - Do not expose secrets in logs, diffs, or reports.
 - Avoid repeating tests already verified unless affected by changes.
 
