@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { PublicLayout } from '@/layouts/PublicLayout';
 import { LearnerLayout } from '@/layouts/LearnerLayout';
@@ -7,37 +8,45 @@ import { ExamLayout } from '@/layouts/ExamLayout';
 
 import { ProtectedRoute } from '@/components/navigation/ProtectedRoute';
 import { RoleGuard } from '@/components/navigation/RoleGuard';
+import { PageLoading } from '@/components/feedback/PageLoading';
 
-import { DesignSystemPreview } from '@/pages/DesignSystemPreview';
-import { LandingPage } from '@/pages/public/LandingPage';
-import { CatalogPage } from '@/pages/public/CatalogPage';
-import { QuizDetailPage } from '@/pages/public/QuizDetailPage';
-import { PricingPage } from '@/pages/public/PricingPage';
-import { LoginPage } from '@/pages/public/LoginPage';
-import { RegisterPage } from '@/pages/public/RegisterPage';
-import { ForbiddenPage } from '@/pages/public/ForbiddenPage';
-import { NotFoundPage } from '@/pages/public/NotFoundPage';
+// Route-level Lazy Loading for bundle optimization & code splitting
+const DesignSystemPreview = lazy(() => import('@/pages/DesignSystemPreview').then(m => ({ default: m.DesignSystemPreview })));
+const LandingPage = lazy(() => import('@/pages/public/LandingPage').then(m => ({ default: m.LandingPage })));
+const CatalogPage = lazy(() => import('@/pages/public/CatalogPage').then(m => ({ default: m.CatalogPage })));
+const QuizDetailPage = lazy(() => import('@/pages/public/QuizDetailPage').then(m => ({ default: m.QuizDetailPage })));
+const PricingPage = lazy(() => import('@/pages/public/PricingPage').then(m => ({ default: m.PricingPage })));
+const LoginPage = lazy(() => import('@/pages/public/LoginPage').then(m => ({ default: m.LoginPage })));
+const RegisterPage = lazy(() => import('@/pages/public/RegisterPage').then(m => ({ default: m.RegisterPage })));
+const ForbiddenPage = lazy(() => import('@/pages/public/ForbiddenPage').then(m => ({ default: m.ForbiddenPage })));
+const NotFoundPage = lazy(() => import('@/pages/public/NotFoundPage').then(m => ({ default: m.NotFoundPage })));
 
-import { LearnerDashboardPage } from '@/pages/learner/LearnerDashboardPage';
-import { ExamHistoryPage } from '@/pages/learner/ExamHistoryPage';
-import { ExamResultDetailPage } from '@/pages/learner/ExamResultDetailPage';
-import { ProfilePage } from '@/pages/learner/ProfilePage';
-import { MembershipPage } from '@/pages/learner/MembershipPage';
+const LearnerDashboardPage = lazy(() => import('@/pages/learner/LearnerDashboardPage').then(m => ({ default: m.LearnerDashboardPage })));
+const ExamHistoryPage = lazy(() => import('@/pages/learner/ExamHistoryPage').then(m => ({ default: m.ExamHistoryPage })));
+const ExamResultDetailPage = lazy(() => import('@/pages/learner/ExamResultDetailPage').then(m => ({ default: m.ExamResultDetailPage })));
+const ProfilePage = lazy(() => import('@/pages/learner/ProfilePage').then(m => ({ default: m.ProfilePage })));
+const MembershipPage = lazy(() => import('@/pages/learner/MembershipPage').then(m => ({ default: m.MembershipPage })));
 
-import { TeacherDashboardPage } from '@/pages/teacher/TeacherDashboardPage';
-import { TeacherQuizzesPage } from '@/pages/teacher/TeacherQuizzesPage';
-import { QuizCreatePage } from '@/pages/teacher/QuizCreatePage';
-import { QuizEditPage } from '@/pages/teacher/QuizEditPage';
-import { AdminDashboardPage } from '@/pages/admin/AdminDashboardPage';
-import { AdminUsersPage } from '@/pages/admin/AdminUsersPage';
-import { AdminQuizzesPage } from '@/pages/admin/AdminQuizzesPage';
-import { ExamScreenPage } from '@/pages/exam/ExamScreenPage';
+const TeacherDashboardPage = lazy(() => import('@/pages/teacher/TeacherDashboardPage').then(m => ({ default: m.TeacherDashboardPage })));
+const TeacherQuizzesPage = lazy(() => import('@/pages/teacher/TeacherQuizzesPage').then(m => ({ default: m.TeacherQuizzesPage })));
+const QuizCreatePage = lazy(() => import('@/pages/teacher/QuizCreatePage').then(m => ({ default: m.QuizCreatePage })));
+const QuizEditPage = lazy(() => import('@/pages/teacher/QuizEditPage').then(m => ({ default: m.QuizEditPage })));
+
+const AdminDashboardPage = lazy(() => import('@/pages/admin/AdminDashboardPage').then(m => ({ default: m.AdminDashboardPage })));
+const AdminUsersPage = lazy(() => import('@/pages/admin/AdminUsersPage').then(m => ({ default: m.AdminUsersPage })));
+const AdminQuizzesPage = lazy(() => import('@/pages/admin/AdminQuizzesPage').then(m => ({ default: m.AdminQuizzesPage })));
+
+const ExamScreenPage = lazy(() => import('@/pages/exam/ExamScreenPage').then(m => ({ default: m.ExamScreenPage })));
 
 export const router = createBrowserRouter([
   // Public routes
   {
     path: '/',
-    element: <PublicLayout />,
+    element: (
+      <Suspense fallback={<PageLoading />}>
+        <PublicLayout />
+      </Suspense>
+    ),
     children: [
       { index: true, element: <LandingPage /> },
       { path: 'preview', element: <DesignSystemPreview /> },
@@ -56,7 +65,9 @@ export const router = createBrowserRouter([
     path: '/learner',
     element: (
       <ProtectedRoute>
-        <LearnerLayout />
+        <Suspense fallback={<PageLoading />}>
+          <LearnerLayout />
+        </Suspense>
       </ProtectedRoute>
     ),
     children: [
@@ -76,7 +87,9 @@ export const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <RoleGuard requiredPermission="assessment:submit">
-          <ExamLayout />
+          <Suspense fallback={<PageLoading />}>
+            <ExamLayout />
+          </Suspense>
         </RoleGuard>
       </ProtectedRoute>
     ),
@@ -91,7 +104,9 @@ export const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <RoleGuard requiredPermission="content:write">
-          <TeacherLayout />
+          <Suspense fallback={<PageLoading />}>
+            <TeacherLayout />
+          </Suspense>
         </RoleGuard>
       </ProtectedRoute>
     ),
@@ -110,7 +125,9 @@ export const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <RoleGuard requiredPermission="rbac:manage">
-          <AdminLayout />
+          <Suspense fallback={<PageLoading />}>
+            <AdminLayout />
+          </Suspense>
         </RoleGuard>
       </ProtectedRoute>
     ),
@@ -125,6 +142,10 @@ export const router = createBrowserRouter([
   // Catch-all
   {
     path: '*',
-    element: <NotFoundPage />,
+    element: (
+      <Suspense fallback={<PageLoading />}>
+        <NotFoundPage />
+      </Suspense>
+    ),
   },
 ]);
