@@ -29,6 +29,8 @@ import { TeacherQuizzesPage } from '@/pages/teacher/TeacherQuizzesPage';
 import { QuizCreatePage } from '@/pages/teacher/QuizCreatePage';
 import { QuizEditPage } from '@/pages/teacher/QuizEditPage';
 import { AdminDashboardPage } from '@/pages/admin/AdminDashboardPage';
+import { AdminUsersPage } from '@/pages/admin/AdminUsersPage';
+import { AdminQuizzesPage } from '@/pages/admin/AdminQuizzesPage';
 import { ExamScreenPage } from '@/pages/exam/ExamScreenPage';
 
 export const router = createBrowserRouter([
@@ -115,8 +117,8 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <Navigate to="/admin/dashboard" replace /> },
       { path: 'dashboard', element: <AdminDashboardPage /> },
-      { path: 'users', element: <AdminDashboardPage /> },
-      { path: 'quizzes', element: <AdminDashboardPage /> },
+      { path: 'users', element: <AdminUsersPage /> },
+      { path: 'quizzes', element: <AdminQuizzesPage /> },
     ],
   },
 
