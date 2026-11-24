@@ -1,8 +1,21 @@
 # Validation status — TOEIC Microservices MVP
 
-The current verified code baseline is [`2e2681eab644f805f6765bb2969126a641088020`](https://github.com/chienvoxn/toeic-learning-platform-microservices/commit/2e2681eab644f805f6765bb2969126a641088020) on `refactor/remaining-layered-services`. Historical sections below retain their own older revision and run conditions.
+## Exam upgrade verification — 24/11/2026 ICT
 
-## Current baseline and live verification (24/11/2026)
+The submission baseline is `0112dc7`. The tests below ran against the Admin/Profile source in the working tree on `feature/exam-eve-upgrade` before packaging. The evidence records the run time and environment separately from historical baseline results.
+
+| Local suite | PASS | FAIL | SKIPPED | Evidence |
+|---|---:|---:|---:|---|
+| Frontend regression | 48 | 0 | 0 | [TAP](evidence/exam-upgrade-20261124-122302-frontend.txt) |
+| Content Maven with isolated PostgreSQL 17 | 5 | 0 | 0 | [Maven](evidence/exam-upgrade-20261124-122302-content-maven.txt) |
+| Gateway Admin API and Edge, including session restore | 16 | 0 | 0 | [Live Admin](evidence/exam-upgrade-20261124-122302-live-admin-edge.txt) |
+| Additional Profile, RBAC and Teacher ownership | 5 | 0 | 0 | [RBAC and Profile](evidence/exam-upgrade-20261124-122302-rbac-profile.txt) |
+| End-to-end smoke | 10 | 0 | 0 | [Smoke](evidence/exam-upgrade-20261124-122302-smoke.txt) |
+| Compose and HTTP preflight | 12/12 services running | 0 | 0 | [Compose and three HTTP 200 probes](evidence/exam-upgrade-20261124-122302-compose-gateway.txt) |
+
+The two static checks were `node --check web/app.js` and `git diff --check`. Prior Maven and smoke attempts hit HTTP timeouts. The table records the successful final runs. The workflow runs ordinary Maven verification and static checks. The isolated PostgreSQL fixture, browser tests and smoke are local evidence. [Actions for the upgrade branch](https://github.com/chienvoxn/toeic-learning-platform-microservices/actions?query=branch%3Afeature%2Fexam-eve-upgrade).
+
+## Historical baseline CI and live verification (24/11/2026)
 
 [CI run #7](https://github.com/chienvoxn/toeic-learning-platform-microservices/actions/runs/45244105920) on `2e2681e` finished successfully with **6/6 jobs**. These CI jobs validate build, tests, JavaScript and Compose configuration; they **do not** run F-02 or QA-03.
 
@@ -14,9 +27,9 @@ The current verified code baseline is [`2e2681eab644f805f6765bb2969126a641088020
 | QA-03 A: Interaction outage | **PASS** | [24/11 evidence](evidence/qa03-fault-injection-20261124-011437.txt), HEAD recorded as `ff9955b`; grading HTTP 200, grade persisted, activity recovered via SQL and API; 29.36 s submit-to-activity. |
 | QA-03 B: RabbitMQ outage | **PASS** | Same log; grading HTTP 200 while broker down, outbox pending, activity recovered; 32.14 s submit-to-activity. Retry warning count was 0 in sampled log; not evidence of retry count. |
 | QA-03 restoration | **PASS** | 12/12 services restored; distinct A/B event IDs, exit code 0. |
-| Final code baseline CI | **PASS 6/6** | [GitHub Actions run #7](https://github.com/chienvoxn/toeic-learning-platform-microservices/actions/runs/45244105920). |
+| Historical code CI | **PASS 6/6** | [GitHub Actions run #7](https://github.com/chienvoxn/toeic-learning-platform-microservices/actions/runs/45244105920). |
 
-**Interpretation:** The `NOT VERIFIED` and `PARTIAL` statements in historical checkpoints below describe those earlier revisions only. External integration fixtures and fault injection remain distinct from CI. Boilerplate verification, final report assembly and live demo screenshots remain outstanding.
+Historical checkpoints retain the recorded revision, conditions and evidence. Instructor boilerplate comparison remains open. [Audit](FINAL_AUDIT_KTPM_KTHDV.md).
 
 ---
 

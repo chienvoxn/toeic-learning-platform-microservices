@@ -68,8 +68,9 @@ Dừng demo và giữ dữ liệu bằng `docker compose stop`.
 1. **Learner và Assessment.** Đăng ký tài khoản mới. Trong **Luyện thi TOEIC**, mở đề Part 5 FREE, chọn A/B/C/D và chờ lưu từng câu trước khi bấm **Nộp bài và chấm điểm**. Đối chiếu `GRADED`, điểm, lời giải và **Lịch sử làm bài**. QA-02 lưu bằng chứng gửi đồng thời cùng một attempt.
 2. **FREE → PRO.** Khi còn FREE, mở đề Part 6 PRO và kiểm tra yêu cầu bắt đầu nhận HTTP 403. Vào **Gói thành viên → Kích hoạt PRO (Demo)**, quay lại và mở cùng đề. Đây là chuyển quyền demo tại chỗ, không có giao dịch thanh toán. Hạn mức demo là 10 lượt/ngày với FREE và 1.000 lượt/ngày với PRO.
 3. **Interaction.** Trong **Tương tác**, chọn đề, nhập số sao và nhận xét, sau đó bấm **Lưu đánh giá**. Dùng **Làm mới** để tìm `ATTEMPT_GRADED` ứng với attempt vừa chấm. Assessment ghi điểm và Outbox trong transaction. Activity xuất hiện bất đồng bộ sau khi RabbitMQ giao sự kiện. [Log phục hồi QA-03](docs/evidence/qa03-fault-injection-20261122-134619.txt).
-4. **Admin.** Đăng ký thêm một Learner riêng làm tài khoản nhận quyền. Lấy `userId` từ JSON của yêu cầu đã xác thực `GET /ms/v1/identity/me` trong DevTools → Network. Có thể tải lại trang sau khi đăng nhập để tạo GET này. Đăng xuất, đăng nhập Admin đã cấu hình, mở **Quản trị RBAC**, nhập UUID và cấp `TEACHER`.
-5. **Teacher.** Đăng nhập lại bằng tài khoản vừa được cấp quyền để JWT nhận claim mới, hoặc dùng tài khoản Teacher cấp sẵn. Mở **Giáo viên**, điền tiêu đề và đủ bốn lựa chọn cùng đáp án, giải thích, rồi bấm **Xuất bản đề mới**. Chuyển về Learner và làm mới danh mục để thấy đề vừa tạo. Learner thiếu `content:write` nhận HTTP 403 nếu gọi API tạo đề. [HTTP và SQL trong QA-01](docs/evidence/qa01-security-rbac-aa43453.txt).
+4. **Admin.** Đăng ký một Learner riêng làm tài khoản nhận quyền. Trong **Quản lý người dùng**, tìm theo tên hoặc email, chọn **Quản lý**, cấp vai trò **Giáo viên** và xác nhận. Tài khoản giữ vai trò Learner và nhận thêm quyền Teacher khi đăng nhập lại.
+5. **Teacher.** Đăng nhập lại bằng tài khoản vừa được cấp quyền. Mở **Tạo đề**, nhập câu hỏi từ CSV đúng Part, lưu nháp và xuất bản. Chuyển sang Learner và làm mới danh mục để thấy đề. Teacher chỉ sửa được bản nháp do mình sở hữu. Learner thiếu `content:write` nhận HTTP 403 khi tạo đề. [Kịch bản bảo vệ 7–10 phút](docs/DEMO_SCRIPT_EXAM.md).
+6. **Kiểm duyệt và hồ sơ.** Trong **Quản lý đề thi**, Admin có thể xem chi tiết, ẩn hoặc công khai lại đề. Learner vẫn xem kết quả cũ và có thể nộp lượt đã mở từ snapshot khi đề đang ẩn. Cả ba workspace có **Hồ sơ cá nhân** để đổi tên hiển thị và mật khẩu.
 
 Dùng email và tiêu đề dành riêng cho demo. Các bước trên tạo dữ liệu trong volumes. Những lỗi có chủ đích của QA-03 đã được lưu trong log và có thể trình bày từ evidence.
 
@@ -84,7 +85,7 @@ python tests/smoke.py
 
 Smoke bao gồm đăng ký, lưu đáp án, nộp lặp, ownership, entitlement PRO khi bật demo và activity. Quota, concurrent submit, fault injection và k6 có kịch bản riêng dưới [tests](tests/).
 
-[CI run 45250496826](https://github.com/chienvoxn/toeic-learning-platform-microservices/actions/runs/45250496826) đạt 6/6 job trên [revision 47a94aa](https://github.com/chienvoxn/toeic-learning-platform-microservices/commit/47a94aaac6b6f6e289003ac9745fb3f2b801f07a). Năm job Maven chạy `clean verify`; job thứ sáu kiểm tra cú pháp JavaScript và `docker compose config --quiet`. Lịch sử build image, runtime, smoke và thử nghiệm QA có mốc riêng trong [Validation status](docs/VALIDATION_STATUS.md).
+Baseline nộp `0112dc7` và các lượt chạy lịch sử được ghi riêng với bản Admin/Profile trên `feature/exam-eve-upgrade`. Xem kết quả cục bộ, phạm vi của CI và link bằng chứng theo phiên. [Validation status](docs/VALIDATION_STATUS.md) · [GitHub Actions của nhánh nâng cấp](https://github.com/chienvoxn/toeic-learning-platform-microservices/actions?query=branch%3Afeature%2Fexam-eve-upgrade).
 
 - [Audit KTPM/KTHDV](docs/FINAL_AUDIT_KTPM_KTHDV.md) và [bộ hình, số liệu QA-01–04](docs/SUBMISSION_EVIDENCE.md).
 - [Kiến trúc ADD, arc42, C4 và QA](docs/EXAM_ARCHITECTURE.md), [ADR](docs/ADR_MVP.md) và [Assessment DDD](docs/ASSESSMENT_DDD.md).
@@ -107,11 +108,15 @@ Các thao tác API dùng trong demo và smoke test.
 | Thao tác | Phương thức và endpoint |
 |---|---|
 | Đăng ký / đăng nhập | `POST /ms/v1/identity/register`, `POST /ms/v1/identity/login` |
-| Xem quyền hoặc cấp vai trò | `GET /ms/v1/identity/rbac/me`, `POST /ms/v1/identity/admin/users/{id}/roles` |
+| Hồ sơ cá nhân | `GET /ms/v1/identity/me`, `PATCH /ms/v1/identity/me`, `POST /ms/v1/identity/me/password` |
+| Xem quyền của phiên | `GET /ms/v1/identity/rbac/me`; giao diện giới hạn theo claims của JWT hiện tại |
+| Danh sách và cấp vai trò | `GET /ms/v1/identity/admin/users?q=&role=ALL&page=0`, `POST /ms/v1/identity/admin/users/{id}/roles`; yêu cầu `rbac:manage` |
 | Danh mục / chi tiết / tạo đề | `GET /ms/v1/contents/quizzes`, `GET /ms/v1/contents/quizzes/{id}`, `POST /ms/v1/contents/quizzes` |
+| Bản nháp Teacher | `GET /ms/v1/contents/quizzes/mine`, `POST /ms/v1/contents/quizzes/drafts`, `GET/PUT /ms/v1/contents/quizzes/{id}/draft`, `POST /ms/v1/contents/quizzes/{id}/publish` |
+| Kiểm duyệt đề | `GET /ms/v1/contents/quizzes/admin?q=&part=0&status=ALL&page=0`, `GET /ms/v1/contents/quizzes/admin/{id}`, `POST /ms/v1/contents/quizzes/admin/{id}/visibility`; yêu cầu `rbac:manage` |
 | Mở bài / lịch sử | `POST /ms/v1/attempts`, `GET /ms/v1/attempts` |
 | Lưu đáp án / nộp bài | `PUT /ms/v1/attempts/{id}/answers/{questionId}`, `POST /ms/v1/attempts/{id}/submit` |
 | Xem gói / chuyển gói demo | `GET /api/v1/memberships/me`, `PUT /api/v1/memberships/me` |
 | Lưu review / xem activity | `PUT /api/v1/interactions/contents/{id}/reviews/me`, `GET /api/v1/interactions/activities/me` |
 
-Gateway chặn các tuyến snapshot và entitlement nội bộ. API danh mục công khai chỉ cung cấp metadata. Assessment giữ snapshot riêng và chỉ trả kết quả của attempt cho chủ sở hữu. Cấu hình JWT HS256 dùng chung khóa và cơ chế tự chuyển PRO phục vụ demo cục bộ. Outbox chỉ đánh dấu `published=true` sau khi nhận correlated publisher ACK từ RabbitMQ mà không có mandatory return. NACK, NO_ROUTE, timeout hoặc lỗi kết nối giữ sự kiện ở trạng thái pending để retry; vì broker ACK và cập nhật SQL không nguyên tử, hệ thống bảo đảm at-least-once delivery kết hợp consumer idempotency theo eventId, không phải exactly-once delivery.
+Gateway chặn các tuyến snapshot và entitlement nội bộ. Danh mục công khai trả metadata, còn chi tiết công khai trả câu hỏi và lựa chọn. Đáp án được giữ ở snapshot nội bộ và Assessment chỉ trả kết quả cho chủ sở hữu. Content dùng một cờ hiển thị cho bản nháp và đề bị ẩn, đồng thời trả mã tác giả khi có. Cấu hình JWT HS256 dùng chung khóa và cơ chế tự chuyển PRO phục vụ demo cục bộ. Outbox chỉ đánh dấu `published=true` sau correlated publisher ACK từ RabbitMQ và khi không có mandatory return. NACK, NO_ROUTE, timeout hoặc lỗi kết nối giữ sự kiện ở trạng thái pending để retry. Broker ACK và cập nhật SQL là hai bước riêng, nên hệ thống dùng at-least-once delivery và consumer idempotency theo event ID.

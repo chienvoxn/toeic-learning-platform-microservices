@@ -1,0 +1,24 @@
+Local Compose API and headless Edge through Gateway at loopback, with distinct test fixtures
+feature/exam-eve-upgrade source changes in the working tree above HEAD 0112dc7, before packaging commit.
+Source log timestamps (ICT): live-edge.log 2026-11-24T11:52:38.7014690+07:00; restore-final.log 2026-11-24T11:58:57.3671442+07:00
+Provenance: copied assertion labels and summary from the two Temp/toeic-browser-qa logs.
+
+PASS API fixture and real account roles
+PASS API directory paging, search by name and email, role filters and DTO allowlist
+PASS API draft creation, Content Part/status/search, detail and owner
+PASS API Learner and Teacher denied on every Admin route, anonymous denied
+PASS API application of visibility and optimistic version conflict
+PASS API opens a real attempt before moderation
+PASS UI Admin sign-in, default workspace, six navigation items and API overview
+PASS UI user loading, pagination, search, filter, confirm/cancel and grant refresh
+PASS API new sign-in contains both roles and the previous JWT retains its original limits
+PASS UI quiz search, Part/status filters, detail and confirmed hide
+PASS API hidden quiz is unavailable publicly while saved snapshot still grades
+PASS UI republishes with confirmation and API retrieves the same historical result
+PASS UI mobile and tablet layout, scoped table overflow and browser runtime
+PASS UI profile for Admin and Teacher, profile edit and password change with Learner
+PASS API closes the dedicated moderation test fixture
+SUMMARY PASS=15 FAIL=0 SKIPPED=0
+
+PASS Admin deep-link restores the authenticated session after reload (1/0/0)
+Combined PASS=16 FAIL=0 SKIPPED=0

@@ -2,9 +2,22 @@
 
 **Cập nhật audit** 22/11/2026 · **Nhánh** `refactor/remaining-layered-services` · **Revision mã trên GitHub và CI** `730dd5c` · **Build/runtime cục bộ đã lưu** `41b192d` · **Baseline audit ban đầu** `2fd4ed8`
 
-## Audit supplement — current baseline, 24/11/2026
+## Rà soát bản thi — 24/11/2026
 
-**Current verified code:** [`2e2681eab644f805f6765bb2969126a641088020`](https://github.com/chienvoxn/toeic-learning-platform-microservices/commit/2e2681eab644f805f6765bb2969126a641088020), `refactor/remaining-layered-services`. [CI run #7](https://github.com/chienvoxn/toeic-learning-platform-microservices/actions/runs/45244105920) completed **6/6 PASS**. The old revision references in the historical matrix are retained as per-run provenance; do not treat them as current baseline.
+Bản nộp ổn định là `0112dc7`. Phần nâng cấp Admin/Profile được kiểm thử trên `feature/exam-eve-upgrade`. Các ma trận lịch sử giữ nguyên SHA và phạm vi của phiên đã ghi.
+
+| Mục đối chiếu | Kết quả bản nâng cấp |
+|---|---|
+| H01, H06, E06 · IAM, RBAC, Profile | Identity chỉ sửa hồ sơ của actor từ JWT. Đã kiểm tra lưu tên, đổi mật khẩu, đăng nhập lại và claims ở cả ba workspace. Learner/Teacher nhận 403 trên năm tuyến Admin. Profile và danh sách Admin dùng DTO giới hạn trường trả về. [RBAC và Profile](evidence/exam-upgrade-20261124-122302-rbac-profile.txt) · [Live Admin](evidence/exam-upgrade-20261124-122302-live-admin-edge.txt) |
+| H02 · Quyền theo tài nguyên Content | Teacher nhận 404 khi xem, sửa hoặc xuất bản bản nháp của người khác. So sánh bản nháp trước và sau xác nhận nội dung cùng version giữ nguyên. Admin có quyền quản lý hiển thị. Chủ sở hữu có thể xuất bản lại đề đã ẩn theo trạng thái bản nháp hiện tại. [RBAC và ownership](evidence/exam-upgrade-20261124-122302-rbac-profile.txt) |
+| K04–K05, K09, H05–H06 · Sơ đồ | Đã đối chiếu C4 L1/L2/L3, arc42, runtime sequence, class diagram RBAC và ERD với mã. Bổ sung trách nhiệm Identity/Content và luồng Profile/Admin. Topology, ownership năm DB, quan hệ RBAC và sequence Assessment vẫn khớp mô hình hiện tại. [Kiến trúc](EXAM_ARCHITECTURE.md) · [RBAC và ERD](REPORT_TEMPLATE.md) |
+| K11, H02, QA-02 · Snapshot | Khi quiz đang ẩn, lượt đã mở vẫn chấm từ snapshot và kết quả cũ vẫn đọc được sau khi công khai lại. Đây là phép thử kiểm duyệt bổ sung. Số liệu concurrent submit QA-02 vẫn thuộc phiên lịch sử. [Live Admin](evidence/exam-upgrade-20261124-122302-live-admin-edge.txt) |
+| K07, E04–E05, H07–H09 · Phát hành và vận hành | Đủ 12 service, Gateway HTTP 200, frontend 48/48, Content PostgreSQL 5/5 và smoke 10/10. Kết quả CI của nhánh phát hành được theo dõi riêng. [Bằng chứng](SUBMISSION_EVIDENCE.md) · [Actions](https://github.com/chienvoxn/toeic-learning-platform-microservices/actions?query=branch%3Afeature%2Fexam-eve-upgrade) |
+| K08 · Đề thi và boilerplate | Workspace có báo cáo tổng hợp của nhóm. Chưa tìm thấy bản đề chính thức hay boilerplate giảng viên để đối chiếu trực tiếp. Đối chiếu theo ma trận đề gốc đã ghi ở §2.1. Trạng thái boilerplate vẫn **PARTIAL / P0**. |
+
+## Audit supplement — historical baseline, 24/11/2026
+
+**Historical verified code:** [`2e2681eab644f805f6765bb2969126a641088020`](https://github.com/chienvoxn/toeic-learning-platform-microservices/commit/2e2681eab644f805f6765bb2969126a641088020), `refactor/remaining-layered-services`. [CI run #7](https://github.com/chienvoxn/toeic-learning-platform-microservices/actions/runs/45244105920) completed **6/6 PASS**. Each row retains its run provenance.
 
 | Requirement / evidence | Current status | Scope and remaining action |
 |---|---|---|

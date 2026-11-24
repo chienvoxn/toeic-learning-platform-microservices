@@ -1,0 +1,57 @@
+Frontend regression using Node.js: node --test --test-reporter=tap tests/*.test.cjs
+feature/exam-eve-upgrade source changes in the working tree above HEAD 0112dc7, before packaging commit.
+Source log timestamp (ICT): 2026-11-24T12:21:11.3896429+07:00
+Provenance: copied TAP assertion labels and totals from Temp/toeic-browser-qa/frontend-readiness.log.
+
+ok 1 - slow answer blocks submit until the saved choice is acknowledged
+ok 2 - failed save keeps the selected answer, blocks submit, and supports retry
+ok 3 - a successful HTTP status without the selected choice does not unlock submission
+ok 4 - A to B on one question is serialized while other responses may arrive first
+ok 5 - double click sends only one submit and locks choices while grading
+ok 6 - reopening an in-progress attempt restores server choices and preserves pending changes
+ok 7 - reopening and trying to submit a graded attempt only displays its stored result
+ok 8 - exam shows one question, retains review flags and cancels submission without a write
+ok 9 - published catalog order controls presentation without altering saved answer identities
+ok 10 - server snapshot order wins over the current catalog for positioned and legacy attempts
+ok 11 - dashboard regions independently show loading, results, empty state, or server error
+ok 12 - dashboard refresh updates entitlement and empties the catalog when the API has no quizzes
+ok 13 - learner dashboard CTA opens Practice and updates focus and current navigation
+ok 14 - latest practice refresh wins and an active navigation item moves focus to the heading
+ok 15 - activity still loads when review catalog fails, and review failure is local
+ok 16 - attempt errors distinguish permission, FREE entitlement, expired token, and server error
+ok 17 - login does not persist a partial session and distinguishes bad credentials
+ok 18 - Learner only lands in the appropriate workspace with its own navigation
+ok 19 - Teacher only lands in the appropriate workspace with its own navigation
+ok 20 - Teacher without practice permission lands in the appropriate workspace with its own navigation
+ok 21 - Admin only lands in the appropriate workspace with its own navigation
+ok 22 - multiple roles lands in the appropriate workspace with its own navigation
+ok 23 - direct forbidden routes fall back safely, while allowed deep links and workspace switching work
+ok 24 - Admin overview uses pagination totals and opens directories scoped by role
+ok 25 - Admin search ignores stale responses, paginates the submitted filter, and retries the failed page
+ok 26 - library filters API data, distinguishes a locked PRO quiz, and dashboard limits suggestions
+ok 27 - leaving an exam with failed writes keeps the user on the same route when they cancel
+ok 28 - logout resets workspace and account state; role grants take effect after a new JWT
+ok 29 - Content V2 HTTP errors stay unverified and a direct create route returns to the safe workspace
+ok 30 - a successful legacy-shaped catalog response is unsupported, and an empty V3 owner list is valid
+ok 31 - expired JWT is distinct from unsupported and cannot open the editor
+ok 32 - forbidden Teacher is distinct from unsupported and cannot open the editor
+ok 33 - network failure is distinct from unsupported and cannot open the editor
+ok 34 - service unavailable is distinct from unsupported and cannot open the editor
+ok 35 - timeout is distinct from unsupported and cannot open the editor
+ok 36 - a Teacher without content:write cannot probe or enter the authoring route
+ok 37 - verified V3 opens a saved draft, preserves version on update, and refreshes the list after publish
+ok 38 - losing V3 during editing blocks the write, retains the draft and allows retry after a positive check
+ok 39 - going offline invalidates an in-flight capability response
+ok 40 - downloadable template uses the supported CSV schema
+ok 41 - CSV preserves Vietnamese, quoted commas, escaped quotes, line breaks and question_no order
+ok 42 - CSV validation reports physical lines, duplicate/gapped numbers, Part, answers and required fields
+ok 43 - CSV rejects malformed quoting, wrong headers, missing columns, and empty inputs
+ok 44 - CSV checks file size before reading bytes, rejects invalid UTF-8 and caps questions
+ok 45 - draft adds, duplicates independently, reorders, and removes questions
+ok 46 - import replaces only a blank first slot, appends to existing work, and rejects overflow atomically
+ok 47 - publish validation pinpoints incomplete questions, checks payload size and uses the existing DTO shape
+ok 48 - editor saves separately, preview and cancel send no publish, and a conflict keeps local edits
+# tests 48
+# pass 48
+# fail 0
+# skipped 0

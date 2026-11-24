@@ -10,13 +10,17 @@
     </label>
     <nav id="primary-nav" class="hidden" aria-label="Điều hướng chính">
       <button type="button" data-tab="admin-home" aria-controls="admin-home-view" class="nav">Tổng quan quản trị</button>
-      <button type="button" data-tab="admin" aria-controls="admin-view" class="nav">Phân quyền</button>
+      <button type="button" data-tab="admin" aria-controls="admin-view" class="nav">Quản lý người dùng</button>
+      <button type="button" data-tab="admin-learners" aria-controls="admin-view" class="nav">Quản lý học viên</button>
+      <button type="button" data-tab="admin-teachers" aria-controls="admin-view" class="nav">Quản lý giáo viên</button>
+      <button type="button" data-tab="admin-quizzes" aria-controls="admin-quizzes-view" class="nav">Quản lý đề thi</button>
       <button type="button" data-tab="teacher-home" aria-controls="teacher-home-view" class="nav">Đề của tôi</button>
       <button type="button" data-tab="teacher" aria-controls="teacher-view" class="nav" disabled>Tạo đề</button>
       <button type="button" data-tab="dashboard" aria-controls="dashboard-view" class="nav">Tổng quan</button>
       <button type="button" data-tab="practice" aria-controls="practice-view" class="nav">Luyện thi TOEIC</button>
       <button type="button" data-tab="results" aria-controls="results-view" class="nav">Kết quả của tôi</button>
       <button type="button" data-tab="membership" aria-controls="membership-view" class="nav">Gói thành viên</button>
+      <button type="button" data-tab="profile" aria-controls="profile-view" class="nav">Hồ sơ cá nhân</button>
     </nav>
   </aside>
   <main id="main-content"><header class="topbar"><h1 id="page-title" tabindex="-1">Đăng nhập</h1><div class="account"><span id="identity-state" class="chip">Chưa đăng nhập</span><button id="logout" type="button" class="ghost hidden">Đăng xuất</button></div></header>
@@ -245,23 +249,102 @@
     </dialog>
   </section>
 
+  <section id="profile-view" class="view hidden">
+    <div class="profile-grid">
+      <article class="panel profile-card">
+        <h2>Thông tin cá nhân</h2>
+        <form id="profile-form">
+          <label>Họ tên hiển thị<input id="profile-name" name="displayName" required minlength="2" maxlength="120" autocomplete="name"></label>
+          <label>Email<input id="profile-email" type="email" readonly autocomplete="email"></label>
+          <label>Vai trò<input id="profile-roles" type="text" readonly></label>
+          <button id="profile-save" type="submit" class="primary">Lưu thông tin</button>
+          <p id="profile-status" class="region-status" role="status"></p>
+        </form>
+      </article>
+      <article class="panel profile-card">
+        <h2>Đổi mật khẩu</h2>
+        <form id="password-form">
+          <label>Mật khẩu hiện tại<input name="currentPassword" type="password" required autocomplete="current-password"></label>
+          <label>Mật khẩu mới (ít nhất 8 ký tự)<input name="newPassword" type="password" minlength="8" maxlength="72" required autocomplete="new-password"></label>
+          <label>Xác nhận mật khẩu mới<input name="confirmPassword" type="password" minlength="8" maxlength="72" required autocomplete="new-password"></label>
+          <button id="password-save" type="submit" class="primary">Đổi mật khẩu</button>
+          <p id="password-status" class="region-status" role="status"></p>
+        </form>
+      </article>
+    </div>
+  </section>
+
   <section id="admin-home-view" class="view hidden">
-    <article class="panel workspace-action">
-      <div class="workspace-action-copy"><h2>Cấp vai trò cho tài khoản</h2><p>Dùng mã tài khoản để cấp vai trò phù hợp.</p></div>
-      <button id="admin-grant" type="button" class="primary" aria-controls="admin-view">Mở phân quyền</button>
-    </article>
+    <div class="admin-stats">
+      <button type="button" class="stat admin-stat" data-admin-page="admin">Tất cả tài khoản <strong id="admin-total-users">—</strong></button>
+      <button type="button" class="stat admin-stat" data-admin-page="admin-learners">Học viên <strong id="admin-total-learners">—</strong></button>
+      <button type="button" class="stat admin-stat" data-admin-page="admin-teachers">Giáo viên <strong id="admin-total-teachers">—</strong></button>
+      <button type="button" class="stat admin-stat" data-admin-page="admin-quizzes">Đề thi <strong id="admin-total-quizzes">—</strong></button>
+    </div>
+    <p id="admin-home-status" class="region-status" role="status"></p>
+    <button id="admin-home-retry" type="button" class="ghost hidden">Thử lại</button>
   </section>
 
   <section id="admin-view" class="view hidden">
-    <div class="panel">
-      <p>Người dùng cần đăng nhập lại sau khi được cấp vai trò.</p>
-      <form id="admin-form">
-        <label>Mã tài khoản<input name="userId" required spellcheck="false" autocomplete="off"></label>
-        <label>Vai trò<select name="role"><option value="TEACHER">Giáo viên</option><option value="LEARNER">Học viên</option><option value="ADMIN">Quản trị viên</option></select></label>
-        <button id="admin-submit" class="primary" type="submit">Cấp vai trò</button>
-        <p id="admin-status" class="region-status" role="status"></p>
+    <div class="panel admin-section">
+      <h2>Danh sách tài khoản</h2>
+      <form id="admin-user-search" class="admin-filters">
+        <label>Tên hoặc email<input id="admin-user-query" type="search" maxlength="120"></label>
+        <label id="admin-role-filter">Vai trò<select id="admin-user-role"><option value="ALL">Tất cả</option><option value="LEARNER">Học viên</option><option value="TEACHER">Giáo viên</option><option value="ADMIN">Quản trị viên</option></select></label>
+        <button type="submit" class="primary">Tìm kiếm</button>
       </form>
+      <p id="admin-user-status" class="region-status" role="status"></p>
+      <button id="admin-user-retry" type="button" class="ghost hidden">Thử lại</button>
+      <div id="admin-user-table" class="admin-table-scroll hidden" role="region" aria-label="Bảng tài khoản" tabindex="0">
+        <table class="admin-table">
+          <thead><tr><th scope="col">Họ tên</th><th scope="col">Email</th><th scope="col">Vai trò</th><th scope="col">Thao tác</th></tr></thead>
+          <tbody id="admin-user-rows"></tbody>
+        </table>
+      </div>
+      <div class="admin-pager"><button id="admin-user-prev" type="button" class="ghost" disabled>Trước</button><span id="admin-user-page" aria-live="polite"></span><button id="admin-user-next" type="button" class="ghost" disabled>Tiếp</button></div>
     </div>
+    <dialog id="admin-user-dialog" class="editor-dialog" aria-labelledby="admin-account-title">
+      <h2 id="admin-account-title">Chi tiết tài khoản</h2>
+      <dl class="admin-details">
+        <dt>Họ tên</dt><dd id="admin-account-name"></dd>
+        <dt>Email</dt><dd id="admin-account-email"></dd>
+        <dt>Vai trò hiện có</dt><dd id="admin-account-roles"></dd>
+      </dl>
+      <form id="admin-form">
+        <label id="admin-grant-field">Vai trò cấp thêm<select id="admin-grant-role" required></select></label>
+        <p id="admin-status" class="region-status" role="status"></p>
+        <div class="view-actions">
+          <button id="admin-submit" class="primary" type="submit">Cấp vai trò</button>
+          <button id="admin-user-close" class="ghost" type="button">Đóng</button>
+        </div>
+      </form>
+    </dialog>
+  </section>
+  <section id="admin-quizzes-view" class="view hidden">
+    <div class="panel admin-section">
+      <h2>Danh sách đề thi</h2>
+      <form id="admin-quiz-search" class="admin-filters admin-quiz-filters">
+        <label>Tên đề<input id="admin-quiz-query" type="search" maxlength="120"></label>
+        <label>Part<select id="admin-quiz-part"><option value="0">Tất cả</option><option value="1">Part 1</option><option value="2">Part 2</option><option value="3">Part 3</option><option value="4">Part 4</option><option value="5">Part 5</option><option value="6">Part 6</option><option value="7">Part 7</option></select></label>
+        <label>Trạng thái<select id="admin-quiz-visibility"><option value="ALL">Tất cả</option><option value="PUBLISHED">Công khai</option><option value="DRAFT">Chưa công khai</option></select></label>
+        <button type="submit" class="primary">Tìm kiếm</button>
+      </form>
+      <p id="admin-quiz-status" class="region-status" role="status"></p>
+      <button id="admin-quiz-retry" type="button" class="ghost hidden">Thử lại</button>
+      <div id="admin-quiz-table" class="admin-table-scroll hidden" role="region" aria-label="Bảng đề thi" tabindex="0">
+        <table class="admin-table admin-quiz-table">
+          <thead><tr><th scope="col">Tên đề</th><th scope="col">Part</th><th scope="col">Loại</th><th scope="col">Số câu</th><th scope="col">Trạng thái</th><th scope="col">Tác giả</th><th scope="col">Thao tác</th></tr></thead>
+          <tbody id="admin-quiz-rows"></tbody>
+        </table>
+      </div>
+      <div class="admin-pager"><button id="admin-quiz-prev" type="button" class="ghost" disabled>Trước</button><span id="admin-quiz-page" aria-live="polite"></span><button id="admin-quiz-next" type="button" class="ghost" disabled>Tiếp</button></div>
+    </div>
+    <dialog id="admin-quiz-dialog" class="editor-dialog" aria-labelledby="admin-quiz-title">
+      <h2 id="admin-quiz-title">Chi tiết đề thi</h2>
+      <p id="admin-quiz-detail-status" class="region-status" role="status"></p>
+      <div id="admin-quiz-detail"></div>
+      <form method="dialog"><button type="submit" class="ghost">Đóng</button></form>
+    </dialog>
   </section>
 </div>
 </main></div><script src="/quiz-authoring.js" defer></script><script src="/app.js" defer></script></body></html>

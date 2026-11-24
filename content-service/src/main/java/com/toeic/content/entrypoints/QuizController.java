@@ -13,6 +13,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.transaction.annotation.Isolation;
@@ -53,6 +55,72 @@ class QuizController {
     record PublishRequest(@NotNull @PositiveOrZero Long version) {}
     record OwnedQuiz(UUID id, String title, int part, boolean premium, long count, String status, long version) {}
     record DraftDetail(OwnedQuiz quiz, List<QuestionInput> questions) {}
+
+    record AdminQuiz(UUID id, String title, int part, boolean premium, long count, String status,
+                     long version, UUID ownerUserId) {}
+    record AdminQuizzes(List<AdminQuiz> quizzes, long total, int page, int size) {}
+    record AdminQuizDetail(AdminQuiz quiz, List<PublicQuestion> questions) {}
+    record VisibilityChange(@NotNull @PositiveOrZero Long version, @NotNull Boolean published) {}
+
+    private void requireAdmin(String bearer) {
+        if (!identity.actor(bearer).can("rbac:manage")) throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+    }
+
+    @GetMapping("/admin")
+    @Transactional(readOnly = true)
+    AdminQuizzes adminList(@RequestHeader(value = "Authorization", required = false) String bearer,
+                           @RequestParam(defaultValue = "") String q,
+                           @RequestParam(defaultValue = "ALL") String status,
+                           @RequestParam(defaultValue = "0") int part,
+                           @RequestParam(defaultValue = "0") int page) {
+        requireAdmin(bearer);
+        if (q.length() > 120 || page < 0 || page > 100000 || part < 0 || part > 7
+                || !List.of("ALL", "PUBLISHED", "DRAFT").contains(status)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+        }
+        int size = 20;
+        var result = quizzes.searchAdmin(q.trim(), status, part,
+                PageRequest.of(page, size, Sort.by("title", "quizId")));
+        return new AdminQuizzes(result.getContent().stream().map(this::adminView).toList(),
+                result.getTotalElements(), page, size);
+    }
+
+    @GetMapping("/admin/{id}")
+    @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
+    AdminQuizDetail adminDetail(@RequestHeader(value = "Authorization", required = false) String bearer,
+                                @PathVariable UUID id) {
+        requireAdmin(bearer);
+        Quiz quiz = quizzes.findById(id).orElseThrow(QuizController::notFound);
+        var rows = questions.findInQuizOrder(id);
+        return new AdminQuizDetail(adminView(quiz, rows.size()), rows.stream()
+                .map(q -> new PublicQuestion(q.questionId, q.prompt, options(q))).toList());
+    }
+
+    @PostMapping("/admin/{id}/visibility")
+    @Transactional
+    AdminQuiz setVisibility(@RequestHeader(value="Authorization",required=false) String bearer,
+                            @PathVariable UUID id, @Valid @RequestBody VisibilityChange input) {
+        requireAdmin(bearer);
+        Quiz quiz = quizzes.lockAdmin(id).orElseThrow(QuizController::notFound);
+        if (quiz.version != input.version()) throw new ResponseStatusException(HttpStatus.CONFLICT);
+        if (quiz.published == input.published()) return adminView(quiz);
+        if (input.published()) {
+            var qs=questions.findInQuizOrder(id);
+            requirePublishable(quiz.title,qs.stream().map(QuizController::editableQuestion).toList());
+        }
+        quiz.published = input.published();
+        quiz.version++;
+        return adminView(quiz);
+    }
+
+    private AdminQuiz adminView(Quiz quiz) {
+        return adminView(quiz, questions.countByQuizId(quiz.quizId));
+    }
+
+    private AdminQuiz adminView(Quiz quiz, long count) {
+        return new AdminQuiz(quiz.quizId, quiz.title, quiz.part, quiz.premium, count,
+                quiz.published ? "PUBLISHED" : "DRAFT", quiz.version, quiz.ownerUserId);
+    }
 
     @GetMapping
     @Transactional(readOnly = true)

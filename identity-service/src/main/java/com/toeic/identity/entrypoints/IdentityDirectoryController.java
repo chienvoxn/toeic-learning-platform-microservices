@@ -31,6 +31,42 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
  UserView me(@RequestHeader(value="Authorization",required=false) String header){var user=tokens.require(header);return repo.findById(user.userId()).map(this::view).orElseThrow(()->new ResponseStatusException(HttpStatus.UNAUTHORIZED));}
  @GetMapping("/rbac/me") @Transactional(readOnly=true)
  RbacService.Access myPermissions(@RequestHeader(value="Authorization",required=false) String token){return rbac.access(tokens.require(token).userId());}
+ @GetMapping("/admin/users") @Transactional(readOnly=true)
+ RbacService.UserDirectoryPage listUsers(
+   @RequestHeader(value="Authorization",required=false) String header,
+   @RequestParam(defaultValue="") String q,
+   @RequestParam(defaultValue="ALL") String role,
+   @RequestParam(defaultValue="0") int page) {
+  if(!tokens.require(header).can("rbac:manage"))throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+  if(q.length()>120 || page<0 || page>100000 || !Set.of("ALL","LEARNER","TEACHER","ADMIN").contains(role.toUpperCase(Locale.ROOT)))
+   throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+  return rbac.directory(q,role,page);
+ }
+
+ record ProfileUpdate(@NotBlank @Size(min=2,max=120) String displayName){}
+ record PasswordChange(@NotBlank String currentPassword,@NotBlank @Size(min=8,max=72) String newPassword){}
+ @PatchMapping("/me") @Transactional
+ UserView updateProfile(@RequestHeader(value="Authorization",required=false) String header,
+                        @Valid @RequestBody ProfileUpdate input){
+  var actor=tokens.require(header);
+  var user=repo.findById(actor.userId()).orElseThrow(()->new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+  String name=input.displayName().trim();
+  if(name.length()<2 || name.length()>120)throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+  user.displayName=name;
+  return view(user);
+ }
+ @PostMapping("/me/password") @Transactional
+ void changePassword(@RequestHeader(value="Authorization",required=false) String header,
+                     @Valid @RequestBody PasswordChange input){
+  var actor=tokens.require(header);
+  var user=repo.findById(actor.userId()).orElseThrow(()->new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+  if(!bcrypt.matches(input.currentPassword(),user.passwordHash))
+   throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Current password is incorrect");
+  if(input.currentPassword().equals(input.newPassword()))
+   throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"New password must be different");
+  user.passwordHash=bcrypt.encode(input.newPassword());
+ }
+
  record RoleChange(@NotNull @Pattern(regexp="LEARNER|TEACHER|ADMIN") String role){}
  @PostMapping("/admin/users/{id}/roles") @Transactional
  RbacService.Access grantRole(@RequestHeader(value="Authorization",required=false) String header,@PathVariable UUID id,@Valid @RequestBody RoleChange change){

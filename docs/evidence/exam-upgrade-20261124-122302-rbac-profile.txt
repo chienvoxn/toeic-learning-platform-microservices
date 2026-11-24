@@ -1,0 +1,22 @@
+Exam readiness RBAC, Profile and ownership through local Gateway
+feature/exam-eve-upgrade source changes in the working tree above HEAD 0112dc7, before packaging commit.
+Source log timestamp (ICT): 2026-11-24T12:23:28.9482152+07:00
+Provenance: copied test labels and summary from the Temp/toeic-browser-qa exam readiness and prior live logs.
+Dedicated test accounts. No real user data, credentials, JWTs or response bodies recorded.
+
+Exam readiness assertions
+PASS Prepare test accounts in all three roles
+PASS Teacher foreign draft GET/PUT/publish = 404; owner version and content preserved
+PASS learner workspace: Profile save, password change, relogin, role, viewport and console
+PASS teacher workspace: Profile save, password change, relogin, role, viewport and console
+PASS admin workspace: Profile save, password change, relogin, role, viewport and console
+SUMMARY PASS=5 FAIL=0 SKIPPED=0
+
+The three workspace checks used Edge at 1440, 768 and 320 CSS px. They verified Profile display-name persistence, wrong current password HTTP 400, old password HTTP 401, new password login and role claims.
+Learner and Teacher Admin deep links fell back to their workspace and both Admin list endpoints returned HTTP 403. Teacher and Learner empty views used real data. Admin loading/error/retry was checked with a browser-injected 503 and a subsequent real successful empty search.
+Ownership used an isolated unpublished draft and compared the complete owner response before and after denied Teacher writes.
+
+Prior live API assertions (also counted in the 16-check live bundle)
+PASS API directory paging, search by name and email, role filters and DTO allowlist
+PASS API Learner and Teacher denied on every Admin route, anonymous denied
+PASS API new sign-in contains both roles and the previous JWT retains its original limits

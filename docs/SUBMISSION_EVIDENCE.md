@@ -1,6 +1,21 @@
 # Bộ bằng chứng nộp KTPM / KTHDV
 
-## Newest verified baseline and local integration evidence — 24/11/2026
+## Exam upgrade evidence — 24/11/2026 ICT
+
+The local runs cover the Admin/Profile code on `feature/exam-eve-upgrade` above submission baseline `0112dc7`. Files contain selected assertion lines or status output, with capture/source timestamps and sensitive values excluded.
+
+| File | Result and scope |
+|---|---|
+| [Content Maven with PostgreSQL](evidence/exam-upgrade-20261124-122302-content-maven.txt) | 5 PASS, 0 FAIL, 0 SKIPPED on PostgreSQL 17.12 |
+| [Admin API and Edge](evidence/exam-upgrade-20261124-122302-live-admin-edge.txt) | 16 PASS, including Admin session restore, permission gates, moderation and historical grade |
+| [Frontend TAP](evidence/exam-upgrade-20261124-122302-frontend.txt) | 48 PASS, 0 FAIL, 0 SKIPPED |
+| [Smoke](evidence/exam-upgrade-20261124-122302-smoke.txt) | 10 PASS, including FREE/PRO, grade and broker delivery |
+| [RBAC, Profile and ownership](evidence/exam-upgrade-20261124-122302-rbac-profile.txt) | 5 new PASS covering three workspaces and denied Teacher writes; three prior assertion lines are quoted for cross-reference |
+| [Compose and Gateway](evidence/exam-upgrade-20261124-122302-compose-gateway.txt) | 12 services running, six healthy backing services and three HTTP 200 probes, with running image IDs |
+
+[Validation scope](VALIDATION_STATUS.md) · [Actions for the upgrade branch](https://github.com/chienvoxn/toeic-learning-platform-microservices/actions?query=branch%3Afeature%2Fexam-eve-upgrade).
+
+## Historical baseline and local integration evidence — 24/11/2026
 
 - **Code baseline:** [`2e2681eab644f805f6765bb2969126a641088020`](https://github.com/chienvoxn/toeic-learning-platform-microservices/commit/2e2681eab644f805f6765bb2969126a641088020), branch `refactor/remaining-layered-services`.
 - **GitHub CI:** [Microservices MVP CI run #7](https://github.com/chienvoxn/toeic-learning-platform-microservices/actions/runs/45244105920), **6/6 PASS**, triggered by push. CI does **not** itself execute external F-02 or QA-03 tests.
@@ -42,7 +57,7 @@ Các PNG dưới đây được kết xuất từ Mermaid trong hồ sơ thiết
 | [Class Diagram RBAC](figures/rbac.png) | User–Role–Permission và ánh xạ quyền của Identity. [Mermaid](REPORT_TEMPLATE.md#class-diagram-for-rbac) |
 | ERD · [Identity](figures/erd-identity.png), [Content](figures/erd-content.png), [Assessment](figures/erd-assessment.png), [Interaction](figures/erd-interaction.png), [Membership](figures/erd-membership.png) | Năm ERD theo database và tham chiếu logic qua ID. [Mermaid và ghi chú ownership](REPORT_TEMPLATE.md#erd-ownership-five-databases) |
 
-## Ảnh chụp demo còn chờ
+## Ảnh và diễn tập demo
 
 Khi rehearsal trên stack sẵn sàng, chụp trực tiếp các khung dưới đây. Ghi timestamp có múi giờ, checkout SHA và nguồn hình cho từng ảnh. Che mật khẩu, JWT, Authorization header, cấu hình resolved và dữ liệu cá nhân trước khi đưa vào báo cáo.
 
@@ -52,4 +67,4 @@ Khi rehearsal trên stack sẵn sàng, chụp trực tiếp các khung dưới �
 4. Admin cấp Teacher và Teacher xuất bản đề sau lần đăng nhập mới.
 5. Review và activity `ATTEMPT_GRADED`, đối chiếu attempt ID.
 
-Hồ sơ hiện có biểu đồ thực nghiệm QA-04, sơ đồ thiết kế và log gốc. Ảnh chụp giao diện chạy đủ các luồng demo vẫn chờ rehearsal. [Kịch bản demo](../README.md#4-kịch-bản-demo-learner--teacher--admin).
+Các log Edge ghi kiểm thử UI trên dữ liệu thử. Bộ ảnh chạy toàn bộ kịch bản demo chưa được lưu trong hồ sơ. [Kịch bản bảo vệ](DEMO_SCRIPT_EXAM.md).

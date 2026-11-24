@@ -34,3 +34,15 @@
 **Decision.** Inject `AttemptStore`, `AttemptQuestionStore` and `OutboxStore` into `AttemptApplicationService`. Their `Jpa*Store` adapters delegate to Spring Data repositories. Keep `lockOwn` in the attempt port and implement it in `AttemptRepo`. The scheduled publisher uses `OutboxRepo` for polling and updating, and quota reservation uses the dedicated JDBC component.
 
 **Trade-off.** Direct Spring Data injection would remove adapter classes while coupling use-case tests to repository interfaces from the framework. Separate domain and persistence entities would add mapping and transaction verification. The selected boundary isolates persistence calls for use-case tests and keeps JPA annotations on the mapped model. See the [dependency review](ASSESSMENT_DDD.md#5-application-services-ports-và-hướng-phụ-thuộc).
+
+## ADR-008 — Admin boundaries and versioned quiz visibility
+
+**Status.** Accepted for the exam upgrade.
+
+**Context.** Admin needs account discovery, role grants and quiz moderation. A quiz can already have active or graded attempts when Admin hides it.
+
+**Decision.** Identity owns directory search, additive role grants and self-service Profile. Content owns quiz visibility. Each service checks `rbac:manage` on Admin calls through the Gateway. Content checks the version under its local quiz row lock and validates publication. Assessment grades from its own persisted snapshot. The workspace uses the Content author UUID when present.
+
+**Trade-off.** Reusing the visibility flag avoids a migration before the exam. Hidden quizzes share draft behavior, including the owner's ability to publish a valid draft. Distinguishing a moderation hold would need a separate lifecycle and policy. Resolving author names would need a narrow Identity lookup authorized for that purpose. Profile password changes affect subsequent authentication, while existing JWTs keep their expiration.
+
+**Evidence.** The live suite checked five protected routes, stale versions, loss of public visibility and successful grading during the hide interval. [Live API and Edge](evidence/exam-upgrade-20261124-122302-live-admin-edge.txt).

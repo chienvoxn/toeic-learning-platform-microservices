@@ -35,14 +35,16 @@ function alertMsg(message, brief = false) {
 }
 
 const roleLabels = {LEARNER: 'Học viên', TEACHER: 'Giáo viên', ADMIN: 'Quản trị viên'};
+const adminUserPages = {admin: 'ALL', 'admin-learners': 'LEARNER', 'admin-teachers': 'TEACHER'};
 const workspaces = {
-  admin: {label: 'Quản trị', role: 'ADMIN', pages: ['admin-home', 'admin']},
-  teacher: {label: 'Giáo viên', role: 'TEACHER', pages: ['teacher-home', 'teacher', 'practice']},
-  learner: {label: 'Học viên', role: 'LEARNER', pages: ['dashboard', 'practice', 'results', 'membership']}
+  admin: {label: 'Quản trị', role: 'ADMIN', pages: ['admin-home', ...Object.keys(adminUserPages), 'admin-quizzes', 'profile']},
+  teacher: {label: 'Giáo viên', role: 'TEACHER', pages: ['teacher-home', 'teacher', 'practice', 'profile']},
+  learner: {label: 'Học viên', role: 'LEARNER', pages: ['dashboard', 'practice', 'results', 'membership', 'profile']}
 };
 const pageTitles = {dashboard: 'Tổng quan học tập', practice: 'Luyện thi TOEIC', results: 'Kết quả của tôi',
-  membership: 'Gói thành viên', interaction: 'Đánh giá đề', 'teacher-home': 'Không gian giáo viên',
-  teacher: 'Tạo đề', 'admin-home': 'Trung tâm quản trị', admin: 'Phân quyền', quiz: 'Chi tiết đề',
+  membership: 'Gói thành viên', profile: 'Hồ sơ cá nhân', interaction: 'Đánh giá đề', 'teacher-home': 'Không gian giáo viên',
+  teacher: 'Tạo đề', 'admin-home': 'Tổng quan quản trị', admin: 'Quản lý người dùng',
+  'admin-learners': 'Quản lý học viên', 'admin-teachers': 'Quản lý giáo viên', 'admin-quizzes': 'Quản lý đề thi', quiz: 'Chi tiết đề',
   attempt: 'Phòng luyện thi', result: 'Kết quả lượt làm'};
 const can = permission => state.permissions.includes(permission) || state.roles.includes('ADMIN');
 const practicePages = ['quiz', 'attempt', 'result'];
@@ -156,6 +158,7 @@ function navigate(tab, workspace = state.workspace, replace = false, id = '', at
     return;
   }
   if (state.routePath !== path && $('submit-dialog')?.open) $('submit-dialog').close();
+  if (state.routePath !== path) closeAdminDialogs();
   if (state.page === 'teacher' && tab !== 'teacher') teacherEditor?.dismissDialogs();
   if (location.hash !== path) history[replace || denied ? 'replaceState' : 'pushState'](null, '', path);
   state.workspace = workspace;
@@ -180,7 +183,8 @@ function navigate(tab, workspace = state.workspace, replace = false, id = '', at
   $('jump-practice').classList.toggle('hidden', !can('assessment:submit'));
   $('app-shell').classList.toggle('exam-mode', tab === 'attempt');
   $('attempt-loading').classList.add('hidden');
-  document.querySelectorAll('.view').forEach(view => view.classList.toggle('hidden', view.id !== tab + '-view'));
+  const viewId = Object.hasOwn(adminUserPages, tab) ? 'admin-view' : tab + '-view';
+  document.querySelectorAll('.view').forEach(view => view.classList.toggle('hidden', view.id !== viewId));
   const title = $('page-title');
   title.textContent = pageTitles[tab];
   (tab === 'attempt' ? $('exit-attempt') : title).focus();
@@ -193,7 +197,11 @@ function navigate(tab, workspace = state.workspace, replace = false, id = '', at
   }
   if (tab === 'results') return loadHistory();
   if (tab === 'membership') return loadMembership();
+  if (tab === 'profile') return loadProfile();
   if (tab === 'interaction') return loadInteraction();
+  if (tab === 'admin-home') return loadAdminOverview();
+  if (Object.hasOwn(adminUserPages, tab)) return openAdminUsers(tab);
+  if (tab === 'admin-quizzes') return openAdminQuizzes();
   if (tab === 'teacher-home') return teacherResult ? renderTeacherQuizzes(teacherResult) : loadTeacherQuizzes();
   if (tab === 'teacher' && !teacherEditor) {
     teacherEditor = QuizAuthoring.createEditor({
@@ -245,6 +253,7 @@ function authUi() {
   $('identity-state').textContent = logged ? [state.user.displayName, ...roles].join(' · ') : 'Chưa đăng nhập';
   const options = logged ? workspaceOptions() : [];
   $('workspace-picker').innerHTML = options.map(key => `<option value="${key}">${workspaces[key].label}</option>`).join('');
+  if (state.workspace) $('workspace-picker').value = state.workspace;
   $('workspace-switch').classList.toggle('hidden', options.length < 2);
 }
 
@@ -365,8 +374,11 @@ $('logout').onclick = () => {
     regionStatus(id, '');
   }
   teacherEditor?.reset();
-  $('admin-form').reset();
-  $('admin-submit').disabled = false;
+  resetAdminWorkspace();
+  $('profile-form').reset();
+  $('password-form').reset();
+  for (const id of ['profile-save', 'password-save']) $(id).disabled = false;
+  for (const id of ['profile-status', 'password-status']) regionStatus(id, '');
   regionStatus('teacher-status', '');
   regionStatus('admin-status', '');
   $('review-stars').value = '5';
@@ -410,7 +422,6 @@ $('jump-practice').onclick = () => navigate('practice');
 $('teacher-create').onclick = () => navigate('teacher');
 $('teacher-list-refresh').onclick = loadTeacherQuizzes;
 $('editor-access-retry').onclick = checkTeacherAccess;
-$('admin-grant').onclick = () => navigate('admin');
 $('practice-review').onclick = $('results-review').onclick = () => navigate('interaction');
 $('refresh-home').onclick = loadHome;
 $('refresh-practice').onclick = loadPractice;
@@ -1190,32 +1201,338 @@ $('save-review').onclick = async () => {
   }
 };
 
-restoreSession();
-
-async function submitWorkspaceForm(event, permission, statusId, save) {
-  event.preventDefault();
-  if (!state.user || !can(permission)) return;
-  const form = event.target;
-  const button = form.querySelector('button[type="submit"]');
-  if (button.disabled) return;
-  const token = state.token;
-  button.disabled = true;
-  regionStatus(statusId, 'Đang lưu…');
+// Profile is self-service; update requests never contain a userId or role.
+async function loadProfile(){
+  const token=state.token;
+  regionStatus('profile-status','Đang tải hồ sơ…');
   try {
-    const message = await save(new FormData(form));
-    if (state.token !== token) return;
-    regionStatus(statusId, message);
+    const user=await api('/ms/v1/identity/me');
+    if(state.token!==token || state.page!=='profile')return;
+    state.user=user;
+    $('profile-name').value=user.displayName;
+    $('profile-email').value=user.email;
+    $('profile-roles').value=state.roles.map(r=>roleLabels[r]||r).join(', ');
+    authUi();
+    regionStatus('profile-status','');
+  }catch(error){if(state.token===token)regionStatus('profile-status',error.message,true);}
+}
+$('profile-form').onsubmit=async event=>{
+  event.preventDefault();
+  if(!state.user)return;
+  const token=state.token, button=$('profile-save');
+  const displayName=$('profile-name').value.trim();
+  if(displayName.length<2 || displayName.length>120){regionStatus('profile-status','Tên phải có 2–120 ký tự.',true);return;}
+  button.disabled=true;
+  regionStatus('profile-status','Đang lưu thông tin…');
+  try {
+    const user=await api('/ms/v1/identity/me',{method:'PATCH',body:JSON.stringify({displayName})});
+    if(state.token!==token)return;
+    state.user=user;
+    authUi();
+    $('welcome').textContent='Xin chào, '+user.displayName;
+    regionStatus('profile-status','Đã lưu tên hiển thị.');
+  }catch(error){if(state.token===token)regionStatus('profile-status',error.message,true);}
+  finally{if(state.token===token)button.disabled=false;}
+};
+$('password-form').onsubmit=async event=>{
+  event.preventDefault();
+  if(!state.user)return;
+  const token=state.token, button=$('password-save'), form=event.target;
+  const currentPassword=form.elements.currentPassword.value;
+  const newPassword=form.elements.newPassword.value;
+  if(newPassword!==form.elements.confirmPassword.value){regionStatus('password-status','Xác nhận mật khẩu không khớp.',true);return;}
+  if(newPassword.length<8 || newPassword.length>72){regionStatus('password-status','Mật khẩu phải có 8–72 ký tự.',true);return;}
+  button.disabled=true;
+  regionStatus('password-status','Đang đổi mật khẩu…');
+  try {
+    await api('/ms/v1/identity/me/password',{method:'POST',body:JSON.stringify({currentPassword,newPassword})});
+    if(state.token!==token)return;
     form.reset();
+    regionStatus('password-status','Đổi mật khẩu thành công.');
+  }catch(error){if(state.token===token)regionStatus('password-status',error.message,true);}
+  finally{if(state.token===token)button.disabled=false;}
+};
+
+
+const adminUsersPath = '/ms/v1/identity/admin/users';
+const adminQuizzesPath = '/ms/v1/contents/quizzes/admin';
+const adminUsers = {id: 'admin-user', path: adminUsersPath, key: 'users', noun: 'tài khoản', rows: [], render: userRow};
+const adminQuizzes = {id: 'admin-quiz', path: adminQuizzesPath, key: 'quizzes', noun: 'đề thi', rows: [], render: quizRow};
+let selectedAdminUser;
+
+const adminOverview = [
+  ['admin', 'admin-total-users', adminUsersPath, 'ALL'],
+  ['admin-learners', 'admin-total-learners', adminUsersPath, 'LEARNER'],
+  ['admin-teachers', 'admin-total-teachers', adminUsersPath, 'TEACHER'],
+  ['admin-quizzes', 'admin-total-quizzes', adminQuizzesPath]
+];
+
+function adminRead(path, params = {}) {
+  const query = new URLSearchParams(params).toString();
+  return api(path + (query ? '?' + query : ''), {signal: AbortSignal.timeout(15000)});
+}
+
+function readAdminPage(data, key) {
+  if (!data || !Array.isArray(data[key]) || !Number.isInteger(data.total) || data.total < 0 ||
+      !Number.isInteger(data.page) || data.page < 0 || !Number.isInteger(data.size) || data.size < 1) {
+    throw new Error('Máy chủ trả về dữ liệu phân trang không hợp lệ.');
+  }
+  return data;
+}
+
+async function loadAdminOverview() {
+  const request = navigationRequest;
+  const token = state.token;
+  $('admin-home-retry').classList.add('hidden');
+  regionStatus('admin-home-status', 'Đang tải thống kê…', false, 'loading');
+  const results = await Promise.allSettled(adminOverview.map(async ([, id, path, role]) => {
+    $(id).textContent = '—';
+    const data = readAdminPage(await adminRead(path, role ? {role} : {}), role ? 'users' : 'quizzes');
+    if (state.token === token && request === navigationRequest) $(id).textContent = data.total;
+  }));
+  if (state.token !== token || request !== navigationRequest) return;
+  const failure = results.find(result => result.status === 'rejected');
+  regionStatus('admin-home-status', failure ? 'Không tải được đầy đủ thống kê. ' + failure.reason.message : '', Boolean(failure));
+  $('admin-home-retry').classList.toggle('hidden', !failure);
+}
+
+$('admin-home-view').onclick = event => {
+  const button = event.target.closest('button[data-admin-page]');
+  if (button) return navigate(button.dataset.adminPage);
+};
+$('admin-home-retry').onclick = loadAdminOverview;
+
+function rolesText(roles) {
+  return roles.map(role => roleLabels[role] || role).join(', ') || '—';
+}
+
+function userRow(user, index) {
+  const badges = user.roles.map(role => '<span class="admin-badge">' + html(roleLabels[role] || role) + '</span>');
+  return '<tr><th scope="row">' + html(user.displayName) + '</th><td>' + html(user.email) + '</td>' +
+    '<td><div class="admin-badges">' + (badges.join('') || '—') + '</div></td>' +
+    '<td><button class="ghost" type="button" data-manage-user="' + index + '">Quản lý</button></td></tr>';
+}
+
+function quizVisibility(quiz) {
+  return quiz.status === 'PUBLISHED' ? 'Công khai' : 'Chưa công khai';
+}
+
+function quizRow(quiz, index) {
+  const published = quiz.status === 'PUBLISHED';
+  return '<tr><th scope="row">' + html(quiz.title) + '</th><td>' + html(quiz.part) + '</td>' +
+    '<td><span class="admin-badge' + (quiz.premium ? ' admin-badge-premium' : '') + '">' +
+    (quiz.premium ? 'PREMIUM' : 'FREE') + '</span></td><td>' + html(quiz.count) + '</td>' +
+    '<td><span class="admin-badge' + (published ? ' admin-badge-live' : '') + '">' + quizVisibility(quiz) + '</span></td>' +
+    '<td class="admin-author">' + html(quiz.ownerUserId || '—') + '</td><td><div class="admin-row-actions">' +
+    '<button class="ghost" type="button" data-view-quiz="' + index + '">Chi tiết</button>' +
+    '<button class="ghost" type="button" data-toggle-quiz="' + index + '">' +
+    (published ? 'Ẩn đề' : 'Công khai') + '</button></div></td></tr>';
+}
+
+async function loadAdminList(list, page = 0) {
+  const {id, key, noun} = list;
+  const request = Symbol();
+  const navigation = navigationRequest;
+  const token = state.token;
+  regionRequests.set(id, request);
+  const current = () => state.token === token && navigation === navigationRequest && regionRequests.get(id) === request;
+  list.page = page;
+  list.rows = [];
+  $(id + '-rows').innerHTML = '';
+  $(id + '-page').textContent = '';
+  $(id + '-table').classList.add('hidden');
+  $(id + '-retry').classList.add('hidden');
+  $(id + '-prev').disabled = $(id + '-next').disabled = true;
+  regionStatus(id + '-status', 'Đang tải danh sách ' + noun + '…', false, 'loading');
+  try {
+    const data = readAdminPage(await adminRead(list.path, {...list.filters, page}), key);
+    if (!current()) return;
+    const pages = Math.ceil(data.total / data.size);
+    if (data.page > 0 && data.page >= pages) return loadAdminList(list, Math.max(0, pages - 1));
+    list.page = data.page;
+    list.rows = data[key];
+    $(id + '-rows').innerHTML = list.rows.map(list.render).join('');
+    $(id + '-table').classList.toggle('hidden', !list.rows.length);
+    $(id + '-page').textContent = pages ? 'Trang ' + (data.page + 1) + '/' + pages + ' · ' + data.total + ' ' + noun : '';
+    $(id + '-prev').disabled = data.page === 0;
+    $(id + '-next').disabled = data.page + 1 >= pages;
+    regionStatus(id + '-status', list.rows.length ? '' : 'Không tìm thấy ' + noun + ' phù hợp.', false,
+      list.rows.length ? '' : 'empty');
   } catch (error) {
-    if (state.token === token) regionStatus(statusId, error.message, true);
-  } finally {
-    if (state.token === token) button.disabled = false;
+    if (!current()) return;
+    regionStatus(id + '-status', 'Không tải được danh sách ' + noun + '. ' + error.message, true);
+    $(id + '-retry').classList.remove('hidden');
   }
 }
 
-$('admin-form').onsubmit = event => submitWorkspaceForm(event, 'rbac:manage', 'admin-status', async form => {
-  const result = await api('/ms/v1/identity/admin/users/' + encodeURIComponent(form.get('userId').trim()) + '/roles',
-    {method: 'POST', body: JSON.stringify({role: form.get('role')})});
-  const roles = result.roles.map(role => roleLabels[role]).filter(Boolean).join(', ');
-  return 'Vai trò hiện tại: ' + roles + '. Người dùng cần đăng nhập lại để nhận quyền mới.';
-});
+for (const list of [adminUsers, adminQuizzes]) {
+  $(list.id + '-retry').onclick = () => loadAdminList(list, list.page);
+  $(list.id + '-prev').onclick = () => loadAdminList(list, list.page - 1);
+  $(list.id + '-next').onclick = () => loadAdminList(list, list.page + 1);
+}
+
+function searchAdminUsers() {
+  adminUsers.filters = {
+    q: $('admin-user-query').value.trim(),
+    role: adminUserPages[state.page] === 'ALL' ? $('admin-user-role').value : adminUserPages[state.page]
+  };
+  return loadAdminList(adminUsers);
+}
+
+function openAdminUsers(tab) {
+  $('admin-user-query').value = '';
+  $('admin-user-role').value = adminUserPages[tab];
+  $('admin-role-filter').classList.toggle('hidden', tab !== 'admin');
+  return searchAdminUsers();
+}
+
+$('admin-user-search').onsubmit = event => {
+  event.preventDefault();
+  return searchAdminUsers();
+};
+$('admin-user-role').onchange = searchAdminUsers;
+
+function showAdminAccount(user) {
+  selectedAdminUser = user;
+  $('admin-account-name').textContent = user.displayName;
+  $('admin-account-email').textContent = user.email;
+  $('admin-account-roles').textContent = rolesText(user.roles);
+  const available = Object.keys(roleLabels).filter(role => !user.roles.includes(role));
+  $('admin-grant-role').innerHTML = available.map(role =>
+    '<option value="' + role + '">' + roleLabels[role] + '</option>').join('');
+  $('admin-grant-field').classList.toggle('hidden', !available.length);
+  $('admin-submit').classList.toggle('hidden', !available.length);
+  $('admin-submit').disabled = $('admin-grant-role').disabled = !available.length;
+  regionStatus('admin-status', available.length ? '' : 'Tài khoản đã có tất cả vai trò.');
+}
+
+$('admin-user-rows').onclick = event => {
+  const index = event.target.closest('button[data-manage-user]')?.dataset.manageUser;
+  const user = adminUsers.rows[index];
+  if (!user) return;
+  showAdminAccount(user);
+  $('admin-user-dialog').showModal();
+};
+$('admin-user-close').onclick = () => $('admin-user-dialog').close();
+$('admin-form').onsubmit = async event => {
+  event.preventDefault();
+  const user = selectedAdminUser;
+  const role = $('admin-grant-role').value;
+  const button = $('admin-submit');
+  if (!user || button.disabled || !Object.hasOwn(roleLabels, role) || user.roles.includes(role)) return;
+  if (!globalThis.confirm('Cấp vai trò ' + roleLabels[role] + ' cho ' + user.displayName + ' (' + user.email + ')?')) return;
+  const token = state.token;
+  const currentDialog = () => $('admin-user-dialog').open && selectedAdminUser === user;
+  button.disabled = $('admin-grant-role').disabled = true;
+  regionStatus('admin-status', 'Đang cấp vai trò…', false, 'loading');
+  try {
+    const result = await api(adminUsersPath + '/' + encodeURIComponent(user.userId) + '/roles',
+      {method: 'POST', body: JSON.stringify({role})});
+    if (state.token !== token) return;
+    if (currentDialog()) {
+      showAdminAccount({...user, roles: result.roles});
+      regionStatus('admin-status', 'Đã cấp vai trò. Người dùng cần đăng nhập lại để nhận quyền mới.');
+    }
+    if (Object.hasOwn(adminUserPages, state.page)) await loadAdminList(adminUsers, adminUsers.page);
+  } catch (error) {
+    if (state.token !== token || !currentDialog()) return;
+    regionStatus('admin-status', error.message, true);
+    button.disabled = $('admin-grant-role').disabled = false;
+  }
+};
+
+function searchAdminQuizzes() {
+  adminQuizzes.filters = {q: $('admin-quiz-query').value.trim(), part: $('admin-quiz-part').value,
+    status: $('admin-quiz-visibility').value};
+  return loadAdminList(adminQuizzes);
+}
+
+function openAdminQuizzes() {
+  $('admin-quiz-query').value = '';
+  $('admin-quiz-part').value = '0';
+  $('admin-quiz-visibility').value = 'ALL';
+  return searchAdminQuizzes();
+}
+
+$('admin-quiz-search').onsubmit = event => {
+  event.preventDefault();
+  return searchAdminQuizzes();
+};
+$('admin-quiz-part').onchange = $('admin-quiz-visibility').onchange = searchAdminQuizzes;
+
+async function openAdminQuizDetail(quiz) {
+  const request = Symbol();
+  const token = state.token;
+  const dialog = $('admin-quiz-dialog');
+  regionRequests.set('admin-quiz-detail', request);
+  const current = () => state.token === token && dialog.open && regionRequests.get('admin-quiz-detail') === request;
+  $('admin-quiz-title').textContent = quiz.title || 'Chi tiết đề thi';
+  $('admin-quiz-detail').innerHTML = '';
+  regionStatus('admin-quiz-detail-status', 'Đang tải chi tiết đề…', false, 'loading');
+  dialog.showModal();
+  try {
+    const data = await adminRead(adminQuizzesPath + '/' + encodeURIComponent(quiz.id));
+    if (!current()) return;
+    $('admin-quiz-title').textContent = data.quiz.title || 'Chi tiết đề thi';
+    $('admin-quiz-detail').innerHTML = '<p>Part ' + html(data.quiz.part) + ' · ' +
+      (data.quiz.premium ? 'PREMIUM' : 'FREE') + ' · ' + html(data.quiz.count) + ' câu · ' +
+      quizVisibility(data.quiz) + '</p>' +
+      (data.quiz.ownerUserId ? '<p>Tác giả <span class="admin-author">' + html(data.quiz.ownerUserId) + '</span></p>' : '') +
+      '<ol class="editor-preview-questions">' + data.questions.map(question =>
+        '<li><strong>' + html(question.prompt) + '</strong><ul>' +
+        Object.entries(question.choices).map(([letter, choice]) =>
+          '<li>' + html(letter) + '. ' + html(choice) + '</li>').join('') + '</ul></li>').join('') + '</ol>';
+    regionStatus('admin-quiz-detail-status', '');
+  } catch (error) {
+    if (current()) regionStatus('admin-quiz-detail-status', error.message, true);
+  }
+}
+
+$('admin-quiz-rows').onclick = async event => {
+  const button = event.target.closest('button[data-view-quiz], button[data-toggle-quiz]');
+  if (!button || button.disabled) return;
+  const quiz = adminQuizzes.rows[button.dataset.viewQuiz ?? button.dataset.toggleQuiz];
+  if (!quiz) return;
+  if (button.dataset.viewQuiz !== undefined) return openAdminQuizDetail(quiz);
+  const published = quiz.status !== 'PUBLISHED';
+  if (!globalThis.confirm((published ? 'Công khai' : 'Ẩn') + ' đề “' + quiz.title + '”?')) return;
+  button.disabled = true;
+  const token = state.token;
+  try {
+    await api(adminQuizzesPath + '/' + encodeURIComponent(quiz.id) + '/visibility',
+      {method: 'POST', body: JSON.stringify({published, version: quiz.version})});
+    if (state.token !== token) return;
+    if (state.page === 'admin-quizzes') {
+      alertMsg(published ? 'Đã công khai đề.' : 'Đã ẩn đề.', true);
+      await loadAdminList(adminQuizzes, adminQuizzes.page);
+    }
+  } catch (error) {
+    if (state.token !== token || state.page !== 'admin-quizzes') return;
+    const message = error.status === 400 && published ? 'Đề cần có tiêu đề và câu hỏi hợp lệ để công khai.' : error.message;
+    alertMsg(message);
+    if (error.status === 409) await loadAdminList(adminQuizzes, adminQuizzes.page);
+    button.disabled = false;
+  }
+};
+
+function closeAdminDialogs() {
+  for (const id of ['admin-user-dialog', 'admin-quiz-dialog']) {
+    if ($(id).open) $(id).close();
+  }
+  selectedAdminUser = null;
+}
+
+function resetAdminWorkspace() {
+  closeAdminDialogs();
+  for (const list of [adminUsers, adminQuizzes]) {
+    list.rows = [];
+    list.filters = {};
+    $(list.id + '-rows').innerHTML = '';
+  }
+  for (const id of ['admin-account-name', 'admin-account-email', 'admin-account-roles',
+    'admin-quiz-detail', 'admin-quiz-title', ...adminOverview.map(([, id]) => id)]) {
+    $(id).textContent = '';
+  }
+}
+
+restoreSession();

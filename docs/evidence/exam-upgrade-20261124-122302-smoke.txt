@@ -1,0 +1,17 @@
+Local Compose and Gateway: python tests/smoke.py
+feature/exam-eve-upgrade source changes in the working tree above HEAD 0112dc7, before packaging commit.
+Source log timestamp (ICT): 2026-11-24T11:50:00.9990947+07:00
+Provenance: copied check labels from Temp/toeic-browser-qa/smoke-retry.log. A prior run returned 503 after a dependency timeout.
+
+PASS: register + JWT
+PASS: public quiz list does not reveal answer key
+PASS: learner RBAC denies teacher authoring
+PASS: internal answer-key route blocked by Gateway
+PASS: FREE user denied premium quiz
+PASS: attempt submission idempotent; explanations returned only after grading
+PASS: ownership guard
+PASS: demo PRO entitlement unlocks premium quiz
+PASS: interaction review
+PASS: RabbitMQ outbox -> Interaction activity delivered
+ALL SMOKE ASSERTIONS PASSED
+PASS=10 FAIL=0 SKIPPED=0

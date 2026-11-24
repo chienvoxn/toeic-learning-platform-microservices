@@ -1,0 +1,14 @@
+Content Maven verification with isolated PostgreSQL 17.12 on Docker Desktop
+feature/exam-eve-upgrade source changes in the working tree above HEAD 0112dc7, before packaging commit.
+Maven image maven:3.9-eclipse-temurin-21, cache volume toeic-maven-cache, mvn -B verify
+Provenance: selected lines from Temp/toeic-browser-qa/content-maven-final.log, credentials and verbose validation/stack traces excluded.
+Source log timestamp (ICT): 2026-11-24T11:58:37.8158671+07:00
+Earlier fixture runs hit HTTP request timeouts. This run used JVM processor count 2 and TieredStopAtLevel 1.
+
+[INFO] Building content-service 0.1.0
+[INFO] Running com.toeic.content.entrypoints.QuizAuthoringTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 238.3 s -- in com.toeic.content.entrypoints.QuizAuthoringTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
+[INFO] Total time:  04:29 min
+[INFO] Finished at: 2026-11-24T04:58:37Z

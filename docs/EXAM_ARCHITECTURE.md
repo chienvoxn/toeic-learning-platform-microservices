@@ -50,9 +50,9 @@ flowchart LR
 
 | External actor | Interactions |
 |---|---|
-| Learner | register/sign in, view quizzes, practice, feedback, membership |
-| Teacher | authenticated creation of new quizzes |
-| Admin | sign in, inspect permissions and grant roles through Identity |
+| Learner | manage own profile, view quizzes, practice, feedback, membership |
+| Teacher | manage own profile, author and publish owned drafts |
+| Admin | manage own profile, search accounts, grant roles and moderate quiz visibility |
 
 Examiner is an assessment stakeholder who reviews the demo and evidence. The runtime role catalog contains Learner, Teacher and Admin. [Identity RBAC migration](../identity-service/src/main/resources/db/migration/V3__rbac.sql) · [Admin UI](../web/app.js)
 
@@ -133,12 +133,12 @@ Each package is relative to `com.toeic.<service>`. The `IdentityApplication`, `C
 
 | Service | C4 component and responsibility | Java package | Class |
 |---|---|---|---|
-| Identity | Registration, login and role-management HTTP API | `entrypoints` | `IdentityDirectoryController` |
+| Identity | Registration, login, self-service Profile and Admin directory HTTP API | `entrypoints` | `IdentityDirectoryController` |
 | Identity | User model and demo account provisioning | `core` | `IdentityUser`, `DemoTeacherProvisioner` |
 | Identity | User persistence | `data.persistence` | `IdentityUserRepository` |
-| Identity | Role validation, grants and permission lookups through JDBC | `data.jdbc` | `RbacService` |
+| Identity | Paginated account directory, role validation, grants and permission lookups through JDBC | `data.jdbc` | `RbacService` |
 | Identity | JWT signing and verification | `adapters.security` | `TokenService` |
-| Content | Quiz, snapshot and learning resource HTTP API | `entrypoints` | `QuizController`, `ResourceController` |
+| Content | Public quizzes, owned drafts, Admin visibility, internal snapshot and learning-resource APIs | `entrypoints` | `QuizController`, `ResourceController` |
 | Content | Quiz, question and learning resource models | `core` | `Quiz`, `QuizQuestion`, `LearningResource` |
 | Content | Quiz, question and resource persistence | `data.persistence` | `QuizRepo`, `QuizQuestionRepo`, `ResourceRepository` |
 | Content | Local JWT verification and actor access | `adapters.security` | `TokenService`, `IdentityClient` |
@@ -153,6 +153,15 @@ Each package is relative to `com.toeic.<service>`. The `IdentityApplication`, `C
 | Interaction | Local JWT verification and actor access | `adapters.security` | `TokenService`, `IdentityClient` |
 
 ## 6. arc42 — Runtime view
+
+### Scenario: Profile and Admin moderation
+
+1. Web calls Identity through the Gateway to read or update the actor's Profile. Identity derives the user from the verified JWT. Name changes update `displayName`. Password changes validate the current password and store a new BCrypt hash. Issued tokens remain valid until expiration.
+2. Admin lists accounts through Identity and grants a role to a selected user. Identity requires `rbac:manage`. The directory returns all roles on each listed account without credential fields. The existing JWT keeps its original claims until the user signs in again.
+3. Admin lists or inspects quizzes through Content, then sends the current `version` and the desired `published` value. Content verifies `rbac:manage`, locks its quiz row and returns 409 for a stale version. Republishing validates the quiz. Teacher draft writes use the same row-lock boundary and additionally require ownership.
+4. Hiding removes the quiz from the public catalog and unavailable snapshots return 404 to new opens. Assessment can still submit a previously opened attempt using its persisted copy and return the stored grade to its owner.
+
+The workspace reads totals from the Identity and Content pagination contracts. Its author column uses the optional Content UUID. Identity has no protected lookup by author UUID in this revision. [API routes](../README.md#6-dịch-vụ-và-tuyến-api) · [Live evidence](SUBMISSION_EVIDENCE.md).
 
 ### Scenario: Start, answer and submit practice
 
@@ -264,7 +273,7 @@ flowchart TB
 
 ## 8. arc42 — Crosscutting concepts
 
-- **Security:** BCrypt for identity password storage; role/permission claims; Signature HMAC-SHA256 and exp, iss, aud verification; UUID actor always sourced from token. Internal service key not exposed through Gateway.
+- **Security.** BCrypt for identity password storage. Services verify HMAC-SHA256, expiration, issuer and audience, and derive the actor UUID from the token. Identity and Content enforce `rbac:manage` for Admin endpoints. Content limits Teacher writes to drafts owned by the actor. The Gateway blocks internal snapshot and entitlement routes.
 - **Data integrity:** pessimistic lock on attempt for save/submit; idempotent submit; immutable snapshots; outbox saved inside grading transaction. No distributed transaction across Content/Membership and Assessment, because snapshot and entitlement are read before local commit. A membership changing concurrently can produce an entitlement race—acceptable for this educational MVP, not a billing guarantee.
 - **Observability:** `docker compose logs`, RabbitMQ dashboard, health by endpoint; structured traces not implemented.
 - **Data and privacy:** each database belongs to a single service. The public review GET exposes reviewer UUID. Interaction activity is queried by the user from the verified token.
@@ -272,7 +281,7 @@ flowchart TB
 
 ## 9. arc42 — Architectural decisions
 
-See [ADR-001 to ADR-007](ADR_MVP.md) for service boundaries, JWT, transactional outbox, database ownership, demo UI, the Assessment aggregate and persistence ports.
+See [ADR-001 to ADR-008](ADR_MVP.md) for service boundaries, JWT, transactional outbox, data ownership, the demo UI, Assessment and Admin moderation.
 
 ## 10. arc42 — Quality requirements
 
@@ -287,6 +296,7 @@ Use the [six-field QA-01 to QA-04 definitions](#quality-attribute-scenarios) and
 5. **Outbox is at-least-once, not exactly-once**: correlated broker confirms and mandatory returns are implemented, but broker ACK and SQL `published` commit are not atomic. Retry may produce duplicates; Interaction deduplicates by event ID. Multi-publisher coordination and DLQ remain out of scope.
 6. **Assessment dependency boundaries**. The application and domain share the core package, and the application depends on concrete HTTP, JWT and JDBC adapters. [Assessment DDD review](ASSESSMENT_DDD.md#8-giới-hạn-và-cải-tiến-sau-mvp)
 7. **Runtime evidence scope**. QA-01 and the archived QA-02/QA-04 runs have their own recorded environments and revision metadata. New QA-03 A/B and F-02 groups were run at checkout `ff9955b`; QA-03 evidence is committed in baseline `2e2681e`, but complete F-02 console logs have not yet been archived. CI at `2e2681e` passed 6/6 jobs and does not itself run external integration/fault-injection fixtures. [Validation status](VALIDATION_STATUS.md)
+8. **Admin limits.** Content stores one visibility flag. A hidden quiz shares the draft state, and an eligible owner can edit and publish it again. The upgrade supports additive grants. Role revocation and a moderation audit trail are outside this release. [ADR-008](ADR_MVP.md#adr-008--admin-boundaries-and-versioned-quiz-visibility)
 
 ## 12. arc42 — Glossary
 

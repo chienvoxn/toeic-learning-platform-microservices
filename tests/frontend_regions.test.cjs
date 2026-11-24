@@ -13,7 +13,7 @@ function frontend(hash = '') {
   const requests = [];
   const storage = new Map();
   const navTabs = [...markup.matchAll(/data-tab="([^"]+)"/g)].map(match => match[1]);
-  const tabs = [...navTabs, 'interaction', 'quiz', 'attempt', 'result'];
+  const viewIds = [...markup.matchAll(/<section id="([^"]+)" class="view\b/g)].map(match => match[1]);
   const location = {hash, pathname: '/', search: ''};
   const listeners = new Map();
   let focused;
@@ -43,12 +43,12 @@ function frontend(hash = '') {
   const context = vm.createContext({
     document: {getElementById: id => nodes.get(id), querySelectorAll: selector => {
       if (selector === '.nav') return nav;
-      if (selector === '.view') return tabs.map(tab => nodes.get(tab + '-view'));
+      if (selector === '.view') return viewIds.map(id => nodes.get(id));
       return [];
     }},
     location, history: {pushState: writeLocation, replaceState: writeLocation},
     addEventListener: (event, callback) => listeners.set(event, callback),
-    atob, clearTimeout, setTimeout: () => 0, confirm: () => false, TextEncoder, TextDecoder,
+    atob, clearTimeout, setTimeout: () => 0, confirm: () => false, TextEncoder, TextDecoder, URLSearchParams,
     AbortSignal: {timeout: milliseconds => ({milliseconds})},
     sessionStorage: {getItem: key => storage.get(key), setItem: (key, value) => storage.set(key, value),
       removeItem: key => storage.delete(key)},
@@ -252,14 +252,15 @@ test('login does not persist a partial session and distinguishes bad credentials
 });
 
 const visibleNav = ui => ui.nav.filter(button => !button.classList.contains('hidden')).map(button => button.dataset.tab);
+const adminPages = ['admin-home', 'admin', 'admin-learners', 'admin-teachers', 'admin-quizzes', 'profile'];
 
 for (const [name, roles, permissions, path, pages] of [
-  ['Learner only', ['LEARNER'], learnerPermissions, '#/learner/dashboard', ['dashboard', 'practice', 'results', 'membership']],
-  ['Teacher only', ['TEACHER'], ['content:write', ...learnerPermissions], '#/teacher/teacher-home', ['teacher-home', 'teacher', 'practice']],
-  ['Teacher without practice permission', ['TEACHER'], ['content:write'], '#/teacher/teacher-home', ['teacher-home', 'teacher']],
-  ['Admin only', ['ADMIN'], ['rbac:manage', 'content:write'], '#/admin/admin-home', ['admin-home', 'admin']],
+  ['Learner only', ['LEARNER'], learnerPermissions, '#/learner/dashboard', ['dashboard', 'practice', 'results', 'membership', 'profile']],
+  ['Teacher only', ['TEACHER'], ['content:write', ...learnerPermissions], '#/teacher/teacher-home', ['teacher-home', 'teacher', 'practice', 'profile']],
+  ['Teacher without practice permission', ['TEACHER'], ['content:write'], '#/teacher/teacher-home', ['teacher-home', 'teacher', 'profile']],
+  ['Admin only', ['ADMIN'], ['rbac:manage', 'content:write'], '#/admin/admin-home', adminPages],
   ['multiple roles', ['LEARNER', 'TEACHER', 'ADMIN'], ['rbac:manage', 'content:write', ...learnerPermissions],
-    '#/admin/admin-home', ['admin-home', 'admin']]
+    '#/admin/admin-home', adminPages]
 ]) {
   test(name + ' lands in the appropriate workspace with its own navigation', async () => {
     const ui = frontend();
@@ -293,10 +294,66 @@ test('direct forbidden routes fall back safely, while allowed deep links and wor
 
   const admin = frontend('#/admin/admin');
   await authenticate(admin, ['ADMIN', 'TEACHER'], ['rbac:manage', 'content:write']);
-  assert.equal(admin.node('page-title').textContent, 'Phân quyền');
+  assert.equal(admin.node('page-title').textContent, 'Quản lý người dùng');
   admin.node('workspace-picker').onchange({target: {value: 'teacher'}});
   assert.equal(admin.location.hash, '#/teacher/teacher-home');
-  assert.deepEqual(visibleNav(admin), ['teacher-home', 'teacher', 'practice']);
+  assert.deepEqual(visibleNav(admin), ['teacher-home', 'teacher', 'practice', 'profile']);
+});
+
+test('Admin overview uses pagination totals and opens directories scoped by role', async () => {
+  const ui = frontend();
+  await authenticate(ui, ['ADMIN'], ['rbac:manage']);
+  const overview = ui.requests.slice(-4);
+  assert.deepEqual(overview.map(request => new URLSearchParams(request.path.split('?')[1]).get('role')),
+    ['ALL', 'LEARNER', 'TEACHER', null]);
+  overview.forEach((request, index) => request.complete(200, {
+    [index === 3 ? 'quizzes' : 'users']: [], page: 0, size: 20, total: [41, 38, 7, 29][index]
+  }));
+  await new Promise(setImmediate);
+  assert.equal(ui.node('admin-total-users').textContent, 41);
+  assert.equal(ui.node('admin-total-quizzes').textContent, 29);
+
+  const directory = ui.nav.find(button => button.dataset.tab === 'admin-teachers').onclick();
+  const request = ui.requests.at(-1);
+  assert.match(request.path, /[?&]role=TEACHER&/);
+  request.complete(200, {page: 0, size: 20, total: 1, users: [
+    {displayName: '<Example>', email: 'teacher@example.test', roles: ['LEARNER', 'TEACHER']}
+  ]});
+  await directory;
+  assert.equal(ui.node('admin-view').classList.contains('hidden'), false);
+  assert.match(ui.node('admin-user-rows').innerHTML, /&lt;Example&gt;.*Học viên.*Giáo viên/);
+});
+
+test('Admin search ignores stale responses, paginates the submitted filter, and retries the failed page', async () => {
+  const ui = frontend('#/admin/admin');
+  await authenticate(ui, ['ADMIN'], ['rbac:manage']);
+  const initial = ui.requests.at(-1);
+  assert.match(initial.path, /role=ALL/);
+  ui.node('admin-user-query').value = 'example';
+  const searching = ui.node('admin-user-search').onsubmit({preventDefault() {}});
+  ui.requests.at(-1).complete(200, {page: 0, size: 20, total: 21, users: [
+    {displayName: 'Example', email: 'one@example.test', roles: ['ADMIN']}
+  ]});
+  await searching;
+  initial.complete(200, {page: 0, size: 20, total: 0, users: []});
+  await new Promise(setImmediate);
+  assert.match(ui.node('admin-user-rows').innerHTML, /one@example.test/);
+
+  ui.node('admin-user-query').value = 'unsubmitted';
+  const paging = ui.node('admin-user-next').onclick();
+  assert.match(ui.requests.at(-1).path, /q=example.*page=1/);
+  ui.requests.at(-1).complete(503);
+  await paging;
+  assert.equal(ui.node('admin-user-retry').classList.contains('hidden'), false);
+  assert.equal(ui.node('admin-user-status').classList.contains('region-error'), true);
+  const retrying = ui.node('admin-user-retry').onclick();
+  assert.match(ui.requests.at(-1).path, /q=example.*page=1/);
+  ui.requests.at(-1).complete(200, {page: 1, size: 20, total: 21, users: [
+    {displayName: 'Last', email: 'last@example.test', roles: ['LEARNER']}
+  ]});
+  await retrying;
+  assert.match(ui.node('admin-user-page').textContent, /2\/2/);
+  assert.equal(ui.node('admin-user-next').disabled, true);
 });
 
 test('library filters API data, distinguishes a locked PRO quiz, and dashboard limits suggestions', async () => {
