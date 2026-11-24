@@ -19,6 +19,11 @@ import { ForbiddenPage } from '@/pages/public/ForbiddenPage';
 import { NotFoundPage } from '@/pages/public/NotFoundPage';
 
 import { LearnerDashboardPage } from '@/pages/learner/LearnerDashboardPage';
+import { ExamHistoryPage } from '@/pages/learner/ExamHistoryPage';
+import { ExamResultDetailPage } from '@/pages/learner/ExamResultDetailPage';
+import { ProfilePage } from '@/pages/learner/ProfilePage';
+import { MembershipPage } from '@/pages/learner/MembershipPage';
+
 import { TeacherDashboardPage } from '@/pages/teacher/TeacherDashboardPage';
 import { AdminDashboardPage } from '@/pages/admin/AdminDashboardPage';
 import { ExamScreenPage } from '@/pages/exam/ExamScreenPage';
@@ -53,9 +58,10 @@ export const router = createBrowserRouter([
       { index: true, element: <Navigate to="/learner/dashboard" replace /> },
       { path: 'dashboard', element: <LearnerDashboardPage /> },
       { path: 'quizzes', element: <CatalogPage /> },
-      { path: 'history', element: <LearnerDashboardPage /> },
-      { path: 'membership', element: <PricingPage /> },
-      { path: 'profile', element: <LearnerDashboardPage /> },
+      { path: 'history', element: <ExamHistoryPage /> },
+      { path: 'results/:attemptId', element: <ExamResultDetailPage /> },
+      { path: 'membership', element: <MembershipPage /> },
+      { path: 'profile', element: <ProfilePage /> },
     ],
   },
 
