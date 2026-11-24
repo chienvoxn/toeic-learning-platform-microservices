@@ -39,14 +39,14 @@ describe('F7A: End-to-End Simulation & Integration Verification Matrix', () => {
   });
 
   describe('Journey 2: Membership Quota Enforcement & Tier Privileges', () => {
-    it('verifies daily quota calculations between FREE (3/day) and PRO (100/day)', () => {
+    it('verifies daily quota calculations between FREE (10/day) and PRO (1000/day) per backend contract', () => {
       const checkCanStart = (used: number, limit: number) => used < limit;
 
-      expect(checkCanStart(2, 3)).toBe(true);
-      expect(checkCanStart(3, 3)).toBe(false); // Free quota reached
-      expect(checkCanStart(3, 100)).toBe(true); // Pro has capacity
-      expect(checkCanStart(99, 100)).toBe(true);
-      expect(checkCanStart(100, 100)).toBe(false);
+      expect(checkCanStart(9, 10)).toBe(true);
+      expect(checkCanStart(10, 10)).toBe(false); // Free quota reached at 10
+      expect(checkCanStart(10, 1000)).toBe(true); // Pro has capacity
+      expect(checkCanStart(999, 1000)).toBe(true);
+      expect(checkCanStart(1000, 1000)).toBe(false);
     });
 
     it('prohibits FREE users from accessing premium quizzes', () => {
