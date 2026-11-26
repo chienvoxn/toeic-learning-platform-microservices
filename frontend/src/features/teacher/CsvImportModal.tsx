@@ -1,10 +1,17 @@
 import { useState, useRef } from 'react';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/atoms/Button';
+import { Badge } from '@/components/atoms/Badge';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/atoms/Dialog';
 import { parseQuestionCsv, CsvParseResult } from './csvParser';
 import { QuestionInput } from '@/types/quiz';
-import { UploadCloud, FileText, CheckCircle2, AlertTriangle, X, Download } from 'lucide-react';
+import { UploadCloud, FileText, CheckCircle2, AlertTriangle, Download } from 'lucide-react';
 
 interface CsvImportModalProps {
   isOpen: boolean;
@@ -16,8 +23,6 @@ export function CsvImportModal({ isOpen, onClose, onImportSuccess }: CsvImportMo
   const [csvText, setCsvText] = useState('');
   const [parseResult, setParseResult] = useState<CsvParseResult | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-
-  if (!isOpen) return null;
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -65,26 +70,19 @@ export function CsvImportModal({ isOpen, onClose, onImportSuccess }: CsvImportMo
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
-      <Card className="max-w-3xl w-full p-6 shadow-2xl border-slate-200 bg-white space-y-5 max-h-[90vh] flex flex-col">
-        {/* Modal Header */}
-        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
+        <DialogHeader>
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-lg bg-blue-50 text-blue-600">
               <UploadCloud className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-slate-900">Nhập Câu Hỏi Hàng Loạt Từ Tệp CSV</h3>
-              <p className="text-xs text-slate-500">Hỗ trợ định dạng chuẩn: prompt, a, b, c, d, answer, explanation</p>
+              <DialogTitle>Nhập Câu Hỏi Hàng Loạt Từ Tệp CSV</DialogTitle>
+              <DialogDescription>Hỗ trợ định dạng chuẩn: prompt, a, b, c, d, answer, explanation</DialogDescription>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 p-1 rounded-md"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
+        </DialogHeader>
 
         {/* Modal Body */}
         <div className="space-y-4 overflow-y-auto flex-1 pr-1">
@@ -98,74 +96,81 @@ export function CsvImportModal({ isOpen, onClose, onImportSuccess }: CsvImportMo
               className="hidden"
             />
             <Button
+              type="button"
               variant="outline"
               size="sm"
               onClick={() => fileInputRef.current?.click()}
-              className="text-xs font-semibold"
+              className="text-xs font-semibold gap-1.5"
             >
-              <FileText className="h-3.5 w-3.5 mr-1.5" /> Chọn tệp .csv từ máy tính
+              <FileText className="h-4 w-4 text-blue-600" /> Chọn tệp CSV từ máy tính
             </Button>
 
             <Button
+              type="button"
               variant="ghost"
               size="sm"
               onClick={downloadSample}
-              className="text-xs text-blue-600 hover:text-blue-700"
+              className="text-xs text-slate-600 hover:text-blue-600 gap-1"
             >
-              <Download className="h-3.5 w-3.5 mr-1.5" /> Tải tệp CSV mẫu
+              <Download className="h-3.5 w-3.5" /> Tải tệp mẫu (.csv)
             </Button>
           </div>
 
-          {/* Text Area for manual paste */}
+          {/* Text Area Input */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-700">
-              Hoặc dán nội dung CSV trực tiếp vào đây:
-            </label>
+            <label className="text-xs font-bold text-slate-800">Hoặc dán trực tiếp nội dung CSV vào đây:</label>
             <textarea
               rows={6}
               value={csvText}
               onChange={(e) => handleTextChange(e.target.value)}
-              placeholder="Dán nội dung CSV tại đây..."
-              className="w-full rounded-md border border-slate-200 bg-white p-3 font-mono text-xs text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-blue-600"
+              placeholder={`prompt,a,b,c,d,answer,explanation\n"Question...","A","B","C","D","A","Explanation..."`}
+              className="w-full rounded-lg border border-slate-200 p-3 font-mono text-xs text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-blue-600"
             />
           </div>
 
-          {/* Parse Validation Results */}
+          {/* Parse Result Summary */}
           {parseResult && (
-            <div className="space-y-3 pt-2">
+            <div className="space-y-3 pt-2 border-t border-slate-100">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-800">Kết quả phân tích:</span>
+                <div className="flex gap-2">
+                  <Badge variant={parseResult.questions.length > 0 ? 'success' : 'destructive'} className="text-[10px]">
+                    <CheckCircle2 className="h-3 w-3 mr-1" /> {parseResult.questions.length} câu hợp lệ
+                  </Badge>
+                  {parseResult.errors.length > 0 && (
+                    <Badge variant="warning" className="text-[10px]">
+                      <AlertTriangle className="h-3 w-3 mr-1" /> {parseResult.errors.length} cảnh báo
+                    </Badge>
+                  )}
+                </div>
+              </div>
+
               {parseResult.errors.length > 0 && (
-                <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs space-y-1">
-                  <div className="flex items-center gap-1.5 font-bold">
-                    <AlertTriangle className="h-4 w-4" />
-                    <span>Phát hiện {parseResult.errors.length} lỗi trong dữ liệu:</span>
-                  </div>
-                  <ul className="list-disc list-inside space-y-0.5 text-[11px] max-h-28 overflow-y-auto pl-2">
-                    {parseResult.errors.map((err, i) => (
-                      <li key={i}>{err}</li>
-                    ))}
-                  </ul>
+                <div className="bg-amber-50 p-3 rounded-lg border border-amber-200 text-xs text-amber-800 space-y-1 max-h-28 overflow-y-auto">
+                  {parseResult.errors.map((err, i) => (
+                    <div key={i}>• {err}</div>
+                  ))}
                 </div>
               )}
 
               {parseResult.questions.length > 0 && (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-emerald-700 flex items-center gap-1.5">
-                      <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                      Tìm thấy {parseResult.questions.length} câu hỏi hợp lệ
+                    <span className="text-xs font-semibold text-slate-700">
+                      Xem trước {Math.min(parseResult.questions.length, 3)} câu đầu:
                     </span>
                     <Badge variant="outline" className="text-[10px]">
-                      Xem trước {Math.min(parseResult.questions.length, 3)} câu đầu
+                      {Math.min(parseResult.questions.length, 3)} / {parseResult.questions.length} câu
                     </Badge>
                   </div>
 
                   <div className="max-h-40 overflow-y-auto space-y-2 border border-slate-200 rounded-lg p-2.5 bg-slate-50/50">
                     {parseResult.questions.slice(0, 3).map((q, idx) => (
-                      <div key={idx} className="p-2 bg-white rounded border border-slate-100 text-xs space-y-1">
+                      <div key={idx} className="p-2.5 bg-white rounded-md border border-slate-200/80 text-xs space-y-1 shadow-2xs">
                         <p className="font-semibold text-slate-900 truncate">
                           #{idx + 1}: {q.prompt}
                         </p>
-                        <div className="grid grid-cols-4 gap-1 text-[11px] text-slate-600">
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-[11px] text-slate-600">
                           <span className={q.answer === 'A' ? 'font-bold text-blue-600' : ''}>A: {q.a}</span>
                           <span className={q.answer === 'B' ? 'font-bold text-blue-600' : ''}>B: {q.b}</span>
                           <span className={q.answer === 'C' ? 'font-bold text-blue-600' : ''}>C: {q.c}</span>
@@ -180,21 +185,20 @@ export function CsvImportModal({ isOpen, onClose, onImportSuccess }: CsvImportMo
           )}
         </div>
 
-        {/* Modal Footer */}
-        <div className="flex items-center justify-end gap-3 border-t border-slate-100 pt-3">
+        <DialogFooter className="gap-2 sm:gap-0">
           <Button variant="outline" size="sm" onClick={onClose}>
-            Hủy
+            Hủy bỏ
           </Button>
           <Button
             variant="primary"
             size="sm"
-            disabled={!parseResult || parseResult.questions.length === 0}
             onClick={handleConfirm}
+            disabled={!parseResult || parseResult.questions.length === 0}
           >
             Nhập {parseResult?.questions.length || 0} câu hỏi vào đề
           </Button>
-        </div>
-      </Card>
-    </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
