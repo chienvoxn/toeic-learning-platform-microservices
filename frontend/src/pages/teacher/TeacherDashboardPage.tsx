@@ -3,10 +3,11 @@ import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/api-client';
 import { OwnedQuiz } from '@/types/quiz';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Card } from '@/components/atoms/Card';
+import { Button } from '@/components/atoms/Button';
 import { SkeletonLoader } from '@/components/feedback/SkeletonLoader';
+import { MetricCard } from '@/components/molecules/MetricCard';
+import { PageHeroBanner } from '@/components/organisms/PageHeroBanner';
 import {
   BookPlus,
   FileCheck,
@@ -38,164 +39,141 @@ export function TeacherDashboardPage() {
 
   return (
     <div className="space-y-8">
-      {/* Header Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 rounded-2xl bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-700 text-white shadow-md">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <Badge variant="outline" className="text-white border-white/30 bg-white/10 text-[11px]">
-              Studio Giảng Viên
-            </Badge>
-          </div>
-          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">
-            Quản Lý & Soạn Thảo Đề Thi
-          </h1>
-          <p className="text-sm text-blue-100 max-w-xl">
-            Tạo mới, chỉnh sửa bản nháp, xuất bản đề thi chuẩn TOEIC và theo dõi số lượng câu hỏi thực tế.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3">
+      {/* Header Banner (Organism) */}
+      <PageHeroBanner
+        badgeText="Studio Giảng Viên"
+        title="Quản Lý & Soạn Thảo Đề Thi"
+        description="Tạo mới, chỉnh sửa bản nháp, xuất bản đề thi chuẩn TOEIC và theo dõi số lượng câu hỏi thực tế."
+        gradient="from-blue-700 via-blue-600 to-indigo-700"
+        actions={
           <Link to="/teacher/quizzes/new">
             <Button className="bg-white text-blue-700 hover:bg-blue-50 font-bold shadow-sm">
               <BookPlus className="h-4 w-4 mr-2" /> Tạo đề thi mới
             </Button>
           </Link>
-        </div>
-      </div>
+        }
+      />
 
-      {/* Metrics Row */}
+      {/* Metrics Row (Molecules) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        <Card className="p-5 border-slate-200 bg-white shadow-xs space-y-2">
-          <div className="flex items-center justify-between text-slate-500">
-            <span className="text-xs font-semibold uppercase tracking-wider">Tổng số đề</span>
-            <div className="p-2 rounded-lg bg-blue-50 text-blue-600">
-              <Layers className="h-4 w-4" />
-            </div>
-          </div>
-          <div className="text-2xl font-black text-slate-900">{stats.total}</div>
-          <p className="text-xs text-slate-500">Đề thi trong kho cá nhân</p>
-        </Card>
-
-        <Card className="p-5 border-slate-200 bg-white shadow-xs space-y-2">
-          <div className="flex items-center justify-between text-slate-500">
-            <span className="text-xs font-semibold uppercase tracking-wider">Đã xuất bản</span>
-            <div className="p-2 rounded-lg bg-emerald-50 text-emerald-600">
-              <FileCheck className="h-4 w-4" />
-            </div>
-          </div>
-          <div className="text-2xl font-black text-emerald-600">{stats.published}</div>
-          <p className="text-xs text-slate-500">Đang hiển thị cho học viên</p>
-        </Card>
-
-        <Card className="p-5 border-slate-200 bg-white shadow-xs space-y-2">
-          <div className="flex items-center justify-between text-slate-500">
-            <span className="text-xs font-semibold uppercase tracking-wider">Bản nháp (Drafts)</span>
-            <div className="p-2 rounded-lg bg-amber-50 text-amber-600">
-              <FileEdit className="h-4 w-4" />
-            </div>
-          </div>
-          <div className="text-2xl font-black text-amber-600">{stats.drafts}</div>
-          <p className="text-xs text-slate-500">Đang biên tập & chưa xuất bản</p>
-        </Card>
-
-        <Card className="p-5 border-slate-200 bg-white shadow-xs space-y-2">
-          <div className="flex items-center justify-between text-slate-500">
-            <span className="text-xs font-semibold uppercase tracking-wider">Tổng số câu hỏi</span>
-            <div className="p-2 rounded-lg bg-indigo-50 text-indigo-600">
-              <BarChart2 className="h-4 w-4" />
-            </div>
-          </div>
-          <div className="text-2xl font-black text-indigo-600">{stats.totalQuestions}</div>
-          <p className="text-xs text-slate-500">Câu hỏi trắc nghiệm đã tạo</p>
-        </Card>
+        <MetricCard
+          title="Tổng số đề"
+          value={stats.total}
+          subtitle="Đề thi trong kho cá nhân"
+          icon={Layers}
+          colorScheme="blue"
+          isLoading={isLoading}
+        />
+        <MetricCard
+          title="Đã xuất bản"
+          value={stats.published}
+          subtitle="Đang hiển thị cho học viên"
+          icon={FileCheck}
+          colorScheme="emerald"
+          isLoading={isLoading}
+        />
+        <MetricCard
+          title="Bản nháp (Drafts)"
+          value={stats.drafts}
+          subtitle="Đang biên tập & chưa xuất bản"
+          icon={FileEdit}
+          colorScheme="amber"
+          isLoading={isLoading}
+        />
+        <MetricCard
+          title="Tổng số câu hỏi"
+          value={stats.totalQuestions}
+          subtitle="Tích lũy từ tất cả các đề"
+          icon={BarChart2}
+          colorScheme="indigo"
+          isLoading={isLoading}
+        />
       </div>
 
       {/* Recent Quizzes List */}
-      <Card className="p-6 border-slate-200 bg-white shadow-sm space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-base font-bold text-slate-900">Đề thi gần đây</h3>
-            <p className="text-xs text-slate-500">Danh sách đề thi được quản lý bởi tài khoản giảng viên hiện tại</p>
+            <h2 className="text-lg font-bold text-slate-900 tracking-tight">Đề thi biên soạn gần đây</h2>
+            <p className="text-xs text-slate-500">Danh sách các bộ đề được cập nhật trong phiên làm việc mới nhất</p>
           </div>
+
           <Link to="/teacher/quizzes">
-            <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700 text-xs">
-              Xem tất cả <ArrowRight className="h-3.5 w-3.5 ml-1" />
+            <Button variant="outline" size="sm" className="gap-1.5 text-xs font-semibold">
+              <span>Xem toàn bộ</span>
+              <ArrowRight className="h-3.5 w-3.5" />
             </Button>
           </Link>
         </div>
 
         {isLoading ? (
           <div className="space-y-3">
-            <SkeletonLoader className="h-14 w-full rounded-lg" />
-            <SkeletonLoader className="h-14 w-full rounded-lg" />
-            <SkeletonLoader className="h-14 w-full rounded-lg" />
+            <SkeletonLoader className="h-16 w-full rounded-xl" />
+            <SkeletonLoader className="h-16 w-full rounded-xl" />
+            <SkeletonLoader className="h-16 w-full rounded-xl" />
           </div>
         ) : recentQuizzes.length === 0 ? (
-          <div className="py-12 text-center space-y-3">
-            <div className="h-12 w-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mx-auto">
+          <Card className="p-8 text-center border-dashed border-slate-300">
+            <div className="mx-auto h-12 w-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mb-3">
               <BookPlus className="h-6 w-6" />
             </div>
-            <h4 className="text-sm font-bold text-slate-900">Chưa có đề thi nào</h4>
-            <p className="text-xs text-slate-500 max-w-sm mx-auto">
-              Hãy bấm vào "Tạo đề thi mới" để bắt đầu soạn đề hoặc nhập câu hỏi nhanh bằng tệp CSV.
+            <h3 className="text-sm font-bold text-slate-900 mb-1">Chưa có đề thi nào trong kho</h3>
+            <p className="text-xs text-slate-500 max-w-sm mx-auto mb-4">
+              Hãy bắt đầu khởi tạo bộ đề thi TOEIC đầu tiên bằng trình soạn thảo bản nháp hoặc tải lên bằng tệp CSV.
             </p>
             <Link to="/teacher/quizzes/new">
-              <Button variant="primary" size="sm" className="mt-2">
-                Bắt đầu tạo đề ngay
-              </Button>
+              <Button variant="primary" size="sm">Khởi tạo đề thi mới</Button>
             </Link>
-          </div>
+          </Card>
         ) : (
-          <div className="divide-y divide-slate-100">
+          <div className="space-y-3">
             {recentQuizzes.map((quiz) => {
-              const isDraft = quiz.status === 'DRAFT';
+              const isPublished = quiz.status === 'PUBLISHED';
               return (
-                <div
+                <Card
                   key={quiz.id}
-                  className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50/60 px-3 rounded-lg transition-colors"
+                  className="p-4 border-slate-200/90 hover:border-blue-300 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4"
                 >
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-sm text-slate-900">{quiz.title}</span>
-                      <Badge variant={isDraft ? 'secondary' : 'default'} className="text-[10px]">
-                        {isDraft ? 'Bản nháp (Draft)' : 'Đã xuất bản'}
-                      </Badge>
+                  <div className="space-y-1 min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                          isPublished
+                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                            : 'bg-amber-50 text-amber-700 border border-amber-200'
+                        }`}
+                      >
+                        {isPublished ? 'Đã xuất bản' : 'Bản nháp (Draft)'}
+                      </span>
+                      <span className="text-[10px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full">
+                        Part {quiz.part}
+                      </span>
                       {quiz.premium && (
-                        <Badge variant="pro" className="text-[10px]">
+                        <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
                           PRO
-                        </Badge>
+                        </span>
                       )}
                     </div>
-                    <div className="flex items-center gap-4 text-xs text-slate-500">
-                      <span>Part {quiz.part}</span>
-                      <span>•</span>
-                      <span>{quiz.count} câu hỏi</span>
-                      <span>•</span>
-                      <span className="font-mono text-[11px]">v{quiz.version}</span>
-                    </div>
+
+                    <h3 className="text-sm font-bold text-slate-900 truncate">{quiz.title}</h3>
+                    <p className="text-xs text-slate-500">
+                      Số câu hỏi: <span className="font-semibold text-slate-700">{quiz.count || 0}</span> câu
+                    </p>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    {isDraft ? (
-                      <Link to={`/teacher/quizzes/${quiz.id}/edit`}>
-                        <Button variant="outline" size="sm" className="text-xs text-blue-600 hover:text-blue-700">
-                          <FileEdit className="h-3.5 w-3.5 mr-1.5" /> Biên tập & Xuất bản
-                        </Button>
-                      </Link>
-                    ) : (
-                      <Link to={`/quizzes/${quiz.id}`}>
-                        <Button variant="ghost" size="sm" className="text-xs text-slate-600">
-                          Xem trang công khai
-                        </Button>
-                      </Link>
-                    )}
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Link to={`/teacher/quizzes/${quiz.id}/edit`}>
+                      <Button variant="outline" size="sm" className="h-8 text-xs font-semibold">
+                        Chỉnh sửa đề
+                      </Button>
+                    </Link>
                   </div>
-                </div>
+                </Card>
               );
             })}
           </div>
         )}
-      </Card>
+      </div>
     </div>
   );
 }
