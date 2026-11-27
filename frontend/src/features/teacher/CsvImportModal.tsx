@@ -11,7 +11,7 @@ import {
 } from '@/components/atoms/Dialog';
 import { parseQuestionCsv, CsvParseResult } from './csvParser';
 import { QuestionInput } from '@/types/quiz';
-import { UploadCloud, FileText, CheckCircle2, AlertTriangle, Download } from 'lucide-react';
+import { UploadCloud, FileText, CheckCircle2, AlertTriangle, Download, RotateCcw } from 'lucide-react';
 
 interface CsvImportModalProps {
   isOpen: boolean;
@@ -23,6 +23,14 @@ export function CsvImportModal({ isOpen, onClose, onImportSuccess }: CsvImportMo
   const [csvText, setCsvText] = useState('');
   const [parseResult, setParseResult] = useState<CsvParseResult | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const handleClearCsv = () => {
+    setCsvText('');
+    setParseResult(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -36,6 +44,7 @@ export function CsvImportModal({ isOpen, onClose, onImportSuccess }: CsvImportMo
       setParseResult(parsed);
     };
     reader.readAsText(file);
+    e.target.value = '';
   };
 
   const handleTextChange = (text: string) => {
@@ -51,6 +60,7 @@ export function CsvImportModal({ isOpen, onClose, onImportSuccess }: CsvImportMo
   const handleConfirm = () => {
     if (parseResult && parseResult.questions.length > 0) {
       onImportSuccess(parseResult.questions);
+      handleClearCsv();
       onClose();
     }
   };
@@ -73,13 +83,15 @@ export function CsvImportModal({ isOpen, onClose, onImportSuccess }: CsvImportMo
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
         <DialogHeader>
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-lg bg-blue-50 text-blue-600">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-md bg-secondary border border-border text-foreground shrink-0">
               <UploadCloud className="h-5 w-5" />
             </div>
             <div>
-              <DialogTitle>Nhập Câu Hỏi Hàng Loạt Từ Tệp CSV</DialogTitle>
-              <DialogDescription>Hỗ trợ định dạng chuẩn: prompt, a, b, c, d, answer, explanation</DialogDescription>
+              <DialogTitle>Nhập câu hỏi hàng loạt từ tệp CSV</DialogTitle>
+              <DialogDescription>
+                Hỗ trợ định dạng chuẩn: prompt, a, b, c, [d], answer, explanation
+              </DialogDescription>
             </div>
           </div>
         </DialogHeader>
@@ -87,30 +99,44 @@ export function CsvImportModal({ isOpen, onClose, onImportSuccess }: CsvImportMo
         {/* Modal Body */}
         <div className="space-y-4 overflow-y-auto flex-1 pr-1">
           {/* Action Row */}
-          <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-50 p-3 rounded-lg border border-slate-200">
+          <div className="flex flex-wrap items-center justify-between gap-3 bg-background p-3 rounded-md border-[1.5px] border-border">
             <input
               type="file"
               ref={fileInputRef}
               onChange={handleFileUpload}
               accept=".csv,text/csv"
-              className="hidden"
+              className="sr-only"
+              aria-label="Chọn tệp CSV từ máy tính"
             />
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => fileInputRef.current?.click()}
-              className="text-xs font-semibold gap-1.5"
-            >
-              <FileText className="h-4 w-4 text-blue-600" /> Chọn tệp CSV từ máy tính
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+                className="text-xs font-bold"
+              >
+                <FileText className="h-4 w-4" /> Chọn tệp CSV từ máy tính
+              </Button>
+              {csvText.length > 0 && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleClearCsv}
+                  className="text-xs font-bold"
+                >
+                  <RotateCcw className="h-3.5 w-3.5" /> Xóa nội dung
+                </Button>
+              )}
+            </div>
 
             <Button
               type="button"
               variant="ghost"
               size="sm"
               onClick={downloadSample}
-              className="text-xs text-slate-600 hover:text-blue-600 gap-1"
+              className="text-xs font-bold"
             >
               <Download className="h-3.5 w-3.5" /> Tải tệp mẫu (.csv)
             </Button>
@@ -118,27 +144,30 @@ export function CsvImportModal({ isOpen, onClose, onImportSuccess }: CsvImportMo
 
           {/* Text Area Input */}
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-800">Hoặc dán trực tiếp nội dung CSV vào đây:</label>
+            <label htmlFor="csv-raw-textarea" className="text-xs font-extrabold text-foreground block">
+              Hoặc dán trực tiếp nội dung CSV vào đây:
+            </label>
             <textarea
+              id="csv-raw-textarea"
               rows={6}
               value={csvText}
               onChange={(e) => handleTextChange(e.target.value)}
               placeholder={`prompt,a,b,c,d,answer,explanation\n"Question...","A","B","C","D","A","Explanation..."`}
-              className="w-full rounded-lg border border-slate-200 p-3 font-mono text-xs text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-blue-600"
+              className="w-full rounded-md border-[1.5px] border-border bg-surface p-3 font-mono text-xs text-foreground placeholder:text-ink-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             />
           </div>
 
           {/* Parse Result Summary */}
           {parseResult && (
-            <div className="space-y-3 pt-2 border-t border-slate-100">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-800">Kết quả phân tích:</span>
+            <div className="space-y-3 pt-3 border-t border-border/20">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <span className="text-xs font-extrabold text-foreground">Kết quả phân tích:</span>
                 <div className="flex gap-2">
-                  <Badge variant={parseResult.questions.length > 0 ? 'success' : 'destructive'} className="text-[10px]">
+                  <Badge variant={parseResult.questions.length > 0 ? 'success' : 'destructive'} className="text-[11px]">
                     <CheckCircle2 className="h-3 w-3 mr-1" /> {parseResult.questions.length} câu hợp lệ
                   </Badge>
                   {parseResult.errors.length > 0 && (
-                    <Badge variant="warning" className="text-[10px]">
+                    <Badge variant="warning" className="text-[11px]">
                       <AlertTriangle className="h-3 w-3 mr-1" /> {parseResult.errors.length} cảnh báo
                     </Badge>
                   )}
@@ -146,7 +175,7 @@ export function CsvImportModal({ isOpen, onClose, onImportSuccess }: CsvImportMo
               </div>
 
               {parseResult.errors.length > 0 && (
-                <div className="bg-amber-50 p-3 rounded-lg border border-amber-200 text-xs text-amber-800 space-y-1 max-h-28 overflow-y-auto">
+                <div className="bg-warning/40 p-3 rounded-md border-[1.5px] border-border text-xs text-foreground space-y-1 max-h-28 overflow-y-auto">
                   {parseResult.errors.map((err, i) => (
                     <div key={i}>• {err}</div>
                   ))}
@@ -156,25 +185,35 @@ export function CsvImportModal({ isOpen, onClose, onImportSuccess }: CsvImportMo
               {parseResult.questions.length > 0 && (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-slate-700">
+                    <span className="text-xs font-bold text-foreground">
                       Xem trước {Math.min(parseResult.questions.length, 3)} câu đầu:
                     </span>
-                    <Badge variant="outline" className="text-[10px]">
+                    <Badge variant="outline" className="font-mono text-[11px]">
                       {Math.min(parseResult.questions.length, 3)} / {parseResult.questions.length} câu
                     </Badge>
                   </div>
 
-                  <div className="max-h-40 overflow-y-auto space-y-2 border border-slate-200 rounded-lg p-2.5 bg-slate-50/50">
+                  <div className="max-h-48 overflow-y-auto space-y-2 border-[1.5px] border-border rounded-md p-2.5 bg-background">
                     {parseResult.questions.slice(0, 3).map((q, idx) => (
-                      <div key={idx} className="p-2.5 bg-white rounded-md border border-slate-200/80 text-xs space-y-1 shadow-2xs">
-                        <p className="font-semibold text-slate-900 truncate">
+                      <div key={idx} className="p-2.5 bg-surface rounded-sm border border-border text-xs space-y-1.5">
+                        <p className="font-bold text-foreground truncate">
                           #{idx + 1}: {q.prompt}
                         </p>
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-[11px] text-slate-600">
-                          <span className={q.answer === 'A' ? 'font-bold text-blue-600' : ''}>A: {q.a}</span>
-                          <span className={q.answer === 'B' ? 'font-bold text-blue-600' : ''}>B: {q.b}</span>
-                          <span className={q.answer === 'C' ? 'font-bold text-blue-600' : ''}>C: {q.c}</span>
-                          <span className={q.answer === 'D' ? 'font-bold text-blue-600' : ''}>D: {q.d}</span>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-[11px] text-ink-muted">
+                          <span className={q.answer === 'A' ? 'font-extrabold text-foreground underline' : ''}>
+                            A: {q.a}
+                          </span>
+                          <span className={q.answer === 'B' ? 'font-extrabold text-foreground underline' : ''}>
+                            B: {q.b}
+                          </span>
+                          <span className={q.answer === 'C' ? 'font-extrabold text-foreground underline' : ''}>
+                            C: {q.c}
+                          </span>
+                          {q.d ? (
+                            <span className={q.answer === 'D' ? 'font-extrabold text-foreground underline' : ''}>
+                              D: {q.d}
+                            </span>
+                          ) : null}
                         </div>
                       </div>
                     ))}
@@ -185,7 +224,7 @@ export function CsvImportModal({ isOpen, onClose, onImportSuccess }: CsvImportMo
           )}
         </div>
 
-        <DialogFooter className="gap-2 sm:gap-0">
+        <DialogFooter className="gap-2 sm:gap-2 pt-3 border-t border-border/20">
           <Button variant="outline" size="sm" onClick={onClose}>
             Hủy bỏ
           </Button>

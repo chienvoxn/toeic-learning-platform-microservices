@@ -67,3 +67,9 @@ export interface AdminQuizzes {
   page: number;
   size: number;
 }
+
+export interface MediaUploadResponse {
+  url: string;
+  mediaType: string;
+  size: number;
+}
