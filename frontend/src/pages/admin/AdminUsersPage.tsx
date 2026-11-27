@@ -1,21 +1,17 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/api-client';
 import { UserDirectoryPage, DirectoryUser } from '@/types/admin';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { SkeletonLoader } from '@/components/feedback/SkeletonLoader';
-import { Alert } from '@/components/feedback/Alert';
+import { Card } from '@/components/atoms/Card';
+import { Badge } from '@/components/atoms/Badge';
+import { Button } from '@/components/atoms/Button';
+import { Select } from '@/components/atoms/Select';
+import { Avatar, AvatarFallback, UserInitials } from '@/components/atoms/Avatar';
+import { SearchInput } from '@/components/molecules/SearchInput';
+import { Alert } from '@/components/molecules/Alert';
+import { DataTable, Column } from '@/components/organisms/DataTable';
 import { RoleAssignModal } from '@/features/admin/RoleAssignModal';
-import {
-  Search,
-  Shield,
-  ChevronLeft,
-  ChevronRight,
-  Filter
-} from 'lucide-react';
+import { Shield, Filter, RefreshCw } from 'lucide-react';
 
 export function AdminUsersPage() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -27,14 +23,14 @@ export function AdminUsersPage() {
   const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  // Trigger search on enter or when user stops typing
+  // Trigger search on form submit
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setDebouncedQuery(searchTerm.trim());
     setPage(0);
   };
 
-  // 1. Fetch Users from Identity Service (/ms/v1/identity/admin/users)
+  // Fetch Users from Identity Service (/ms/v1/identity/admin/users)
   const { data: usersPage, isLoading, isError, error, refetch } = useQuery<UserDirectoryPage>({
     queryKey: ['admin-users', debouncedQuery, roleFilter, page],
     queryFn: () => {
@@ -49,9 +45,21 @@ export function AdminUsersPage() {
   });
 
   const totalPages = useMemo(() => {
-    if (!usersPage) return 0;
+    if (!usersPage || usersPage.size <= 0) return 0;
     return Math.ceil(usersPage.total / usersPage.size);
   }, [usersPage]);
+
+  // Adjust out-of-range page based only on matching settled server response
+  useEffect(() => {
+    if (isLoading || isError || !usersPage || usersPage.page !== page) return;
+    if (usersPage.total === 0 && page !== 0) {
+      setPage(0);
+      return;
+    }
+    if (totalPages > 0 && page >= totalPages) {
+      setPage(totalPages - 1);
+    }
+  }, [isLoading, isError, usersPage, page, totalPages]);
 
   const handleOpenRoleModal = (u: DirectoryUser) => {
     setSelectedUserForRole(u);
@@ -59,174 +67,179 @@ export function AdminUsersPage() {
     setSuccessMessage(null);
   };
 
+  const columns: Column<DirectoryUser>[] = [
+    {
+      key: 'displayName',
+      header: 'Người dùng',
+      render: (u) => (
+        <div className="flex items-center gap-3">
+          <Avatar className="h-9 w-9 shrink-0">
+            <AvatarFallback className="text-xs">
+              <UserInitials name={u.displayName} email={u.email} />
+            </AvatarFallback>
+          </Avatar>
+          <div className="min-w-0">
+            <p className="font-extrabold text-foreground truncate">
+              {u.displayName || '(Chưa đặt tên)'}
+            </p>
+            <p className="font-mono text-xs text-ink-muted truncate">{u.email}</p>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'userId',
+      header: 'Mã định danh (UUID)',
+      render: (u) => (
+        <span
+          className="font-mono text-xs text-ink-muted bg-background px-2 py-1 rounded-sm border border-border/50 inline-block"
+          title={u.userId}
+        >
+          {u.userId.slice(0, 8)}...{u.userId.slice(-4)}
+        </span>
+      ),
+    },
+    {
+      key: 'roles',
+      header: 'Vai trò hiện tại',
+      render: (u) => (
+        <div className="flex flex-wrap gap-1.5">
+          {u.roles.map((r) => {
+            const variant = r === 'ADMIN' ? 'warning' : r === 'TEACHER' ? 'secondary' : 'outline';
+            return (
+              <Badge
+                key={r}
+                variant={variant}
+                className={r === 'TEACHER' ? 'bg-secondary text-foreground text-[11px]' : 'text-[11px]'}
+              >
+                {r}
+              </Badge>
+            );
+          })}
+        </div>
+      ),
+    },
+    {
+      key: 'actions',
+      header: <span className="block text-right">Thao tác</span>,
+      className: 'text-right',
+      render: (u) => (
+        <div className="flex justify-end">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleOpenRoleModal(u)}
+          >
+            <Shield className="h-3.5 w-3.5" /> Phân vai trò
+          </Button>
+        </div>
+      ),
+    },
+  ];
+
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Danh Bạ Người Dùng & Quản Trị RBAC</h1>
-          <p className="text-xs text-slate-500">
-            Xem danh sách tài khoản toàn hệ thống, tìm kiếm theo tên hoặc email và phân quyền vai trò.
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b-[1.5px] border-border pb-4">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-black text-foreground tracking-tight">
+            Danh bạ người dùng &amp; quản trị RBAC
+          </h1>
+          <p className="text-sm text-ink-muted">
+            Tìm kiếm tài khoản theo tên hoặc email, kiểm tra vai trò hiện có và cấp quyền mới
           </p>
         </div>
+        {usersPage && (
+          <Badge variant="outline" className="font-mono text-xs self-start sm:self-auto">
+            {usersPage.total} tài khoản
+          </Badge>
+        )}
       </div>
 
       {successMessage && (
-        <Alert type="success" title="Thành công">
+        <Alert type="success" title="Cập nhật quyền thành công">
           {successMessage}
         </Alert>
       )}
 
       {/* Filter and Search Bar */}
-      <Card className="p-4 border-slate-200 bg-white shadow-xs">
-        <form onSubmit={handleSearchSubmit} className="grid grid-cols-1 sm:grid-cols-12 gap-3">
-          <div className="sm:col-span-8 relative">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-            <Input
-              placeholder="Nhập tên hoặc email người dùng (bấm Enter để tìm)..."
+      <Card variant="default" className="p-4">
+        <form onSubmit={handleSearchSubmit} className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
+          <div className="sm:col-span-6">
+            <SearchInput
+              placeholder="Nhập tên hoặc email người dùng (nhấn Enter để tìm)..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 text-xs"
+              onChange={(val) => {
+                setSearchTerm(val);
+                if (val === '' && debouncedQuery !== '') {
+                  setDebouncedQuery('');
+                  setPage(0);
+                }
+              }}
+              aria-label="Tìm kiếm người dùng theo tên hoặc email"
             />
           </div>
 
-          <div className="sm:col-span-4 flex gap-2">
-            <select
+          <div className="sm:col-span-4">
+            <Select
+              aria-label="Lọc theo vai trò"
               value={roleFilter}
               onChange={(e) => {
                 setRoleFilter(e.target.value as 'ALL' | 'LEARNER' | 'TEACHER' | 'ADMIN');
                 setPage(0);
               }}
-              className="w-full h-9 rounded-md border border-slate-200 bg-white px-3 text-xs text-slate-700 font-medium focus:outline-hidden focus:ring-2 focus:ring-blue-600"
-            >
-              <option value="ALL">Tất cả vai trò</option>
-              <option value="LEARNER">Học viên (LEARNER)</option>
-              <option value="TEACHER">Giảng viên (TEACHER)</option>
-              <option value="ADMIN">Quản trị viên (ADMIN)</option>
-            </select>
+              options={[
+                { value: 'ALL', label: 'Tất cả vai trò' },
+                { value: 'LEARNER', label: 'Học viên (LEARNER)' },
+                { value: 'TEACHER', label: 'Giảng viên (TEACHER)' },
+                { value: 'ADMIN', label: 'Quản trị viên (ADMIN)' },
+              ]}
+            />
+          </div>
 
-            <Button type="submit" variant="primary" size="sm" className="h-9 px-4 text-xs font-semibold shrink-0">
+          <div className="sm:col-span-2">
+            <Button type="submit" variant="primary" size="md" className="w-full">
               Tìm kiếm
             </Button>
           </div>
         </form>
       </Card>
 
-      {/* Users Table */}
-      <Card className="border-slate-200 bg-white shadow-xs overflow-hidden">
-        {isLoading ? (
-          <div className="p-6 space-y-3">
-            <SkeletonLoader className="h-12 w-full rounded-md" />
-            <SkeletonLoader className="h-12 w-full rounded-md" />
-            <SkeletonLoader className="h-12 w-full rounded-md" />
-          </div>
-        ) : isError ? (
-          <div className="p-8 text-center space-y-2">
-            <p className="text-sm font-semibold text-rose-600">
-              {error instanceof Error ? error.message : 'Lỗi tải danh bạ người dùng.'}
-            </p>
-            <Button variant="outline" size="sm" onClick={() => refetch()} className="text-xs">
-              Thử lại
+      {/* Error State or DataTable */}
+      {isError ? (
+        <Alert type="error" title="Lỗi tải danh bạ người dùng">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <span>
+              {error instanceof Error ? error.message : 'Không thể kết nối dịch vụ định danh.'}
+            </span>
+            <Button variant="outline" size="sm" onClick={() => refetch()} className="shrink-0">
+              <RefreshCw className="h-3.5 w-3.5" /> Thử lại
             </Button>
           </div>
-        ) : !usersPage || usersPage.users.length === 0 ? (
-          <div className="py-16 text-center space-y-3">
-            <div className="h-12 w-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
-              <Filter className="h-6 w-6" />
-            </div>
-            <h3 className="text-sm font-bold text-slate-800">Không tìm thấy người dùng</h3>
-            <p className="text-xs text-slate-500 max-w-sm mx-auto">
-              Không có tài khoản nào khớp với từ khóa tìm kiếm hoặc bộ lọc vai trò hiện tại.
-            </p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold uppercase tracking-wider">
-                <tr>
-                  <th className="py-3 px-4">Tên hiển thị</th>
-                  <th className="py-3 px-4">Địa chỉ Email</th>
-                  <th className="py-3 px-4">Mã định danh (User ID)</th>
-                  <th className="py-3 px-4">Vai trò (Roles)</th>
-                  <th className="py-3 px-4 text-right">Thao tác</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 text-slate-700">
-                {usersPage.users.map((u) => {
-                  return (
-                    <tr key={u.userId} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="py-3 px-4 font-bold text-slate-900">
-                        {u.displayName || '(Chưa đặt tên)'}
-                      </td>
-                      <td className="py-3 px-4 font-mono text-slate-800">
-                        {u.email}
-                      </td>
-                      <td className="py-3 px-4 font-mono text-[11px] text-slate-400">
-                        {u.userId.slice(0, 13)}...
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="flex flex-wrap gap-1">
-                          {u.roles.map((r) => {
-                            let badgeStyle = 'bg-slate-100 text-slate-700 border-slate-200';
-                            if (r === 'ADMIN') badgeStyle = 'bg-rose-50 text-rose-700 border-rose-200 font-bold';
-                            if (r === 'TEACHER') badgeStyle = 'bg-blue-50 text-blue-700 border-blue-200 font-bold';
-                            return (
-                              <Badge key={r} variant="outline" className={`text-[10px] ${badgeStyle}`}>
-                                {r}
-                              </Badge>
-                            );
-                          })}
-                        </div>
-                      </td>
-                      <td className="py-3 px-4 text-right">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleOpenRoleModal(u)}
-                          className="h-7 text-xs text-blue-600 border-blue-200 hover:bg-blue-50"
-                        >
-                          <Shield className="h-3 w-3 mr-1" /> Phân vai trò
-                        </Button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {/* Server-Side Pagination Bar */}
-        {usersPage && usersPage.total > usersPage.size && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-slate-200 bg-slate-50/50 text-xs">
-            <span className="text-slate-500">
-              Hiển thị trang <strong>{page + 1}</strong> / <strong>{totalPages}</strong> ({usersPage.total} người dùng)
-            </span>
-
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={page <= 0}
-                onClick={() => setPage((p) => Math.max(0, p - 1))}
-                className="h-7 px-2.5 text-xs"
-              >
-                <ChevronLeft className="h-3.5 w-3.5 mr-1" /> Trước
-              </Button>
-
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={page >= totalPages - 1}
-                onClick={() => setPage((p) => p + 1)}
-                className="h-7 px-2.5 text-xs"
-              >
-                Sau <ChevronRight className="h-3.5 w-3.5 ml-1" />
-              </Button>
-            </div>
-          </div>
-        )}
-      </Card>
+        </Alert>
+      ) : (
+        <DataTable
+          columns={columns}
+          data={usersPage?.users || []}
+          keyExtractor={(u) => u.userId}
+          isLoading={isLoading}
+          emptyIcon={Filter}
+          emptyTitle="Không tìm thấy người dùng"
+          emptyDescription="Không có tài khoản nào khớp với từ khóa tìm kiếm hoặc bộ lọc vai trò hiện tại."
+          pagination={
+            usersPage && usersPage.total > usersPage.size
+              ? {
+                  currentPage: page,
+                  totalPages,
+                  onPageChange: setPage,
+                  baseIndex: 0,
+                  totalItems: usersPage.total,
+                  pageSize: usersPage.size,
+                }
+              : undefined
+          }
+        />
+      )}
 
       {/* Role Assignment Modal */}
       <RoleAssignModal
@@ -234,7 +247,7 @@ export function AdminUsersPage() {
         isOpen={isRoleModalOpen}
         onClose={() => setIsRoleModalOpen(false)}
         onSuccess={() => {
-          setSuccessMessage(`Đã cập nhật vai trò người dùng thành công!`);
+          setSuccessMessage('Đã cập nhật vai trò người dùng thành công!');
         }}
       />
     </div>

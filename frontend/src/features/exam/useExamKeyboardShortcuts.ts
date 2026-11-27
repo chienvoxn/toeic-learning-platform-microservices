@@ -19,26 +19,31 @@ export function useExamKeyboardShortcuts({
     if (!enabled) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't trigger shortcuts if user is typing in an input/textarea
-      if (
-        e.target instanceof HTMLInputElement ||
-        e.target instanceof HTMLTextAreaElement ||
-        e.target instanceof HTMLSelectElement
-      ) {
+      // Ignore held-key auto-repeat, browser/OS modifier shortcuts, or already-handled events
+      if (e.repeat || e.ctrlKey || e.metaKey || e.altKey || e.defaultPrevented) {
         return;
+      }
+
+      const target = e.target;
+      if (target instanceof HTMLElement) {
+        if (
+          target instanceof HTMLInputElement ||
+          target instanceof HTMLTextAreaElement ||
+          target instanceof HTMLSelectElement ||
+          target instanceof HTMLMediaElement ||
+          target.isContentEditable ||
+          Boolean(target.closest('audio, video, [role="dialog"], [data-shortcut-ignore="true"]'))
+        ) {
+          return;
+        }
       }
 
       const key = e.key.toUpperCase();
 
-      // Choice selection: A, B, C, D or 1, 2, 3, 4
       if (key === 'A' || key === '1') {
         e.preventDefault();
         onSelectChoice('A');
-      } else if (key === 'B' && !e.ctrlKey && !e.metaKey) {
-        // Distinguish Bookmark vs Choice B:
-        // Use key 'B' for Choice B or Bookmark?
-        // Standard convention: 1-4 for choices, or A-D. Let's make A/B/C/D map to choices, 'M' or 'K' for bookmark, OR if user presses B, toggle bookmark only if not selecting choice?
-        // Let's support both cleanly: A, B, C, D selects choices. Key 'M' (Mark) or 'F' (Flag) or Ctrl+B toggles bookmark.
+      } else if (key === 'B' || key === '2') {
         e.preventDefault();
         onSelectChoice('B');
       } else if (key === 'C' || key === '3') {
@@ -47,11 +52,7 @@ export function useExamKeyboardShortcuts({
       } else if (key === 'D' || key === '4') {
         e.preventDefault();
         onSelectChoice('D');
-      } else if (key === '2') {
-        e.preventDefault();
-        onSelectChoice('B');
       } else if (key === 'M' || key === 'F') {
-        // M or F for Mark/Flag
         e.preventDefault();
         onToggleBookmark();
       } else if (e.key === 'ArrowRight' || e.key === 'PageDown') {

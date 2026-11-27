@@ -13,24 +13,8 @@ export interface Session {
   user: UserView;
 }
 
-export interface RbacAccess {
-  userId: string;
-  roles: string[];
-  permissions: string[];
-}
-
-export interface UserDirectoryItem {
-  userId: string;
-  email: string;
-  displayName: string;
-  role: string;
-  roles?: string[];
-}
-
-export interface UserDirectoryPage {
-  users: UserDirectoryItem[];
-  totalUsers: number;
-  page: number;
-  pageSize: number;
-  totalPages: number;
-}
+export type {
+  RbacAccess,
+  DirectoryUser as UserDirectoryItem,
+  UserDirectoryPage,
+} from './admin';

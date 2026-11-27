@@ -1,183 +1,254 @@
 import { useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/api-client';
 import { OwnedQuiz } from '@/types/quiz';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { SkeletonLoader } from '@/components/feedback/SkeletonLoader';
+import { Card } from '@/components/atoms/Card';
+import { Badge } from '@/components/atoms/Badge';
+import { StatusBadge } from '@/components/atoms/StatusBadge';
+import { Button } from '@/components/atoms/Button';
+import { Select } from '@/components/atoms/Select';
+import { SearchInput } from '@/components/molecules/SearchInput';
+import { FilterButtonGroup } from '@/components/molecules/FilterButtonGroup';
+import { Alert } from '@/components/molecules/Alert';
+import { DataTable, Column } from '@/components/organisms/DataTable';
 import {
   BookPlus,
-  Search,
   FileEdit,
   ExternalLink,
-  Filter
+  Filter,
+  RefreshCw,
+  RotateCcw,
 } from 'lucide-react';
 
 export function TeacherQuizzesPage() {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'DRAFT' | 'PUBLISHED'>('ALL');
   const [partFilter, setPartFilter] = useState<number | 'ALL'>('ALL');
 
-  const { data: quizzes = [], isLoading } = useQuery<OwnedQuiz[]>({
+  const {
+    data: quizzes = [],
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useQuery<OwnedQuiz[]>({
     queryKey: ['teacher-quizzes'],
     queryFn: () => apiRequest<OwnedQuiz[]>('/ms/v1/contents/quizzes/mine'),
     staleTime: 1000 * 30,
   });
 
+  const statusCounts = useMemo(() => {
+    const draft = quizzes.filter((q) => q.status === 'DRAFT').length;
+    const published = quizzes.filter((q) => q.status === 'PUBLISHED').length;
+    return {
+      all: quizzes.length,
+      draft,
+      published,
+    };
+  }, [quizzes]);
+
   const filteredQuizzes = useMemo(() => {
+    const query = searchTerm.trim().toLowerCase();
     return quizzes.filter((q) => {
-      const matchSearch = q.title.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchSearch = !query || q.title.toLowerCase().includes(query);
       const matchStatus = statusFilter === 'ALL' || q.status === statusFilter;
       const matchPart = partFilter === 'ALL' || q.part === partFilter;
       return matchSearch && matchStatus && matchPart;
     });
   }, [quizzes, searchTerm, statusFilter, partFilter]);
 
+  const hasActiveFilters = searchTerm.trim().length > 0 || statusFilter !== 'ALL' || partFilter !== 'ALL';
+
+  const handleResetFilters = () => {
+    setSearchTerm('');
+    setStatusFilter('ALL');
+    setPartFilter('ALL');
+  };
+
+  const columns: Column<OwnedQuiz>[] = [
+    {
+      key: 'title',
+      header: 'Tiêu đề đề thi',
+      render: (quiz) => (
+        <div className="max-w-xs space-y-0.5">
+          <span className="font-extrabold text-foreground block truncate" title={quiz.title}>
+            {quiz.title}
+          </span>
+          <span className="font-mono text-[11px] text-ink-muted block truncate" title={quiz.id}>
+            #{quiz.id.slice(0, 8)}
+          </span>
+        </div>
+      ),
+    },
+    {
+      key: 'part',
+      header: 'Phần thi',
+      render: (quiz) => (
+        <Badge variant="outline" className="text-xs">
+          Part {quiz.part}
+        </Badge>
+      ),
+    },
+    {
+      key: 'premium',
+      header: 'Gói áp dụng',
+      render: (quiz) =>
+        quiz.premium ? (
+          <Badge variant="pro" className="text-[11px]">PRO</Badge>
+        ) : (
+          <Badge variant="outline" className="text-[11px]">FREE</Badge>
+        ),
+    },
+    {
+      key: 'count',
+      header: 'Số câu hỏi',
+      render: (quiz) => (
+        <span className="font-mono font-bold text-foreground">{quiz.count} câu</span>
+      ),
+    },
+    {
+      key: 'status',
+      header: 'Trạng thái',
+      render: (quiz) => <StatusBadge status={quiz.status} />,
+    },
+    {
+      key: 'version',
+      header: 'Phiên bản',
+      render: (quiz) => <span className="font-mono font-semibold text-ink-muted">v{quiz.version}</span>,
+    },
+    {
+      key: 'actions',
+      header: <span className="block text-right">Thao tác</span>,
+      className: 'text-right',
+      render: (quiz) => {
+        const isDraft = quiz.status === 'DRAFT';
+        return (
+          <div className="flex flex-col items-end gap-1">
+            {isDraft ? (
+              <Link to={`/teacher/quizzes/${quiz.id}/edit`}>
+                <Button variant="secondary" size="sm">
+                  <FileEdit className="h-3.5 w-3.5" /> Chỉnh sửa đề
+                </Button>
+              </Link>
+            ) : (
+              <>
+                <Link to={`/quizzes/${quiz.id}`}>
+                  <Button variant="outline" size="sm">
+                    <ExternalLink className="h-3.5 w-3.5" /> Xem đề công khai
+                  </Button>
+                </Link>
+                <span className="text-[11px] text-ink-muted">
+                  Đề đã xuất bản không thể chỉnh sửa trực tiếp.
+                </span>
+              </>
+            )}
+          </div>
+        );
+      },
+    },
+  ];
+
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Kho Đề Thi Của Tôi</h1>
-          <p className="text-xs text-slate-500">Quản lý toàn bộ danh sách đề thi, trạng thái bản nháp và xuất bản</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b-[1.5px] border-border pb-4">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-black text-foreground tracking-tight">Kho đề thi của tôi</h1>
+          <p className="text-sm text-ink-muted">
+            Quản lý toàn bộ đề bản nháp và đề đã xuất bản thuộc quyền sở hữu giảng viên
+          </p>
         </div>
 
         <Link to="/teacher/quizzes/new">
-          <Button variant="primary" className="shadow-xs font-bold text-xs">
-            <BookPlus className="h-4 w-4 mr-2" /> Tạo đề thi mới
+          <Button variant="primary" size="md">
+            <BookPlus className="h-4 w-4" /> Tạo đề thi mới
           </Button>
         </Link>
       </div>
 
-      {/* Filter and Search Bar */}
-      <Card className="p-4 border-slate-200 bg-white shadow-xs space-y-3">
+      {isError && (
+        <Alert type="error" title="Không thể tải danh sách đề thi">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <span>
+              {error instanceof Error
+                ? error.message
+                : 'Đã xảy ra lỗi khi kết nối kho đề thi giảng viên.'}
+            </span>
+            <Button variant="outline" size="sm" onClick={() => refetch()} className="shrink-0">
+              <RefreshCw className="h-3.5 w-3.5" /> Thử lại
+            </Button>
+          </div>
+        </Alert>
+      )}
+
+      {/* Filter & Search Bar */}
+      <Card variant="default" className="p-4 space-y-4">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+          <FilterButtonGroup
+            selectedValue={statusFilter}
+            onChange={setStatusFilter}
+            options={[
+              { value: 'ALL', label: 'Tất cả', count: isLoading || isError ? undefined : statusCounts.all },
+              { value: 'DRAFT', label: 'Bản nháp', count: isLoading || isError ? undefined : statusCounts.draft },
+              {
+                value: 'PUBLISHED',
+                label: 'Đã xuất bản',
+                count: isLoading || isError ? undefined : statusCounts.published,
+              },
+            ]}
+          />
+
+          {hasActiveFilters && (
+            <Button variant="ghost" size="sm" onClick={handleResetFilters}>
+              <RotateCcw className="h-3.5 w-3.5" /> Đặt lại bộ lọc
+            </Button>
+          )}
+        </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
-          <div className="sm:col-span-6 relative">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-            <Input
-              placeholder="Tìm kiếm theo tiêu đề đề thi..."
+          <div className="sm:col-span-8">
+            <SearchInput
+              placeholder="Tìm kiếm theo tên đề thi..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 text-xs"
+              onChange={setSearchTerm}
+              aria-label="Tìm kiếm theo tên đề thi"
             />
           </div>
 
-          <div className="sm:col-span-3">
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as 'ALL' | 'DRAFT' | 'PUBLISHED')}
-              className="w-full h-9 rounded-md border border-slate-200 bg-white px-3 text-xs text-slate-700 font-medium focus:outline-hidden focus:ring-2 focus:ring-blue-600"
-            >
-              <option value="ALL">Tất cả trạng thái</option>
-              <option value="DRAFT">Chỉ bản nháp (Draft)</option>
-              <option value="PUBLISHED">Đã xuất bản (Published)</option>
-            </select>
-          </div>
-
-          <div className="sm:col-span-3">
-            <select
-              value={partFilter}
+          <div className="sm:col-span-4">
+            <Select
+              aria-label="Lọc theo phần thi TOEIC"
+              value={partFilter === 'ALL' ? 'ALL' : String(partFilter)}
               onChange={(e) => setPartFilter(e.target.value === 'ALL' ? 'ALL' : Number(e.target.value))}
-              className="w-full h-9 rounded-md border border-slate-200 bg-white px-3 text-xs text-slate-700 font-medium focus:outline-hidden focus:ring-2 focus:ring-blue-600"
-            >
-              <option value="ALL">Tất cả các Part (1-7)</option>
-              {[1, 2, 3, 4, 5, 6, 7].map((p) => (
-                <option key={p} value={p}>Part {p}</option>
-              ))}
-            </select>
+              options={[
+                { value: 'ALL', label: 'Tất cả các Part (1–7)' },
+                ...[1, 2, 3, 4, 5, 6, 7].map((p) => ({ value: String(p), label: `Part ${p}` })),
+              ]}
+            />
           </div>
         </div>
       </Card>
 
-      {/* Quiz Table / List */}
-      <Card className="border-slate-200 bg-white shadow-xs overflow-hidden">
-        {isLoading ? (
-          <div className="p-6 space-y-3">
-            <SkeletonLoader className="h-12 w-full rounded-md" />
-            <SkeletonLoader className="h-12 w-full rounded-md" />
-            <SkeletonLoader className="h-12 w-full rounded-md" />
-          </div>
-        ) : filteredQuizzes.length === 0 ? (
-          <div className="py-16 text-center space-y-3">
-            <div className="h-12 w-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
-              <Filter className="h-6 w-6" />
-            </div>
-            <h3 className="text-sm font-bold text-slate-800">Không tìm thấy đề thi phù hợp</h3>
-            <p className="text-xs text-slate-500 max-w-sm mx-auto">
-              Thử điều chỉnh lại từ khóa tìm kiếm hoặc bộ lọc trạng thái.
-            </p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold uppercase tracking-wider">
-                <tr>
-                  <th className="py-3 px-4">Tiêu đề đề thi</th>
-                  <th className="py-3 px-4">Phần thi</th>
-                  <th className="py-3 px-4">Gói cước</th>
-                  <th className="py-3 px-4">Số câu</th>
-                  <th className="py-3 px-4">Trạng thái</th>
-                  <th className="py-3 px-4">Phiên bản</th>
-                  <th className="py-3 px-4 text-right">Thao tác</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 text-slate-700">
-                {filteredQuizzes.map((quiz) => {
-                  const isDraft = quiz.status === 'DRAFT';
-                  return (
-                    <tr key={quiz.id} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="py-3.5 px-4 font-bold text-slate-900 max-w-xs truncate">
-                        {quiz.title}
-                      </td>
-                      <td className="py-3.5 px-4 font-medium">
-                        Part {quiz.part}
-                      </td>
-                      <td className="py-3.5 px-4">
-                        {quiz.premium ? (
-                          <Badge variant="pro" className="text-[10px]">PRO</Badge>
-                        ) : (
-                          <Badge variant="outline" className="text-[10px] text-slate-600">FREE</Badge>
-                        )}
-                      </td>
-                      <td className="py-3.5 px-4 font-semibold text-slate-900">
-                        {quiz.count} câu
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <Badge variant={isDraft ? 'secondary' : 'default'} className="text-[10px]">
-                          {isDraft ? 'Bản nháp (Draft)' : 'Đã xuất bản'}
-                        </Badge>
-                      </td>
-                      <td className="py-3.5 px-4 font-mono text-slate-500">
-                        v{quiz.version}
-                      </td>
-                      <td className="py-3.5 px-4 text-right space-x-2">
-                        {isDraft ? (
-                          <Link to={`/teacher/quizzes/${quiz.id}/edit`}>
-                            <Button variant="outline" size="sm" className="h-7 text-xs text-blue-600 border-blue-200 hover:bg-blue-50">
-                              <FileEdit className="h-3 w-3 mr-1" /> Biên tập
-                            </Button>
-                          </Link>
-                        ) : (
-                          <div className="inline-flex items-center gap-1.5">
-                            <Link to={`/quizzes/${quiz.id}`}>
-                              <Button variant="outline" size="sm" className="h-7 text-xs text-blue-700 border-blue-200 hover:bg-blue-50">
-                                <ExternalLink className="h-3 w-3 mr-1" /> Luyện thi thực tế
-                              </Button>
-                            </Link>
-                          </div>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </Card>
+      {/* Editorial Quiz Library Table */}
+      {!isError && (
+        <DataTable
+          columns={columns}
+          data={filteredQuizzes}
+          keyExtractor={(quiz) => quiz.id}
+          isLoading={isLoading}
+          emptyIcon={Filter}
+          emptyTitle={hasActiveFilters ? 'Không tìm thấy đề thi phù hợp' : 'Kho đề thi hiện đang trống'}
+          emptyDescription={
+            hasActiveFilters
+              ? 'Thử điều chỉnh từ khóa tìm kiếm, trạng thái bản nháp/xuất bản hoặc bộ lọc Part.'
+              : 'Khởi tạo bản nháp đầu tiên để bắt đầu xây dựng ngân hàng câu hỏi TOEIC.'
+          }
+          emptyActionText={hasActiveFilters ? 'Xóa bộ lọc' : 'Tạo đề thi mới'}
+          onEmptyAction={hasActiveFilters ? handleResetFilters : () => navigate('/teacher/quizzes/new')}
+        />
+      )}
     </div>
   );
 }

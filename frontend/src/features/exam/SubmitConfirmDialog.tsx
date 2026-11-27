@@ -1,6 +1,14 @@
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { AlertTriangle, CheckCircle } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/atoms/Dialog';
+import { Button } from '@/components/atoms/Button';
+import { Alert } from '@/components/molecules/Alert';
+import { CheckCircle2, RefreshCw } from 'lucide-react';
 
 interface SubmitConfirmDialogProps {
   isOpen: boolean;
@@ -27,78 +35,114 @@ export function SubmitConfirmDialog({
   onConfirm,
   onCancel,
 }: SubmitConfirmDialogProps) {
-  if (!isOpen) return null;
+  const isBusy = isSubmitting || isSyncing;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
-      <Card className="max-w-md w-full p-6 shadow-xl border-slate-200 bg-white space-y-5">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-            <CheckCircle className="h-6 w-6" />
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open && !isBusy) {
+          onCancel();
+        }
+      }}
+    >
+      <DialogContent
+        className="max-w-md max-h-[90vh] overflow-y-auto"
+        hideCloseButton={isBusy}
+        onEscapeKeyDown={(e) => {
+          if (isBusy) e.preventDefault();
+        }}
+        onPointerDownOutside={(e) => {
+          if (isBusy) e.preventDefault();
+        }}
+      >
+        <DialogHeader>
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-md bg-primary border-[1.5px] border-border text-foreground flex items-center justify-center shrink-0">
+              <CheckCircle2 className="h-5 w-5" aria-hidden="true" />
+            </div>
+            <div>
+              <DialogTitle>Xác nhận nộp bài thi</DialogTitle>
+              <DialogDescription>
+                Sau khi nộp, bài làm sẽ được hệ thống chấm điểm và khóa chỉnh sửa.
+              </DialogDescription>
+            </div>
           </div>
-          <div>
-            <h3 className="text-lg font-bold text-slate-900">Xác nhận nộp bài thi</h3>
-            <p className="text-xs text-slate-500">Sau khi nộp, hệ thống sẽ chấm điểm và khóa bài thi</p>
-          </div>
-        </div>
+        </DialogHeader>
 
-        {/* Exam Statistics Summary */}
-        <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 space-y-2 text-sm">
-          <div className="flex justify-between text-slate-600">
-            <span>Tổng số câu hỏi:</span>
-            <span className="font-bold text-slate-900">{totalQuestions}</span>
+        {/* Exam Summary Dossier */}
+        <div className="rounded-md border-[1.5px] border-border bg-background p-4 space-y-2.5 text-sm">
+          <div className="flex items-center justify-between text-ink-muted">
+            <span>Tổng số câu:</span>
+            <span className="font-mono font-extrabold text-foreground">{totalQuestions}</span>
           </div>
-          <div className="flex justify-between text-slate-600">
-            <span>Số câu đã trả lời:</span>
-            <span className="font-bold text-emerald-600">{answeredCount}</span>
+          <div className="flex items-center justify-between text-ink-muted">
+            <span>Đã trả lời:</span>
+            <span className="font-mono font-extrabold text-foreground">{answeredCount}</span>
           </div>
-          <div className="flex justify-between text-slate-600">
-            <span>Số câu chưa trả lời:</span>
-            <span className={`font-bold ${unansweredCount > 0 ? 'text-rose-600' : 'text-slate-900'}`}>
+          <div className="flex items-center justify-between text-ink-muted">
+            <span>Chưa trả lời:</span>
+            <span
+              className={`font-mono font-extrabold ${
+                unansweredCount > 0 ? 'text-destructive-foreground bg-destructive/40 px-1.5 rounded-xs border border-border' : 'text-foreground'
+              }`}
+            >
               {unansweredCount}
             </span>
           </div>
-          {bookmarkedCount > 0 && (
-            <div className="flex justify-between text-slate-600">
-              <span>Số câu đang đánh dấu:</span>
-              <span className="font-bold text-amber-600">{bookmarkedCount}</span>
-            </div>
-          )}
+          <div className="flex items-center justify-between text-ink-muted pt-1 border-t border-border/30">
+            <span>Đã đánh dấu:</span>
+            <span className="font-mono font-extrabold text-foreground">{bookmarkedCount}</span>
+          </div>
         </div>
 
         {unansweredCount > 0 && (
-          <div className="flex items-start gap-2.5 p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-xs">
-            <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 mt-0.5" />
-            <span>
-              Bạn vẫn còn <strong>{unansweredCount} câu chưa làm</strong>. Những câu này sẽ được tính là 0 điểm. Bạn có chắc chắn muốn nộp ngay?
-            </span>
+          <Alert type="warning" title={`Còn ${unansweredCount} câu chưa chọn đáp án`}>
+            Những câu chưa trả lời sẽ không có điểm khi hệ thống chấm bài. Bạn vẫn có thể quay lại kiểm tra trước khi nộp.
+          </Alert>
+        )}
+
+        {isSyncing && (
+          <div className="flex items-center gap-2.5 rounded-md border border-border bg-secondary/35 p-3 text-xs font-bold text-foreground">
+            <RefreshCw className="h-4 w-4 animate-spin motion-reduce:animate-none shrink-0" aria-hidden="true" />
+            <span>Đang đồng bộ đáp án lên máy chủ trước khi nộp bài...</span>
           </div>
         )}
 
         {errorMessage && (
-          <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs">
+          <Alert type="error" title="Không thể hoàn tất nộp bài">
             {errorMessage}
-          </div>
+          </Alert>
         )}
 
-        <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+        <DialogFooter className="gap-2 sm:gap-2 pt-2 border-t border-border/30">
           <Button
+            type="button"
             variant="outline"
+            size="md"
             onClick={onCancel}
-            disabled={isSubmitting || isSyncing}
+            disabled={isBusy}
           >
             Tiếp tục làm bài
           </Button>
-
           <Button
+            type="button"
             variant="primary"
+            size="md"
             onClick={onConfirm}
-            disabled={isSubmitting || isSyncing}
+            disabled={isBusy}
+            isLoading={isBusy}
           >
-            {isSyncing ? 'Đang lưu đáp án...' : isSubmitting ? 'Đang chấm điểm...' : 'Đồng ý nộp bài'}
+            {isSyncing
+              ? 'Đang đồng bộ đáp án...'
+              : isSubmitting
+              ? 'Đang nộp bài...'
+              : errorMessage
+              ? 'Thử nộp lại'
+              : 'Xác nhận nộp bài'}
           </Button>
-        </div>
-      </Card>
-    </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
