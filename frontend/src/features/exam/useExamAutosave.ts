@@ -1,122 +1,323 @@
 import { useRef, useCallback, useState, useEffect } from 'react';
 import { apiRequest } from '@/lib/api-client';
-import { AttemptView } from '@/types/attempt';
+import { ApiError } from '@/types/api';
+import { AttemptQuestion, AttemptView } from '@/types/attempt';
 import { AutosaveStatus } from './types';
 
-export function useExamAutosave(attemptId: string, initialQuestions: AttemptView['questions']) {
+export interface UseExamAutosaveOptions {
+  loadedAttemptId?: string;
+  onConflict?: (attemptId: string) => void;
+}
+
+export function isValidQuestionChoice(
+  question: AttemptQuestion | undefined,
+  choice: string | null | undefined
+): choice is 'A' | 'B' | 'C' | 'D' {
+  if (!question || !choice || !['A', 'B', 'C', 'D'].includes(choice)) {
+    return false;
+  }
+  const choiceText = question.choices?.[choice];
+  return (
+    choiceText !== undefined &&
+    choiceText !== null &&
+    String(choiceText).trim() !== ''
+  );
+}
+
+function formatAutosaveError(err: unknown): string {
+  if (err instanceof Error) {
+    const cleanMsg = err.message.trim();
+    const lower = cleanMsg.toLowerCase();
+    if (lower.includes('failed to fetch') || lower.includes('network')) {
+      return 'Không thể kết nối máy chủ để lưu đáp án.';
+    }
+    if (cleanMsg.startsWith('<') || lower.includes('<html') || lower.includes('<!doctype')) {
+      return 'Lỗi phản hồi từ máy chủ khi đồng bộ đáp án.';
+    }
+    return cleanMsg || 'Lỗi đồng bộ câu trả lời lên máy chủ.';
+  }
+  return 'Lỗi đồng bộ câu trả lời lên máy chủ.';
+}
+
+export function useExamAutosave(
+  attemptId: string,
+  initialQuestions: AttemptView['questions'],
+  loadedAttemptIdOrOptions?: string | UseExamAutosaveOptions
+) {
+  const loadedAttemptId =
+    typeof loadedAttemptIdOrOptions === 'string'
+      ? loadedAttemptIdOrOptions
+      : loadedAttemptIdOrOptions?.loadedAttemptId;
+  const onConflict =
+    typeof loadedAttemptIdOrOptions === 'string'
+      ? undefined
+      : loadedAttemptIdOrOptions?.onConflict;
+
   const [status, setStatus] = useState<AutosaveStatus>('idle');
+  const [hasPendingChanges, setHasPendingChanges] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Keep a map of confirmed saved answers on server
+  // Confirmed server-side answer map for the active attempt session
   const serverAnswersRef = useRef<Record<string, 'A' | 'B' | 'C' | 'D'>>({});
-  // Latest intent for each question
+  // Latest learner answer intent for each question
   const pendingAnswersRef = useRef<Record<string, 'A' | 'B' | 'C' | 'D'>>({});
-  // Running promise queue to ensure sequential single-flight saves
+  // Single-flight worker promise tracking
   const activeSavePromiseRef = useRef<Promise<void> | null>(null);
   const isComponentMountedRef = useRef(true);
+  const activeAttemptIdRef = useRef<string>(attemptId);
+  const hydratedAttemptIdRef = useRef<string | null>(null);
+  const sessionSeqRef = useRef<number>(0);
+  const isLockedGradedRef = useRef<boolean>(false);
+  const lastSavedAtRef = useRef<Date | null>(null);
+  const onConflictRef = useRef(onConflict);
+  onConflictRef.current = onConflict;
 
-  // Initialize server answers from attempt data
+  const checkHasUnsynced = useCallback((): boolean => {
+    const pendingKeys = Object.keys(pendingAnswersRef.current);
+    return pendingKeys.some(
+      (k) => pendingAnswersRef.current[k] !== serverAnswersRef.current[k]
+    );
+  }, []);
+
+  // Reset refs and state when navigating to a different attemptId
   useEffect(() => {
-    isComponentMountedRef.current = true;
+    if (activeAttemptIdRef.current === attemptId) return;
+    sessionSeqRef.current += 1;
+    activeAttemptIdRef.current = attemptId;
+    hydratedAttemptIdRef.current = null;
+    isLockedGradedRef.current = false;
+    serverAnswersRef.current = {};
+    pendingAnswersRef.current = {};
+    activeSavePromiseRef.current = null;
+    lastSavedAtRef.current = null;
+    setStatus('idle');
+    setHasPendingChanges(false);
+    setLastSavedAt(null);
+    setErrorMessage(null);
+  }, [attemptId]);
+
+  // Initial hydration strictly once per attemptId; ignore background refetches
+  useEffect(() => {
+    const isReadyToHydrate =
+      Boolean(attemptId) &&
+      (loadedAttemptId ? loadedAttemptId === attemptId : initialQuestions.length > 0);
+    if (!isReadyToHydrate) return;
+
+    if (hydratedAttemptIdRef.current === attemptId) {
+      return;
+    }
+
     const initialMap: Record<string, 'A' | 'B' | 'C' | 'D'> = {};
     initialQuestions.forEach((q) => {
-      if (q.selectedChoice && ['A', 'B', 'C', 'D'].includes(q.selectedChoice)) {
-        initialMap[q.id] = q.selectedChoice as 'A' | 'B' | 'C' | 'D';
+      if (isValidQuestionChoice(q, q.selectedChoice)) {
+        initialMap[q.id] = q.selectedChoice;
       }
     });
-    serverAnswersRef.current = { ...initialMap };
-    pendingAnswersRef.current = { ...initialMap };
 
-    return () => {
-      isComponentMountedRef.current = false;
-    };
-  }, [initialQuestions]);
+    hydratedAttemptIdRef.current = attemptId;
+    serverAnswersRef.current = { ...initialMap, ...serverAnswersRef.current };
+    pendingAnswersRef.current = { ...initialMap, ...pendingAnswersRef.current };
+    setHasPendingChanges(checkHasUnsynced());
+  }, [attemptId, initialQuestions, loadedAttemptId, checkHasUnsynced]);
 
-  // Serialized worker that processes pending saves one by one
-  const drainQueue = useCallback(async () => {
+  // Serialized single-flight worker that drains pending saves one by one
+  const drainQueue = useCallback(async (): Promise<void> => {
     if (activeSavePromiseRef.current) {
       return activeSavePromiseRef.current;
     }
 
-    const runner = async () => {
-      while (isComponentMountedRef.current) {
-        // Find next question where pending != server
-        const pendingKeys = Object.keys(pendingAnswersRef.current);
-        const nextKey = pendingKeys.find(
-          (k) => pendingAnswersRef.current[k] !== serverAnswersRef.current[k]
-        );
+    const targetAttemptId = activeAttemptIdRef.current;
+    const targetSessionSeq = sessionSeqRef.current;
+    if (!targetAttemptId || isLockedGradedRef.current) {
+      return Promise.resolve();
+    }
 
-        if (!nextKey) {
-          // All pending synced!
-          if (isComponentMountedRef.current) {
-            setStatus('saved');
-            setLastSavedAt(new Date());
-            setErrorMessage(null);
+    if (!checkHasUnsynced()) {
+      setHasPendingChanges(false);
+      return Promise.resolve();
+    }
+
+    let encounteredError = false;
+    let didConfirmAnySave = false;
+    let workerPromise: Promise<void> | null = null;
+
+    workerPromise = (async () => {
+      try {
+        // Yield a microtask so activeSavePromiseRef.current is always assigned before cleanup/finally
+        // and synchronous same-tick edits coalesce into the latest choice.
+        await Promise.resolve();
+
+        while (
+          isComponentMountedRef.current &&
+          !isLockedGradedRef.current &&
+          activeAttemptIdRef.current === targetAttemptId &&
+          sessionSeqRef.current === targetSessionSeq
+        ) {
+          const pendingKeys = Object.keys(pendingAnswersRef.current);
+          const nextKey = pendingKeys.find(
+            (k) => pendingAnswersRef.current[k] !== serverAnswersRef.current[k]
+          );
+
+          if (!nextKey) {
+            break;
           }
-          break;
-        }
 
-        const choiceToSave = pendingAnswersRef.current[nextKey];
-        if (isComponentMountedRef.current) {
-          setStatus('saving');
-        }
+          const choiceToSave = pendingAnswersRef.current[nextKey];
+          // Clear confirmed server state for this question once an unconfirmed mutation starts
+          delete serverAnswersRef.current[nextKey];
 
-        try {
-          await apiRequest<AttemptView>(`/ms/v1/attempts/${attemptId}/answers/${nextKey}`, {
-            method: 'PUT',
-            body: JSON.stringify({ choice: choiceToSave }),
-          });
-
-          // Mark as confirmed on server
-          serverAnswersRef.current[nextKey] = choiceToSave;
-        } catch (err: unknown) {
-          const msg = err instanceof Error ? err.message : 'Lỗi đồng bộ câu trả lời';
           if (isComponentMountedRef.current) {
+            setStatus('saving');
+            setHasPendingChanges(true);
+          }
+
+          try {
+            await apiRequest<AttemptView>(
+              `/ms/v1/attempts/${targetAttemptId}/answers/${nextKey}`,
+              {
+                method: 'PUT',
+                body: JSON.stringify({ choice: choiceToSave }),
+              }
+            );
+
+            if (
+              !isComponentMountedRef.current ||
+              isLockedGradedRef.current ||
+              activeAttemptIdRef.current !== targetAttemptId ||
+              sessionSeqRef.current !== targetSessionSeq
+            ) {
+              return;
+            }
+
+            serverAnswersRef.current[nextKey] = choiceToSave;
+            didConfirmAnySave = true;
+            setHasPendingChanges(checkHasUnsynced());
+          } catch (err: unknown) {
+            if (
+              !isComponentMountedRef.current ||
+              isLockedGradedRef.current ||
+              activeAttemptIdRef.current !== targetAttemptId ||
+              sessionSeqRef.current !== targetSessionSeq
+            ) {
+              return;
+            }
+
+            encounteredError = true;
             setStatus('error');
-            setErrorMessage(msg);
+            setHasPendingChanges(checkHasUnsynced());
+
+            if (err instanceof ApiError && err.isConflict()) {
+              setErrorMessage(
+                'Máy chủ từ chối cập nhật đáp án (HTTP 409). Đang xác minh trạng thái lượt thi...'
+              );
+              onConflictRef.current?.(targetAttemptId);
+            } else {
+              setErrorMessage(formatAutosaveError(err));
+            }
+            break;
           }
-          // Do not drop the pending intent so the user can retry or submit will wait/fail safely
-          break;
+        }
+      } finally {
+        if (activeSavePromiseRef.current === workerPromise) {
+          activeSavePromiseRef.current = null;
         }
       }
-    };
 
-    activeSavePromiseRef.current = runner().finally(() => {
+      if (
+        !encounteredError &&
+        !isLockedGradedRef.current &&
+        isComponentMountedRef.current &&
+        activeAttemptIdRef.current === targetAttemptId &&
+        sessionSeqRef.current === targetSessionSeq
+      ) {
+        if (checkHasUnsynced()) {
+          return drainQueue();
+        }
+        setHasPendingChanges(false);
+        setErrorMessage(null);
+        if (didConfirmAnySave || lastSavedAtRef.current !== null) {
+          const savedTime = new Date();
+          lastSavedAtRef.current = savedTime;
+          setLastSavedAt(savedTime);
+          setStatus('saved');
+        } else {
+          setStatus('idle');
+        }
+      }
+    })();
+
+    activeSavePromiseRef.current = workerPromise;
+    return workerPromise;
+  }, [checkHasUnsynced]);
+
+  // Mount/unmount lifecycle guard (supports React StrictMode cleanup/remount without losing pending edits)
+  useEffect(() => {
+    isComponentMountedRef.current = true;
+    if (checkHasUnsynced() && !activeSavePromiseRef.current && !isLockedGradedRef.current) {
+      void drainQueue();
+    }
+    return () => {
+      isComponentMountedRef.current = false;
+      sessionSeqRef.current += 1;
       activeSavePromiseRef.current = null;
-    });
-
-    return activeSavePromiseRef.current;
-  }, [attemptId]);
+    };
+  }, [checkHasUnsynced, drainQueue]);
 
   // Queue an answer change
   const queueAnswer = useCallback(
     (questionId: string, choice: 'A' | 'B' | 'C' | 'D') => {
+      if (isLockedGradedRef.current) return;
+
+      if (
+        pendingAnswersRef.current[questionId] === choice &&
+        serverAnswersRef.current[questionId] === choice
+      ) {
+        if (!checkHasUnsynced() && !activeSavePromiseRef.current) {
+          setHasPendingChanges(false);
+        }
+        return;
+      }
+
       pendingAnswersRef.current[questionId] = choice;
+      setHasPendingChanges(true);
       setStatus('saving');
-      drainQueue();
+      setErrorMessage(null);
+      void drainQueue();
     },
-    [drainQueue]
+    [checkHasUnsynced, drainQueue]
   );
 
   // Explicit sync/wait before submit
   const syncPending = useCallback(async (): Promise<boolean> => {
-    // If there's an ongoing or needed sync
+    if (isLockedGradedRef.current) {
+      return false;
+    }
+    if (!checkHasUnsynced() && !activeSavePromiseRef.current) {
+      return true;
+    }
     await drainQueue();
-    // Verify all pending equals server
-    const pendingKeys = Object.keys(pendingAnswersRef.current);
-    const hasUnsynced = pendingKeys.some(
-      (k) => pendingAnswersRef.current[k] !== serverAnswersRef.current[k]
-    );
-    return !hasUnsynced;
-  }, [drainQueue]);
+    while (activeSavePromiseRef.current) {
+      await activeSavePromiseRef.current;
+    }
+    return !isLockedGradedRef.current && !checkHasUnsynced();
+  }, [checkHasUnsynced, drainQueue]);
+
+  // Halt autosave immediately when backend confirms attempt is GRADED
+  const stopAutosaveForGraded = useCallback(() => {
+    isLockedGradedRef.current = true;
+    sessionSeqRef.current += 1;
+    activeSavePromiseRef.current = null;
+  }, []);
 
   return {
     status,
+    hasPendingChanges,
     lastSavedAt,
     errorMessage,
     queueAnswer,
     syncPending,
     retry: drainQueue,
+    stopAutosaveForGraded,
   };
 }
