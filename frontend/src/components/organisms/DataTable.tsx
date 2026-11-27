@@ -52,10 +52,10 @@ export function DataTable<T>({
   className,
 }: DataTableProps<T>) {
   return (
-    <Card className={cn('border-slate-200 bg-white shadow-xs overflow-hidden flex flex-col', className)}>
+    <Card variant="flat" className={cn('border-[1.5px] border-border bg-surface overflow-hidden flex flex-col', className)}>
       <Table>
         <TableHeader>
-          <TableRow>
+          <TableRow className="hover:bg-muted">
             {columns.map((col) => (
               <TableHead key={col.key} className={col.headerClassName}>
                 {col.header}
@@ -70,13 +70,13 @@ export function DataTable<T>({
               <TableRow key={`skeleton-row-${rIdx}`}>
                 {columns.map((col, cIdx) => (
                   <TableCell key={`skeleton-cell-${rIdx}-${cIdx}`} className={col.className}>
-                    <SkeletonLoader className="h-5 w-full rounded-md" />
+                    <SkeletonLoader className="h-5 w-full rounded-sm" />
                   </TableCell>
                 ))}
               </TableRow>
             ))
           ) : data.length === 0 ? (
-            <TableRow>
+            <TableRow className="hover:bg-surface">
               <TableCell colSpan={columns.length} className="p-0 border-none">
                 <div className="py-12">
                   <EmptyState

@@ -38,20 +38,20 @@ export function ConfirmDialog({
         <DialogHeader>
           <div className="flex items-center gap-3">
             <div
-              className={`p-2.5 rounded-xl ${
-                variant === 'destructive' ? 'bg-rose-50 text-rose-600' : 'bg-blue-50 text-blue-600'
+              className={`p-2 rounded-md border border-border text-foreground shrink-0 ${
+                variant === 'destructive' ? 'bg-destructive' : 'bg-primary'
               }`}
             >
               {variant === 'destructive' ? <AlertTriangle className="h-5 w-5" /> : <Info className="h-5 w-5" />}
             </div>
             <DialogTitle>{title}</DialogTitle>
           </div>
-          <DialogDescription className="pt-2 text-slate-600 leading-relaxed">
+          <DialogDescription className="pt-2 text-ink-muted leading-relaxed">
             {description}
           </DialogDescription>
         </DialogHeader>
 
-        <DialogFooter className="gap-2 sm:gap-0">
+        <DialogFooter className="gap-2 sm:gap-2">
           <Button variant="outline" size="sm" onClick={onClose} disabled={isLoading}>
             {cancelText}
           </Button>

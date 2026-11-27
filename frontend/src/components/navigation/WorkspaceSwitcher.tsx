@@ -1,15 +1,14 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/features/auth/AuthContext';
-import { Badge } from '@/components/ui/badge';
+import { Badge } from '@/components/atoms/Badge';
 import {
   GraduationCap,
   BookOpenCheck,
   ShieldAlert,
   ChevronDown,
   Check,
-  Sparkles,
-  ArrowRightLeft
+  ArrowRightLeft,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -36,8 +35,8 @@ export const WORKSPACE_OPTIONS: WorkspaceOption[] = [
     path: '/learner/dashboard',
     icon: GraduationCap,
     roleRequired: 'LEARNER',
-    badgeVariant: 'secondary',
-    accentColor: 'text-blue-600 bg-blue-50 border-blue-200',
+    badgeVariant: 'default',
+    accentColor: 'text-foreground bg-primary border-border',
   },
   {
     id: 'teacher',
@@ -47,8 +46,8 @@ export const WORKSPACE_OPTIONS: WorkspaceOption[] = [
     path: '/teacher/dashboard',
     icon: BookOpenCheck,
     roleRequired: 'TEACHER',
-    badgeVariant: 'default',
-    accentColor: 'text-indigo-600 bg-indigo-50 border-indigo-200',
+    badgeVariant: 'secondary',
+    accentColor: 'text-foreground bg-secondary border-border',
   },
   {
     id: 'admin',
@@ -59,7 +58,7 @@ export const WORKSPACE_OPTIONS: WorkspaceOption[] = [
     icon: ShieldAlert,
     roleRequired: 'ADMIN',
     badgeVariant: 'destructive',
-    accentColor: 'text-rose-600 bg-rose-50 border-rose-200',
+    accentColor: 'text-foreground bg-destructive border-border',
   },
 ];
 
@@ -133,8 +132,13 @@ export function WorkspaceSwitcher({
   // If user only has 1 role (only LEARNER), render a neat static workspace indicator
   if (authorizedWorkspaces.length <= 1) {
     return (
-      <div className={cn('inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200/80 text-xs font-semibold text-slate-700', className)}>
-        <CurrentIcon className="h-4 w-4 text-primary" />
+      <div
+        className={cn(
+          'inline-flex items-center gap-2 px-3 py-1.5 rounded-sm bg-background border border-border text-xs font-bold text-foreground',
+          className
+        )}
+      >
+        <CurrentIcon className="h-4 w-4 text-foreground" />
         <span>{currentOption.title}</span>
       </div>
     );
@@ -147,8 +151,8 @@ export function WorkspaceSwitcher({
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          'inline-flex items-center justify-between gap-2.5 px-3 py-2 rounded-xl text-xs font-bold transition-all border shadow-xs select-none',
-          'bg-white hover:bg-slate-50 text-slate-800 border-slate-200/90 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-primary/20',
+          'inline-flex items-center justify-between gap-2.5 px-3 py-2 rounded-md text-xs font-bold transition-colors border-[1.5px] select-none',
+          'bg-surface hover:bg-muted text-foreground border-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
           compact ? 'h-9 px-2.5' : 'h-10'
         )}
         aria-expanded={isOpen}
@@ -156,38 +160,47 @@ export function WorkspaceSwitcher({
         title="Chuyển đổi không gian làm việc"
       >
         <div className="flex items-center gap-2 truncate">
-          <div className={cn('p-1 rounded-md shrink-0 border', currentOption.accentColor)}>
+          <div className={cn('p-1 rounded-sm shrink-0 border', currentOption.accentColor)}>
             <CurrentIcon className="h-3.5 w-3.5" />
           </div>
           {!compact && (
             <div className="flex flex-col text-left truncate">
-              <span className="text-[10px] text-slate-400 uppercase font-semibold leading-none">Không gian</span>
-              <span className="text-xs font-bold text-slate-800 leading-tight truncate">{currentOption.title}</span>
+              <span className="font-mono text-[10px] text-ink-muted uppercase font-bold leading-none">
+                Không gian
+              </span>
+              <span className="text-xs font-bold text-foreground leading-tight truncate">{currentOption.title}</span>
             </div>
           )}
           {compact && (
-            <span className="text-xs font-bold text-slate-800">{currentOption.title}</span>
+            <span className="text-xs font-bold text-foreground">{currentOption.title}</span>
           )}
         </div>
-        <div className="flex items-center gap-1 shrink-0 text-slate-400">
-          <Badge variant="outline" className="text-[9px] px-1.5 py-0 font-bold uppercase hidden sm:inline-flex">
+        <div className="flex items-center gap-1.5 shrink-0 text-foreground">
+          <Badge variant="outline" className="font-mono text-[10px] px-1.5 py-0 hidden sm:inline-flex">
             {authorizedWorkspaces.length} vai trò
           </Badge>
-          <ChevronDown className={cn('h-3.5 w-3.5 transition-transform duration-200', isOpen && 'rotate-180')} />
+          <ChevronDown
+            className={cn(
+              'h-3.5 w-3.5 transition-transform duration-150 motion-reduce:transition-none',
+              isOpen && 'rotate-180'
+            )}
+          />
         </div>
       </button>
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-72 rounded-2xl bg-white shadow-xl border border-slate-200 p-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
-          <div className="px-3 py-2 border-b border-slate-100 flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-              <ArrowRightLeft className="h-3 w-3 text-primary" /> Chuyển không gian làm việc
+        <div className="absolute right-0 mt-2 w-72 rounded-lg bg-surface shadow-brutal-lg border-2 border-border p-2 z-50">
+          <div className="px-2.5 py-2 border-b border-border/20 flex items-center justify-between">
+            <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-ink-muted flex items-center gap-1.5">
+              <ArrowRightLeft className="h-3 w-3 text-foreground" /> Chuyển không gian
             </span>
-            <span className="text-[10px] text-slate-400">{authorizedWorkspaces.length} khả dụng</span>
+            <span className="font-mono text-[10px] font-bold text-ink-muted">
+              {authorizedWorkspaces.length} khả dụng
+            </span>
           </div>
 
-          <div className="py-1 space-y-1">
+          <div className="py-1.5 space-y-1">
             {authorizedWorkspaces.map((option) => {
               const Icon = option.icon;
               const isActive = option.id === currentWorkspace;
@@ -198,41 +211,37 @@ export function WorkspaceSwitcher({
                   type="button"
                   onClick={() => handleSelectWorkspace(option)}
                   className={cn(
-                    'w-full flex items-start gap-3 p-2.5 rounded-xl text-left transition-colors text-xs',
+                    'w-full flex items-start gap-2.5 p-2.5 rounded-md text-left transition-colors text-xs border',
                     isActive
-                      ? 'bg-blue-50/80 text-primary font-bold'
-                      : 'hover:bg-slate-50 text-slate-700'
+                      ? 'bg-muted border-border font-bold text-foreground'
+                      : 'border-transparent hover:bg-background text-foreground'
                   )}
                 >
-                  <div className={cn('p-1.5 rounded-lg shrink-0 mt-0.5 border', option.accentColor)}>
+                  <div className={cn('p-1.5 rounded-sm shrink-0 mt-0.5 border', option.accentColor)}>
                     <Icon className="h-4 w-4" />
                   </div>
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-1">
-                      <span className="font-bold text-xs truncate text-slate-900">{option.title}</span>
-                      <Badge variant={option.badgeVariant} className="text-[9px] px-1 py-0 uppercase">
+                      <span className="font-bold text-xs truncate text-foreground">{option.title}</span>
+                      <Badge variant={option.badgeVariant} className="font-mono text-[9px] px-1 py-0 uppercase">
                         {option.badgeLabel}
                       </Badge>
                     </div>
-                    <p className="text-[11px] text-slate-500 font-normal leading-snug line-clamp-1 mt-0.5">
+                    <p className="text-[11px] text-ink-muted font-normal leading-snug line-clamp-1 mt-0.5">
                       {option.description}
                     </p>
                   </div>
 
-                  {isActive && (
-                    <Check className="h-4 w-4 text-primary shrink-0 self-center ml-1" />
-                  )}
+                  {isActive && <Check className="h-4 w-4 text-foreground shrink-0 self-center ml-1" />}
                 </button>
               );
             })}
           </div>
 
-          <div className="pt-2 mt-1 border-t border-slate-100 px-3 py-1 text-[11px] text-slate-400 flex items-center justify-between">
-            <span>Phiên đăng nhập: Giữ nguyên</span>
-            <span className="text-emerald-600 font-semibold flex items-center gap-1">
-              <Sparkles className="h-3 w-3" /> Xác thực JWT
-            </span>
+          <div className="pt-2 mt-1 border-t border-border/20 px-2.5 py-1 text-[11px] text-ink-muted flex items-center justify-between">
+            <span>Phiên đăng nhập giữ nguyên</span>
+            <span className="font-mono font-bold text-foreground">JWT RBAC</span>
           </div>
         </div>
       )}

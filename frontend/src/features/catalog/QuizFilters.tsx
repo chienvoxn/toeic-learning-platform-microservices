@@ -37,8 +37,8 @@ export function QuizFilters({
 
   const skillOptions = [
     { value: 'ALL' as const, label: 'Tất cả kỹ năng', icon: Layers },
-    { value: 'LISTENING' as const, label: 'Listening (Part 1 - 4)', icon: Headphones },
-    { value: 'READING' as const, label: 'Reading (Part 5 - 7)', icon: BookOpen },
+    { value: 'LISTENING' as const, label: 'Listening (Part 1–4)', icon: Headphones },
+    { value: 'READING' as const, label: 'Reading (Part 5–7)', icon: BookOpen },
   ];
 
   const tierOptions = [
@@ -48,11 +48,13 @@ export function QuizFilters({
   ];
 
   return (
-    <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs space-y-4">
-      {/* Skill Tabs Shortcut using FilterButtonGroup */}
+    <div className="bg-surface p-4 sm:p-5 rounded-lg border-[1.5px] border-border shadow-brutal-sm space-y-4">
+      {/* Skill Tabs Shortcut */}
       {onSkillChange && (
-        <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
-          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Kỹ năng:</span>
+        <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-border/20">
+          <span className="font-mono text-xs font-bold text-ink-muted uppercase tracking-wider">
+            Nhóm kỹ năng
+          </span>
           <FilterButtonGroup
             options={skillOptions}
             selectedValue={selectedSkill}
@@ -62,33 +64,31 @@ export function QuizFilters({
       )}
 
       {/* Main Filter Row */}
-      <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
-        {/* Search Input molecule */}
-        <div className="flex-1">
+      <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center justify-between">
+        <div className="flex-1 min-w-0">
           <SearchInput
             value={searchQuery}
             onChange={onSearchChange}
             placeholder="Tìm kiếm theo tiêu đề đề thi hoặc Part..."
-            className="rounded-xl"
           />
         </div>
 
-        {/* Part selector atom */}
-        <div className="w-full md:w-64">
+        <div className="w-full lg:w-72 shrink-0">
           <Select
+            aria-label="Lọc theo Part"
             value={selectedPart}
             onChange={(e) => onPartChange(Number(e.target.value))}
-            className="rounded-xl"
             options={parts}
           />
         </div>
 
-        {/* Tier filter buttons */}
-        <FilterButtonGroup
-          options={tierOptions}
-          selectedValue={selectedTier}
-          onChange={onTierChange}
-        />
+        <div className="shrink-0">
+          <FilterButtonGroup
+            options={tierOptions}
+            selectedValue={selectedTier}
+            onChange={onTierChange}
+          />
+        </div>
       </div>
     </div>
   );

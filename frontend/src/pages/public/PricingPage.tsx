@@ -1,126 +1,147 @@
 import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/atoms/Button';
+import { Badge } from '@/components/atoms/Badge';
+import { Card, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/atoms/Card';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/components/atoms/Table';
+import { Alert } from '@/components/molecules/Alert';
 import { useAuth } from '@/features/auth/AuthContext';
-import { ShieldCheck, ArrowRight, Sparkles, Check, Info } from 'lucide-react';
+import { ArrowRight, Check, Minus } from 'lucide-react';
 
 export function PricingPage() {
   const { isAuthenticated } = useAuth();
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-14">
-      {/* Title */}
-      <div className="text-center space-y-4 max-w-2xl mx-auto">
-        <Badge variant="outline" className="text-primary border-primary/20">Bảng Giá Minh Bạch</Badge>
-        <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-          Lựa Chọn Gói Học Phù Hợp
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 space-y-12">
+      {/* Editorial Title */}
+      <div className="space-y-4 border-b-2 border-border pb-8">
+        <Badge variant="outline" className="font-mono uppercase tracking-wider">
+          Bảng giá &amp; hạn ngạch
+        </Badge>
+        <h1 className="text-3xl sm:text-4xl font-black text-foreground tracking-tight">
+          Lựa chọn gói học phù hợp
         </h1>
-        <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
-          Tất cả các gói đều bám sát cấu trúc đề thi TOEIC chuẩn quốc tế. Tự động chấm điểm và hỗ trợ học tập liên tục.
+        <p className="text-sm sm:text-base text-ink-muted max-w-2xl leading-relaxed">
+          Hạn ngạch luyện tập hằng ngày và quyền mở khóa các bộ đề chuyên sâu được quản lý tự động theo hạng gói tài khoản của bạn.
         </p>
-
-        {/* Honest Demo Notification Banner */}
-        <div className="p-4 rounded-xl bg-amber-50/80 border border-amber-200 text-xs text-amber-900 flex items-start gap-3 text-left">
-          <Info className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
-          <div className="space-y-1">
-            <p className="font-bold">Thông báo minh bạch về môi trường thử nghiệm (Demo Environment):</p>
-            <p className="leading-relaxed opacity-90">
-              Hệ thống hiện tại chưa tích hợp cổng thanh toán thực tế (VNPAY/Momo/Stripe). Việc chuyển đổi gói FREE sang PRO là tính năng thử nghiệm nội bộ dành cho mục đích đánh giá và chấm điểm đồ án.
-            </p>
-          </div>
-        </div>
       </div>
 
-      {/* Pricing Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+      {/* Honest Demo Notification Banner */}
+      <Alert type="warning" title="Môi trường thử nghiệm &amp; chính sách gói tài khoản (Demo)">
+        <p className="text-sm leading-relaxed">
+          Hệ thống hiện tại là nền tảng học tập thử nghiệm, <strong>chưa tích hợp cổng thanh toán và không thu bất kỳ khoản phí thực tế nào</strong>. Mức giá hiển thị mang tính chất mô phỏng. Khi tính năng thử nghiệm gói (<code>ALLOW_DEMO_PLAN_CHANGE</code>) được bật, học viên có thể tự do nâng cấp lên gói PRO trong trang Quản lý gói hội viên để trải nghiệm đầy đủ hạn ngạch 1.000 lượt/ngày và mở khóa kho đề thi chuyên sâu.
+        </p>
+      </Alert>
+
+      {/* Editorial Pricing Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch">
         {/* FREE PLAN */}
-        <Card className="border-slate-200 shadow-card bg-white flex flex-col justify-between">
+        <Card variant="default" className="p-0 overflow-hidden flex flex-col justify-between">
           <div>
+            <div className="bg-background border-b-[1.5px] border-border px-6 py-3 flex items-center justify-between">
+              <span className="font-mono text-xs font-bold uppercase tracking-wider text-ink-muted">
+                Gói Cơ Bản
+              </span>
+              <Badge variant="outline" className="font-mono">
+                FREE
+              </Badge>
+            </div>
+
             <CardHeader className="pb-4">
-              <Badge variant="secondary" className="w-fit mb-2">Gói Cơ Bản</Badge>
-              <CardTitle className="text-2xl font-bold text-slate-900">Gói FREE</CardTitle>
-              <div className="text-3xl font-black text-slate-900 mt-2">
-                0 VNĐ <span className="text-xs font-normal text-slate-500">/ miễn phí vĩnh viễn</span>
+              <CardTitle className="text-2xl font-black text-foreground">Gói FREE</CardTitle>
+              <div className="font-mono text-3xl font-black text-foreground pt-2">
+                0 VNĐ <span className="font-sans text-xs font-medium text-ink-muted">/ mặc định</span>
               </div>
-              <CardDescription className="mt-2 text-xs text-slate-500">
-                Phù hợp cho học viên mới bắt đầu làm quen với format đề và luyện tập cơ bản.
+              <CardDescription className="pt-1">
+                Phù hợp cho học viên làm quen với cấu trúc 7 phần thi và luyện tập hằng ngày.
               </CardDescription>
             </CardHeader>
 
-            <div className="p-6 pt-0 space-y-3.5 text-xs text-slate-600">
-              <div className="flex items-center gap-2.5">
-                <Check className="h-4 w-4 text-emerald-600 shrink-0" />
-                <span>Tối đa <strong>10 lượt luyện đề</strong> mỗi ngày (Daily Quota)</span>
+            <div className="px-6 pb-6 space-y-3 text-sm text-foreground">
+              <div className="flex items-start gap-2.5">
+                <Check className="h-4 w-4 shrink-0 mt-0.5" />
+                <span>
+                  Tối đa <strong className="font-mono">10 lượt/ngày</strong> tạo bài luyện tập mới
+                </span>
               </div>
-              <div className="flex items-center gap-2.5">
-                <Check className="h-4 w-4 text-emerald-600 shrink-0" />
-                <span>Truy cập toàn bộ đề thi chuẩn FREE</span>
+              <div className="flex items-start gap-2.5">
+                <Check className="h-4 w-4 shrink-0 mt-0.5" />
+                <span>Truy cập toàn bộ đề thi gắn nhãn FREE</span>
               </div>
-              <div className="flex items-center gap-2.5">
-                <Check className="h-4 w-4 text-emerald-600 shrink-0" />
-                <span>Tự động chấm điểm và lưu lịch sử thi</span>
+              <div className="flex items-start gap-2.5">
+                <Check className="h-4 w-4 shrink-0 mt-0.5" />
+                <span>Tự động lưu đáp án, chấm điểm và lưu lịch sử thi</span>
               </div>
-              <div className="flex items-center gap-2.5">
-                <Check className="h-4 w-4 text-emerald-600 shrink-0" />
-                <span>Gửi nhận xét và đánh giá sao cho đề thi</span>
+              <div className="flex items-start gap-2.5">
+                <Check className="h-4 w-4 shrink-0 mt-0.5" />
+                <span>Xem giải thích đáp án và gửi đánh giá đề thi</span>
               </div>
             </div>
           </div>
 
-          <CardFooter className="pt-2">
+          <CardFooter className="pt-0">
             <Link to={isAuthenticated ? '/quizzes' : '/register'} className="w-full">
-              <Button variant="outline" className="w-full font-semibold">
-                {isAuthenticated ? 'Vào luyện đề ngay' : 'Bắt đầu miễn phí'}
+              <Button variant="outline" className="w-full">
+                {isAuthenticated ? 'Vào luyện đề ngay' : 'Đăng ký miễn phí'}
               </Button>
             </Link>
           </CardFooter>
         </Card>
 
         {/* PRO PLAN */}
-        <Card className="border-primary/50 shadow-elevation bg-white relative flex flex-col justify-between">
-          <div className="absolute -top-3 right-6">
-            <Badge variant="pro" className="flex items-center gap-1 shadow-xs">
-              <Sparkles className="h-3 w-3" /> KHUYÊN DÙNG
-            </Badge>
-          </div>
-
+        <Card variant="elevated" className="p-0 overflow-hidden flex flex-col justify-between">
           <div>
+            <div className="bg-primary border-b-2 border-border px-6 py-3 flex items-center justify-between">
+              <span className="font-mono text-xs font-extrabold uppercase tracking-wider text-foreground">
+                Hạn Ngạch Mở Rộng
+              </span>
+              <Badge variant="outline" className="font-mono bg-surface">
+                1.000 LƯỢT / NGÀY
+              </Badge>
+            </div>
+
             <CardHeader className="pb-4">
-              <Badge variant="pro" className="w-fit mb-2">Không Giới Hạn</Badge>
-              <CardTitle className="text-2xl font-bold text-primary">Gói PRO</CardTitle>
-              <div className="text-3xl font-black text-slate-900 mt-2">
-                199.000 VNĐ <span className="text-xs font-normal text-slate-500">/ tháng (Demo)</span>
+              <CardTitle className="text-2xl font-black text-foreground">Gói PRO</CardTitle>
+              <div className="font-mono text-3xl font-black text-foreground pt-2">
+                199.000 VNĐ <span className="font-sans text-xs font-medium text-ink-muted">/ tháng (Giá mô phỏng)</span>
               </div>
-              <CardDescription className="mt-2 text-xs text-slate-500">
-                Dành cho người học mục tiêu cao, cần luyện tập liên tục và mở khóa toàn bộ đề Premium.
+              <CardDescription className="pt-1">
+                Dành cho học viên cần mở khóa toàn bộ đề thi nâng cao và tăng hạn ngạch lên 1.000 lượt luyện tập mỗi ngày (kích hoạt thử nghiệm miễn phí).
               </CardDescription>
             </CardHeader>
 
-            <div className="p-6 pt-0 space-y-3.5 text-xs text-slate-700">
-              <div className="flex items-center gap-2.5 font-medium">
-                <ShieldCheck className="h-4 w-4 text-primary shrink-0" />
-                <span>Lên đến <strong>1.000 lượt luyện đề</strong> mỗi ngày</span>
+            <div className="px-6 pb-6 space-y-3 text-sm text-foreground">
+              <div className="flex items-start gap-2.5 font-semibold">
+                <Check className="h-4 w-4 shrink-0 mt-0.5" />
+                <span>
+                  Tối đa <strong className="font-mono">1.000 lượt/ngày</strong> tạo bài luyện tập mới
+                </span>
               </div>
-              <div className="flex items-center gap-2.5 font-medium">
-                <ShieldCheck className="h-4 w-4 text-primary shrink-0" />
-                <span>Mở khóa 100% các đề thi có gắn mác <strong>PRO</strong></span>
+              <div className="flex items-start gap-2.5 font-semibold">
+                <Check className="h-4 w-4 shrink-0 mt-0.5" />
+                <span>Mở khóa toàn bộ đề thi gắn nhãn PRO và FREE</span>
               </div>
-              <div className="flex items-center gap-2.5 font-medium">
-                <ShieldCheck className="h-4 w-4 text-primary shrink-0" />
-                <span>Xem giải thích ngữ pháp chi tiết sau khi chấm điểm</span>
+              <div className="flex items-start gap-2.5">
+                <Check className="h-4 w-4 shrink-0 mt-0.5" />
+                <span>Tự động lưu đáp án, chấm điểm và lưu lịch sử thi</span>
               </div>
-              <div className="flex items-center gap-2.5 font-medium">
-                <ShieldCheck className="h-4 w-4 text-primary shrink-0" />
-                <span>Ưu tiên băng thông trong các phòng thi trực tuyến</span>
+              <div className="flex items-start gap-2.5">
+                <Check className="h-4 w-4 shrink-0 mt-0.5" />
+                <span>Xem giải thích chi tiết từng câu sau khi bài thi được chấm</span>
               </div>
             </div>
           </div>
 
-          <CardFooter className="pt-2">
+          <CardFooter className="pt-0">
             <Link to={isAuthenticated ? '/learner/membership' : '/login?redirect=/pricing'} className="w-full">
-              <Button variant="primary" className="w-full font-bold gap-1.5 shadow-md">
-                <span>{isAuthenticated ? 'Kích hoạt thử nghiệm PRO' : 'Đăng nhập để kích hoạt'}</span>
+              <Button variant="primary" className="w-full gap-1.5">
+                <span>{isAuthenticated ? 'Quản lý gói trải nghiệm' : 'Đăng nhập để trải nghiệm'}</span>
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
@@ -128,47 +149,53 @@ export function PricingPage() {
         </Card>
       </div>
 
-      {/* Feature comparison table */}
-      <div className="max-w-4xl mx-auto pt-8">
-        <h3 className="text-lg font-bold text-slate-900 mb-4 text-center">Bảng So Sánh Quyền Lợi Chi Tiết</h3>
-        <div className="rounded-xl border border-slate-200 overflow-hidden bg-white shadow-xs">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50 border-b border-slate-200 text-slate-700 font-semibold">
-              <tr>
-                <th className="p-3.5">Tính năng</th>
-                <th className="p-3.5 text-center w-32">Gói FREE</th>
-                <th className="p-3.5 text-center w-32 text-primary font-bold">Gói PRO</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 text-slate-600">
-              <tr>
-                <td className="p-3.5 font-medium text-slate-800">Giới hạn luyện thi / ngày</td>
-                <td className="p-3.5 text-center font-bold">10 lượt</td>
-                <td className="p-3.5 text-center font-bold text-primary">1.000 lượt</td>
-              </tr>
-              <tr>
-                <td className="p-3.5 font-medium text-slate-800">Truy cập đề thi cơ bản</td>
-                <td className="p-3.5 text-center text-emerald-600">Có</td>
-                <td className="p-3.5 text-center text-emerald-600">Có</td>
-              </tr>
-              <tr>
-                <td className="p-3.5 font-medium text-slate-800">Truy cập đề thi Premium</td>
-                <td className="p-3.5 text-center text-slate-400">Không</td>
-                <td className="p-3.5 text-center text-emerald-600 font-bold">Có</td>
-              </tr>
-              <tr>
-                <td className="p-3.5 font-medium text-slate-800">Tự động chấm điểm & Lưu lịch sử</td>
-                <td className="p-3.5 text-center text-emerald-600">Có</td>
-                <td className="p-3.5 text-center text-emerald-600">Có</td>
-              </tr>
-              <tr>
-                <td className="p-3.5 font-medium text-slate-800">Hỗ trợ học viên</td>
-                <td className="p-3.5 text-center">Tiêu chuẩn</td>
-                <td className="p-3.5 text-center font-bold text-primary">Ưu tiên</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+      {/* Accurate Feature Comparison Table */}
+      <div className="space-y-4">
+        <h2 className="text-xl font-extrabold text-foreground">
+          Bảng đối chiếu quyền lợi tài khoản
+        </h2>
+        <Card variant="flat" className="overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow className="hover:bg-muted">
+                <TableHead>Quyền lợi trong hệ thống</TableHead>
+                <TableHead className="text-center w-36">Gói FREE</TableHead>
+                <TableHead className="text-center w-40 bg-primary/40">Gói PRO (Mô phỏng)</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow>
+                <TableCell className="font-semibold">Giới hạn lượt thi mới mỗi ngày (UTC)</TableCell>
+                <TableCell className="text-center font-mono font-bold">10 lượt</TableCell>
+                <TableCell className="text-center font-mono font-black bg-primary/15">1.000 lượt</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell className="font-semibold">Truy cập đề thi tiêu chuẩn (FREE)</TableCell>
+                <TableCell className="text-center font-bold">Có</TableCell>
+                <TableCell className="text-center font-bold bg-primary/15">Có</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell className="font-semibold">Truy cập đề thi chuyên sâu (PRO)</TableCell>
+                <TableCell className="text-center text-ink-muted">
+                  <span className="inline-flex items-center gap-1">
+                    <Minus className="h-3.5 w-3.5" /> Không
+                  </span>
+                </TableCell>
+                <TableCell className="text-center font-bold bg-primary/15">Có</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell className="font-semibold">Lưu đáp án từng câu &amp; chấm điểm tự động</TableCell>
+                <TableCell className="text-center font-bold">Có</TableCell>
+                <TableCell className="text-center font-bold bg-primary/15">Có</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell className="font-semibold">Xem giải thích chi tiết &amp; viết đánh giá</TableCell>
+                <TableCell className="text-center font-bold">Có</TableCell>
+                <TableCell className="text-center font-bold bg-primary/15">Có</TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </Card>
       </div>
     </div>
   );

@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/atoms/Button';
 import { useAuth } from '@/features/auth/AuthContext';
 import { WorkspaceSwitcher } from '@/components/navigation/WorkspaceSwitcher';
-import { GraduationCap, LogIn, UserPlus, LogOut, Menu, X, ArrowRight, Sparkles } from 'lucide-react';
+import { LogIn, UserPlus, LogOut, Menu, X, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function PublicNavbar() {
@@ -25,41 +25,50 @@ export function PublicNavbar() {
 
   const navLinks = [
     { label: 'Trang chủ', path: '/' },
-    { label: 'Kho Đề Thi TOEIC', path: '/quizzes' },
-    { label: 'Gói Hội Viên', path: '/pricing' },
+    { label: 'Kho đề thi', path: '/quizzes' },
+    { label: 'Gói hội viên', path: '/pricing' },
   ];
 
+  const isNavActive = (path: string) =>
+    path === '/' ? location.pathname === '/' : location.pathname.startsWith(path);
+
   return (
-    <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/95 backdrop-blur-md transition-shadow">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        {/* Logo */}
-        <Link to="/" className="flex items-center gap-2.5 group">
-          <div className="h-10 w-10 rounded-xl bg-primary flex items-center justify-center text-white shadow-sm group-hover:bg-primary-hover transition-colors">
-            <GraduationCap className="h-6 w-6" />
+    <header className="sticky top-0 z-50 border-b-2 border-border bg-surface text-foreground">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+        {/* Editorial Brand Mark */}
+        <Link
+          to="/"
+          className="flex items-center gap-3 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
+        >
+          <div className="h-9 w-9 rounded-sm border-[1.5px] border-border bg-primary text-foreground shadow-subtle flex items-center justify-center shrink-0 transition-transform group-hover:-translate-x-0.5 group-hover:-translate-y-0.5 motion-reduce:transform-none">
+            <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
+              <path d="M4 5.5H20V9H13.75V19H10.25V9H4V5.5Z" fill="currentColor" />
+              <rect x="16.5" y="13" width="3.5" height="6" fill="currentColor" />
+            </svg>
           </div>
           <div className="flex flex-col">
-            <span className="font-bold text-lg text-slate-900 tracking-tight leading-tight group-hover:text-primary transition-colors">
+            <span className="font-black text-lg text-foreground tracking-tight leading-none">
               TOEIC Master
             </span>
-            <span className="text-[10px] uppercase font-semibold text-primary tracking-wider flex items-center gap-1">
-              Luyện Thi Chuẩn Quốc Tế <Sparkles className="h-2.5 w-2.5" />
+            <span className="text-[10px] font-bold uppercase tracking-wider text-ink-muted mt-1">
+              ETS Format · Practice Lab
             </span>
           </div>
         </Link>
 
         {/* Desktop Nav */}
-        <nav className="hidden md:flex items-center gap-1 text-sm font-medium">
+        <nav className="hidden md:flex items-center gap-1.5 text-sm" aria-label="Điều hướng chính">
           {navLinks.map((link) => {
-            const isActive = location.pathname === link.path;
+            const active = isNavActive(link.path);
             return (
               <Link
                 key={link.path}
                 to={link.path}
                 className={cn(
-                  'px-3.5 py-2 rounded-lg transition-colors',
-                  isActive
-                    ? 'bg-blue-50 text-primary font-semibold'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                  'px-3.5 py-1.5 rounded-sm border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                  active
+                    ? 'bg-primary text-foreground border-border font-bold shadow-subtle'
+                    : 'border-transparent text-ink-muted font-semibold hover:text-foreground hover:bg-muted'
                 )}
               >
                 {link.label}
@@ -69,32 +78,39 @@ export function PublicNavbar() {
         </nav>
 
         {/* Desktop Auth Controls */}
-        <div className="hidden md:flex items-center gap-3">
+        <div className="hidden md:flex items-center gap-2.5">
           {isAuthenticated ? (
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2.5">
               <WorkspaceSwitcher currentWorkspace={getCurrentWorkspaceType()} compact />
 
               <Link to={getWorkspacePath()}>
-                <Button variant="primary" size="sm" className="gap-2 shadow-xs">
-                  <span className="font-semibold truncate max-w-[140px]">{user?.displayName || 'Vào học'}</span>
+                <Button variant="primary" size="sm" className="gap-1.5">
+                  <span className="truncate max-w-[140px]">{user?.displayName || 'Vào học'}</span>
                   <ArrowRight className="h-3.5 w-3.5" />
                 </Button>
               </Link>
 
-              <Button variant="ghost" size="sm" onClick={logout} title="Đăng xuất" className="text-slate-500 hover:text-rose-600">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={logout}
+                title="Đăng xuất"
+                aria-label="Đăng xuất"
+                className="text-ink-muted hover:text-foreground hover:bg-destructive/30"
+              >
                 <LogOut className="h-4 w-4" />
               </Button>
             </div>
           ) : (
             <div className="flex items-center gap-2">
               <Link to="/login">
-                <Button variant="ghost" size="sm" className="text-slate-700 hover:text-primary font-semibold">
-                  <LogIn className="h-4 w-4 mr-1.5" /> Đăng nhập
+                <Button variant="outline" size="sm">
+                  <LogIn className="h-4 w-4" /> Đăng nhập
                 </Button>
               </Link>
               <Link to="/register">
-                <Button variant="primary" size="sm" className="font-semibold shadow-xs">
-                  <UserPlus className="h-4 w-4 mr-1.5" /> Đăng ký miễn phí
+                <Button variant="primary" size="sm">
+                  <UserPlus className="h-4 w-4" /> Đăng ký miễn phí
                 </Button>
               </Link>
             </div>
@@ -106,61 +122,72 @@ export function PublicNavbar() {
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-2 rounded-lg text-slate-600 hover:bg-slate-100 focus:outline-hidden"
+            className="p-2 rounded-sm border border-border bg-surface text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             aria-label="Toggle menu"
+            aria-expanded={mobileMenuOpen}
           >
-            {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
         </div>
       </div>
 
       {/* Mobile Menu Drawer */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-b border-slate-200 bg-white px-4 pt-3 pb-6 space-y-4 animate-in slide-in-from-top duration-200">
-          <div className="flex flex-col space-y-1">
-            {navLinks.map((link) => (
-              <Link
-                key={link.path}
-                to={link.path}
-                onClick={() => setMobileMenuOpen(false)}
-                className={cn(
-                  'px-3 py-2 rounded-lg text-sm font-medium',
-                  location.pathname === link.path
-                    ? 'bg-blue-50 text-primary font-bold'
-                    : 'text-slate-700 hover:bg-slate-50'
-                )}
-              >
-                {link.label}
-              </Link>
-            ))}
+        <div className="md:hidden border-t border-b-2 border-border bg-surface px-4 pt-3 pb-6 space-y-4">
+          <div className="flex flex-col space-y-1.5">
+            {navLinks.map((link) => {
+              const active = isNavActive(link.path);
+              return (
+                <Link
+                  key={link.path}
+                  to={link.path}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={cn(
+                    'px-3.5 py-2.5 rounded-sm border text-sm font-bold',
+                    active
+                      ? 'bg-primary text-foreground border-border'
+                      : 'border-transparent text-foreground hover:bg-muted'
+                  )}
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
           </div>
 
-          <div className="pt-3 border-t border-slate-100 flex flex-col gap-2">
+          <div className="pt-3 border-t border-border/20 flex flex-col gap-2">
             {isAuthenticated ? (
               <>
-                <div className="px-3 py-2 bg-slate-50 rounded-lg flex items-center justify-between text-xs">
-                  <span className="font-semibold text-slate-700">{user?.displayName}</span>
-                  <span className="text-slate-500">{user?.roles?.join(', ')}</span>
+                <div className="px-3 py-2 bg-background border border-border rounded-sm flex items-center justify-between text-xs">
+                  <span className="font-bold text-foreground">{user?.displayName}</span>
+                  <span className="font-mono text-ink-muted">{user?.roles?.join(', ')}</span>
                 </div>
                 <Link to={getWorkspacePath()} onClick={() => setMobileMenuOpen(false)}>
                   <Button variant="primary" className="w-full justify-center">
                     Vào Không Gian Học Tập
                   </Button>
                 </Link>
-                <Button variant="outline" onClick={() => { logout(); setMobileMenuOpen(false); }} className="w-full text-rose-600">
-                  <LogOut className="h-4 w-4 mr-1.5" /> Đăng xuất
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    logout();
+                    setMobileMenuOpen(false);
+                  }}
+                  className="w-full"
+                >
+                  <LogOut className="h-4 w-4" /> Đăng xuất
                 </Button>
               </>
             ) : (
               <>
                 <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
                   <Button variant="outline" className="w-full justify-center">
-                    <LogIn className="h-4 w-4 mr-1.5" /> Đăng nhập
+                    <LogIn className="h-4 w-4" /> Đăng nhập
                   </Button>
                 </Link>
                 <Link to="/register" onClick={() => setMobileMenuOpen(false)}>
                   <Button variant="primary" className="w-full justify-center">
-                    <UserPlus className="h-4 w-4 mr-1.5" /> Đăng ký miễn phí
+                    <UserPlus className="h-4 w-4" /> Đăng ký miễn phí
                   </Button>
                 </Link>
               </>

@@ -17,39 +17,54 @@ const config: Config = {
     extend: {
       colors: {
         border: 'hsl(var(--border))',
+        'border-subtle': 'hsl(var(--border-subtle))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
+        canvas: 'hsl(var(--background))',
+        surface: 'hsl(var(--card))',
+        ink: {
+          DEFAULT: 'hsl(var(--foreground))',
+          muted: 'hsl(var(--muted-foreground))',
+        },
         primary: {
-          DEFAULT: '#2563EB',
-          hover: '#1D4ED8',
-          light: '#EFF6FF',
-          foreground: '#FFFFFF',
+          DEFAULT: 'hsl(var(--primary))',
+          hover: 'hsl(var(--primary-hover))',
+          light: 'hsl(var(--primary-light))',
+          foreground: 'hsl(var(--primary-foreground))',
         },
         secondary: {
-          DEFAULT: '#F1F5F9',
-          foreground: '#0F172A',
+          DEFAULT: 'hsl(var(--secondary))',
+          foreground: 'hsl(var(--secondary-foreground))',
+        },
+        success: {
+          DEFAULT: 'hsl(var(--success))',
+          foreground: 'hsl(var(--success-foreground))',
+        },
+        warning: {
+          DEFAULT: 'hsl(var(--warning))',
+          foreground: 'hsl(var(--warning-foreground))',
         },
         destructive: {
-          DEFAULT: '#DC2626',
-          foreground: '#FFFFFF',
+          DEFAULT: 'hsl(var(--destructive))',
+          foreground: 'hsl(var(--destructive-foreground))',
         },
         muted: {
-          DEFAULT: '#F1F5F9',
-          foreground: '#64748B',
+          DEFAULT: 'hsl(var(--muted))',
+          foreground: 'hsl(var(--muted-foreground))',
         },
         accent: {
-          DEFAULT: '#EFF6FF',
-          foreground: '#1D4ED8',
+          DEFAULT: 'hsl(var(--accent))',
+          foreground: 'hsl(var(--accent-foreground))',
         },
         popover: {
-          DEFAULT: '#FFFFFF',
-          foreground: '#0F172A',
+          DEFAULT: 'hsl(var(--popover))',
+          foreground: 'hsl(var(--popover-foreground))',
         },
         card: {
-          DEFAULT: '#FFFFFF',
-          foreground: '#0F172A',
+          DEFAULT: 'hsl(var(--card))',
+          foreground: 'hsl(var(--card-foreground))',
         },
         brand: {
           50: '#eff6ff',
@@ -58,8 +73,8 @@ const config: Config = {
           300: '#93c5fd',
           400: '#60a5fa',
           500: '#3b82f6',
-          600: '#2563eb', // Brand primary
-          700: '#1d4ed8', // Deep blue
+          600: '#2563eb',
+          700: '#1d4ed8',
           800: '#1e40af',
           900: '#1e3a8a',
           950: '#172554',
@@ -72,11 +87,16 @@ const config: Config = {
       },
       fontFamily: {
         sans: ['"Plus Jakarta Sans"', 'Inter', 'system-ui', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
       },
       boxShadow: {
-        subtle: '0 1px 3px 0 rgba(15, 23, 42, 0.05), 0 1px 2px -1px rgba(15, 23, 42, 0.05)',
-        card: '0 4px 6px -1px rgba(15, 23, 42, 0.04), 0 2px 4px -2px rgba(15, 23, 42, 0.04)',
-        elevation: '0 10px 15px -3px rgba(15, 23, 42, 0.06), 0 4px 6px -4px rgba(15, 23, 42, 0.04)',
+        subtle: 'var(--shadow-subtle)',
+        'brutal-sm': 'var(--shadow-brutal-sm)',
+        brutal: 'var(--shadow-brutal)',
+        'brutal-md': 'var(--shadow-brutal)',
+        'brutal-lg': 'var(--shadow-brutal-lg)',
+        card: 'var(--shadow-brutal)',
+        elevation: 'var(--shadow-brutal-lg)',
       },
     },
   },

@@ -36,7 +36,7 @@ export function DashboardLayout({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
-    <div className={cn('min-h-screen flex flex-col md:flex-row bg-[#F8FAFC]', className)}>
+    <div className={cn('min-h-screen flex flex-col md:flex-row bg-background text-foreground', className)}>
       {/* Composed Sidebar with Desktop sticky & Mobile drawer */}
       <DashboardSidebar
         workspaceRole={workspaceRole}

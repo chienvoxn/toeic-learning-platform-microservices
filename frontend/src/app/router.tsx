@@ -12,6 +12,7 @@ import { PageLoading } from '@/components/feedback/PageLoading';
 
 // Route-level Lazy Loading for bundle optimization & code splitting
 const LandingPage = lazy(() => import('@/pages/public/LandingPage').then(m => ({ default: m.LandingPage })));
+const DesignSystemPreview = lazy(() => import('@/pages/DesignSystemPreview').then(m => ({ default: m.DesignSystemPreview })));
 const CatalogPage = lazy(() => import('@/pages/public/CatalogPage').then(m => ({ default: m.CatalogPage })));
 const QuizDetailPage = lazy(() => import('@/pages/public/QuizDetailPage').then(m => ({ default: m.QuizDetailPage })));
 const PricingPage = lazy(() => import('@/pages/public/PricingPage').then(m => ({ default: m.PricingPage })));
@@ -48,7 +49,10 @@ export const router = createBrowserRouter([
     ),
     children: [
       { index: true, element: <LandingPage /> },
-      { path: 'preview', element: <Navigate to="/" replace /> },
+      {
+        path: 'preview',
+        element: import.meta.env.DEV ? <DesignSystemPreview /> : <Navigate to="/" replace />,
+      },
       { path: 'quizzes', element: <CatalogPage /> },
       { path: 'quizzes/:id', element: <QuizDetailPage /> },
       { path: 'pricing', element: <PricingPage /> },

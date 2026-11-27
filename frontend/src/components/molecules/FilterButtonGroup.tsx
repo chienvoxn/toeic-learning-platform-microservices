@@ -26,7 +26,7 @@ export function FilterButtonGroup<T extends string | number>({
   return (
     <div
       className={cn(
-        'inline-flex items-center rounded-xl border border-slate-200 p-1 bg-slate-100/70',
+        'inline-flex flex-wrap items-center rounded-md border-[1.5px] border-border p-1 bg-muted gap-1',
         className
       )}
       role="group"
@@ -41,9 +41,11 @@ export function FilterButtonGroup<T extends string | number>({
             type="button"
             onClick={() => onChange(opt.value)}
             className={cn(
-              'flex items-center gap-1.5 font-bold rounded-lg transition-colors text-slate-600 hover:text-slate-900',
+              'flex items-center gap-1.5 font-bold rounded-sm border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
               size === 'sm' ? 'px-3 py-1.5 text-xs' : 'px-4 py-2 text-sm',
-              isSelected && 'bg-white text-primary shadow-xs hover:text-primary font-bold'
+              isSelected
+                ? 'bg-primary text-foreground border-border shadow-subtle'
+                : 'border-transparent text-ink-muted hover:text-foreground hover:bg-surface/70'
             )}
             aria-pressed={isSelected}
           >
@@ -52,8 +54,8 @@ export function FilterButtonGroup<T extends string | number>({
             {opt.count !== undefined && (
               <span
                 className={cn(
-                  'ml-1 text-[10px] px-1.5 py-0.2 rounded-full',
-                  isSelected ? 'bg-blue-50 text-primary' : 'bg-slate-200 text-slate-600'
+                  'ml-1 font-mono text-[10px] px-1.5 py-0.5 rounded-sm border border-border',
+                  isSelected ? 'bg-surface text-foreground' : 'bg-background text-ink-muted'
                 )}
               >
                 {opt.count}

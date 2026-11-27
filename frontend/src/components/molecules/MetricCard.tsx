@@ -22,24 +22,24 @@ export interface MetricCardProps {
 
 const colorVariants = {
   blue: {
-    iconBg: 'bg-blue-50 text-blue-600',
-    valueText: 'text-slate-900',
+    iconBg: 'bg-primary text-foreground border-border',
+    valueText: 'text-foreground',
   },
   emerald: {
-    iconBg: 'bg-emerald-50 text-emerald-600',
-    valueText: 'text-emerald-600',
+    iconBg: 'bg-success text-foreground border-border',
+    valueText: 'text-foreground',
   },
   amber: {
-    iconBg: 'bg-amber-50 text-amber-600',
-    valueText: 'text-amber-600',
+    iconBg: 'bg-warning text-foreground border-border',
+    valueText: 'text-foreground',
   },
   rose: {
-    iconBg: 'bg-rose-50 text-rose-600',
-    valueText: 'text-rose-600',
+    iconBg: 'bg-destructive text-foreground border-border',
+    valueText: 'text-foreground',
   },
   indigo: {
-    iconBg: 'bg-indigo-50 text-indigo-600',
-    valueText: 'text-indigo-600',
+    iconBg: 'bg-secondary text-foreground border-border',
+    valueText: 'text-foreground',
   },
 };
 
@@ -59,10 +59,10 @@ export function MetricCard({
 
   if (isLoading) {
     return (
-      <Card className={cn('p-5 border-slate-200 bg-white shadow-xs space-y-3', className)}>
+      <Card variant="default" className={cn('p-5 space-y-3', className)}>
         <div className="flex items-center justify-between">
           <SkeletonLoader className="h-4 w-24" />
-          <SkeletonLoader className="h-8 w-8 rounded-lg" />
+          <SkeletonLoader className="h-8 w-8 rounded-sm" />
         </div>
         <SkeletonLoader className="h-8 w-16" />
         <SkeletonLoader className="h-3 w-32" />
@@ -72,35 +72,36 @@ export function MetricCard({
 
   return (
     <Card
+      variant="default"
       className={cn(
-        'p-5 border-slate-200 bg-white shadow-xs space-y-2 transition-shadow',
-        onClick && 'cursor-pointer hover:shadow-elevation',
+        'p-5 space-y-2.5 transition-shadow motion-reduce:transition-none',
+        onClick && 'cursor-pointer hover:shadow-brutal',
         className
       )}
       onClick={onClick}
     >
-      <div className="flex items-center justify-between text-slate-500">
-        <span className="text-xs font-semibold uppercase tracking-wider">{title}</span>
-        <div className={cn('p-2 rounded-lg', scheme.iconBg)}>
+      <div className="flex items-center justify-between gap-2 text-ink-muted">
+        <span className="text-xs font-bold uppercase tracking-wider text-ink-muted">{title}</span>
+        <div className={cn('p-2 rounded-sm border shrink-0', scheme.iconBg)}>
           <Icon className="h-4 w-4" />
         </div>
       </div>
-      <div className="flex items-baseline justify-between">
-        <div className={cn('text-2xl font-black tracking-tight', scheme.valueText)}>
+      <div className="flex items-baseline justify-between gap-2">
+        <div className={cn('font-mono text-2xl sm:text-3xl font-black tracking-tight', scheme.valueText)}>
           {value}
         </div>
         {trend && (
           <span
             className={cn(
-              'text-[11px] font-bold px-1.5 py-0.5 rounded-md',
-              trend.positive ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'
+              'font-mono text-[11px] font-bold px-1.5 py-0.5 rounded-sm border border-border',
+              trend.positive ? 'bg-success text-foreground' : 'bg-destructive text-foreground'
             )}
           >
             {trend.positive ? '↑' : '↓'} {trend.value}
           </span>
         )}
       </div>
-      {subtitle && <p className="text-xs text-slate-500">{subtitle}</p>}
+      {subtitle && <p className="text-xs text-ink-muted font-medium leading-relaxed">{subtitle}</p>}
       {children}
     </Card>
   );

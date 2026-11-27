@@ -30,16 +30,16 @@ export function AdminLayout() {
 
   // User card
   const userCard = (
-    <div className="px-5 py-3 bg-slate-50/50">
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-bold text-slate-900 truncate max-w-[140px]">
+    <div className="px-5 py-3.5 bg-background/60">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-sm font-bold text-foreground truncate max-w-[140px]">
           {user?.displayName || user?.email}
         </span>
-        <Badge variant="outline" className="text-[10px] font-bold text-rose-700 bg-rose-50 border-rose-200">
+        <Badge variant="destructive" className="font-mono text-[10px] uppercase">
           ADMIN
         </Badge>
       </div>
-      <span className="text-[11px] text-slate-500 block truncate">{user?.email}</span>
+      <span className="text-xs text-ink-muted block truncate mt-0.5">{user?.email}</span>
     </div>
   );
 
@@ -48,13 +48,13 @@ export function AdminLayout() {
     <div className="px-4 pt-3 pb-1 space-y-1.5">
       <Link
         to="/learner/dashboard"
-        className="flex items-center justify-between p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200/80 text-slate-800 text-xs font-semibold border border-slate-200 shadow-2xs transition-colors"
+        className="flex items-center justify-between p-2.5 rounded-md bg-background hover:bg-muted text-foreground text-xs font-bold border border-border transition-colors"
       >
         <div className="flex items-center gap-2">
-          <GraduationCap className="h-4 w-4 text-slate-600" />
+          <GraduationCap className="h-4 w-4 text-foreground shrink-0" />
           <span>Khu vực Học viên</span>
         </div>
-        <span className="text-[10px] font-bold text-slate-600 bg-white px-2 py-0.5 rounded-md border border-slate-200">
+        <span className="font-mono text-[10px] font-bold text-foreground bg-surface px-1.5 py-0.5 rounded-sm border border-border">
           Chuyển →
         </span>
       </Link>
@@ -62,13 +62,13 @@ export function AdminLayout() {
       {user?.roles?.includes('TEACHER') && (
         <Link
           to="/teacher/dashboard"
-          className="flex items-center justify-between p-2.5 rounded-xl bg-blue-50/70 hover:bg-blue-100/80 text-blue-900 text-xs font-semibold border border-blue-200/80 shadow-2xs transition-colors"
+          className="flex items-center justify-between p-2.5 rounded-md bg-background hover:bg-secondary/40 text-foreground text-xs font-bold border border-border transition-colors"
         >
           <div className="flex items-center gap-2">
-            <BookOpen className="h-4 w-4 text-blue-600" />
+            <BookOpen className="h-4 w-4 text-foreground shrink-0" />
             <span>Khu vực Giảng viên</span>
           </div>
-          <span className="text-[10px] font-bold text-blue-600 bg-white px-2 py-0.5 rounded-md border border-blue-200">
+          <span className="font-mono text-[10px] font-bold text-foreground bg-surface px-1.5 py-0.5 rounded-sm border border-border">
             Chuyển →
           </span>
         </Link>
@@ -78,7 +78,7 @@ export function AdminLayout() {
 
   const headerActions = (
     <Link to="/quizzes">
-      <Button variant="outline" size="sm" className="gap-1.5 text-xs font-semibold">
+      <Button variant="outline" size="sm" className="gap-1.5 text-xs font-bold">
         <span>Xem Website</span>
         <ExternalLink className="h-3.5 w-3.5" />
       </Button>

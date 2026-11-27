@@ -4,35 +4,52 @@
 
 @layer base {
   :root {
-    --background: 210 40% 98%;    /* #F8FAFC */
-    --foreground: 222 47% 11%;    /* #0F172A */
+    /* Core Surfaces & Ink (Premium Editorial Neo Brutalism) */
+    --background: 47 36% 95%;          /* Canvas: #F7F5EE */
+    --foreground: 0 0% 9%;             /* Ink: #171717 */
 
-    --card: 0 0% 100%;            /* #FFFFFF */
-    --card-foreground: 222 47% 11%;
+    --card: 0 0% 100%;                 /* Surface: #FFFFFF */
+    --card-foreground: 0 0% 9%;        /* Ink: #171717 */
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;              /* Surface: #FFFFFF */
+    --popover-foreground: 0 0% 9%;     /* Ink: #171717 */
 
-    --primary: 221 83% 53%;       /* #2563EB */
-    --primary-foreground: 210 40% 98%;
+    /* Brand & Semantic Accents (Dark #171717 Ink foreground ensures high contrast) */
+    --primary: 50 98% 64%;             /* Primary Yellow: #FDE047 */
+    --primary-hover: 48 96% 56%;       /* Deeper Yellow Hover: #FACC15 */
+    --primary-light: 52 98% 88%;       /* Soft Yellow Tint: #FEF08A */
+    --primary-foreground: 0 0% 9%;     /* Ink: #171717 */
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222 47% 11%;
+    --secondary: 227 100% 86%;         /* Secondary Periwinkle: #B9C8FF */
+    --secondary-foreground: 0 0% 9%;   /* Ink: #171717 */
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215 16% 47%; /* #64748B */
+    --muted: 46 27% 90%;               /* Warm Muted Paper: #EDEAE0 */
+    --muted-foreground: 0 0% 32%;      /* Muted Ink: #525252 */
 
-    --accent: 214 100% 97%;       /* #EFF6FF */
-    --accent-foreground: 221 83% 48%;
+    --accent: 227 100% 86%;            /* Periwinkle Accent: #B9C8FF */
+    --accent-foreground: 0 0% 9%;      /* Ink: #171717 */
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --success: 92 63% 84%;             /* Sage Lime: #D5F0BE */
+    --success-foreground: 0 0% 9%;     /* Ink: #171717 */
 
-    --border: 214 32% 91%;        /* #E2E8F0 */
-    --input: 214 32% 91%;
-    --ring: 221 83% 53%;
+    --warning: 32 98% 83%;             /* Warm Amber: #FED7AA */
+    --warning-foreground: 0 0% 9%;     /* Ink: #171717 */
 
+    --destructive: 5 100% 81%;         /* Coral Salmon: #FFA69E */
+    --destructive-foreground: 0 0% 9%; /* Ink: #171717 */
+
+    /* Borders, Inputs & Focus Ring */
+    --border: 0 0% 9%;                 /* Solid Ink Border: #171717 */
+    --border-subtle: 45 18% 80%;       /* Subtle Structural Divider: #D6D2C4 */
+    --input: 0 0% 9%;                  /* Input Border: #171717 */
+    --ring: 0 0% 9%;                   /* Focus Ring: #171717 */
+
+    /* Geometry & Semantic Hard Offset Shadows */
     --radius: 0.5rem;
+    --shadow-subtle: 1px 1px 0px hsl(0 0% 9%);
+    --shadow-brutal-sm: 2px 2px 0px hsl(0 0% 9%);
+    --shadow-brutal: 3px 3px 0px hsl(0 0% 9%);
+    --shadow-brutal-lg: 5px 5px 0px hsl(0 0% 9%);
   }
 }
 
@@ -41,7 +58,7 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
