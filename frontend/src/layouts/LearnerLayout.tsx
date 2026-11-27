@@ -35,19 +35,19 @@ export function LearnerLayout() {
   ];
 
   const getPageTitle = () => {
-    if (location.pathname.startsWith('/learner/results')) return 'Kết Quả Bài Thi & Lời Giải';
-    if (location.pathname === '/learner/quizzes') return 'Thư Viện Đề Thi';
-    if (location.pathname === '/learner/history') return 'Lịch Sử Luyện Đề';
-    if (location.pathname === '/learner/membership') return 'Quản Lý Gói Hội Viên';
-    if (location.pathname === '/learner/profile') return 'Thông Tin Tài Khoản';
-    return 'Bàn Làm Việc Học Viên';
+    if (location.pathname.startsWith('/learner/results')) return 'Kết quả bài thi & lời giải';
+    if (location.pathname === '/learner/quizzes') return 'Kho đề thi TOEIC';
+    if (location.pathname === '/learner/history') return 'Lịch sử luyện đề';
+    if (location.pathname === '/learner/membership') return 'Quản lý gói hội viên';
+    if (location.pathname === '/learner/profile') return 'Tài khoản cá nhân';
+    return 'Tổng quan học tập';
   };
 
   // Quick Multi-role Switch Banner if Teacher or Admin
   const quickSwitchBanner = (hasRole('TEACHER') || hasRole('ADMIN')) ? (
     <div className="px-4 pt-3 pb-1">
       <div className="p-2.5 rounded-md bg-background border border-border space-y-2">
-        <span className="font-mono text-[10px] font-bold text-ink-muted uppercase tracking-wider block">
+        <span className="text-[10px] font-bold text-ink-muted uppercase tracking-wider block">
           Chuyển nhanh không gian
         </span>
         <div className="flex flex-col gap-1.5">
@@ -59,7 +59,7 @@ export function LearnerLayout() {
               <span className="flex items-center gap-1.5">
                 <BookOpenCheck className="h-3.5 w-3.5 text-foreground" /> Giảng viên
               </span>
-              <span className="font-mono text-[10px] text-ink-muted">Sang soạn đề →</span>
+              <span className="text-[10px] font-semibold text-ink-muted">Sang soạn đề →</span>
             </Link>
           )}
           {hasRole('ADMIN') && (
@@ -70,7 +70,7 @@ export function LearnerLayout() {
               <span className="flex items-center gap-1.5">
                 <ShieldAlert className="h-3.5 w-3.5 text-foreground" /> Quản trị
               </span>
-              <span className="font-mono text-[10px] text-ink-muted">Quản trị viên →</span>
+              <span className="text-[10px] font-semibold text-ink-muted">Quản trị viên →</span>
             </Link>
           )}
         </div>
@@ -84,9 +84,13 @@ export function LearnerLayout() {
       <div className="p-3 bg-surface rounded-md border border-border space-y-1">
         <div className="flex items-center justify-between gap-2">
           <span className="text-xs font-semibold text-ink-muted">Gói hiện tại:</span>
-          <Badge variant={membership?.planCode === 'PRO' ? 'pro' : 'outline'} className="text-[10px] px-1.5 py-0">
-            {membership?.planCode === 'PRO' ? 'PRO' : 'FREE'}
-          </Badge>
+          {membership ? (
+            <Badge variant={membership.planCode === 'PRO' ? 'pro' : 'outline'} className="text-[10px] px-1.5 py-0">
+              {membership.planCode}
+            </Badge>
+          ) : (
+            <span className="font-mono text-[10px] font-bold text-ink-muted">—</span>
+          )}
         </div>
         <p className="text-sm font-bold text-foreground truncate">{user?.displayName}</p>
         <p className="text-xs text-ink-muted truncate">{user?.email}</p>
@@ -97,9 +101,9 @@ export function LearnerLayout() {
   return (
     <DashboardLayout
       workspaceRole="learner"
-      brandSubtitle="Học Viên"
+      brandSubtitle="Không gian học viên"
       headerTitle={getPageTitle()}
-      headerBadge={membership?.planCode === 'PRO' ? 'PRO Member' : 'Free Plan'}
+      headerBadge={membership ? (membership.planCode === 'PRO' ? 'Gói PRO' : 'Gói FREE') : undefined}
       navItems={navItems}
       quickSwitchBanner={quickSwitchBanner}
       userCard={userCard}

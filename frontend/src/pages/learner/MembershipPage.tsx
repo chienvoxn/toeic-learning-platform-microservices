@@ -2,18 +2,32 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/api-client';
 import { MembershipView } from '@/types/membership';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Alert } from '@/components/feedback/Alert';
-import { SkeletonLoader } from '@/components/feedback/SkeletonLoader';
-import { 
-  Award, 
-  Check, 
-  ShieldCheck, 
-  Sparkles, 
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardFooter,
+} from '@/components/atoms/Card';
+import { Button } from '@/components/atoms/Button';
+import { Badge } from '@/components/atoms/Badge';
+import { SkeletonLoader } from '@/components/atoms/SkeletonLoader';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/components/atoms/Table';
+import { Alert } from '@/components/molecules/Alert';
+import {
+  Award,
+  Check,
+  Minus,
   RefreshCw,
-  Zap
+  Sparkles,
+  Zap,
 } from 'lucide-react';
 
 export function MembershipPage() {
@@ -43,13 +57,16 @@ export function MembershipPage() {
     onSuccess: (updated) => {
       setActionMessage({
         type: 'success',
-        text: `Đã chuyển đổi thành công sang gói ${updated.planCode} (Hạn ngạch: ${updated.maxPracticePerDay} lượt/ngày)!`,
+        text: `Đã chuyển đổi thành công sang gói ${updated.planCode} (hạn ngạch: ${updated.maxPracticePerDay} lượt/ngày).`,
       });
       queryClient.invalidateQueries({ queryKey: ['learner-membership'] });
       queryClient.invalidateQueries({ queryKey: ['learner-membership-chip'] });
     },
     onError: (err: unknown) => {
-      const message = err instanceof Error ? err.message : 'Không thể chuyển đổi gói hội viên. Tính năng demo có thể bị tắt trên máy chủ.';
+      const message =
+        err instanceof Error
+          ? err.message
+          : 'Không thể chuyển đổi gói hội viên. Tính năng đổi gói thử nghiệm (ALLOW_DEMO_PLAN_CHANGE) có thể đang tắt trên hệ thống.';
       setActionMessage({
         type: 'error',
         text: message,
@@ -61,19 +78,19 @@ export function MembershipPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <SkeletonLoader className="h-6 w-36" />
-        <SkeletonLoader className="h-48 w-full rounded-2xl" />
-        <SkeletonLoader className="h-64 w-full rounded-2xl" />
+      <div className="max-w-5xl mx-auto space-y-6">
+        <SkeletonLoader className="h-8 w-56" />
+        <SkeletonLoader className="h-44 w-full" />
+        <SkeletonLoader className="h-72 w-full" />
       </div>
     );
   }
 
   if (isError) {
     return (
-      <div className="space-y-4 py-8 text-center max-w-lg mx-auto">
-        <Alert type="error" title="Không thể tải thông tin gói cước">
-          {(error as Error)?.message || 'Lỗi kết nối đến dịch vụ Hội viên (Membership Service).'}
+      <div className="space-y-4 py-8 max-w-lg mx-auto">
+        <Alert type="error" title="Không thể tải thông tin gói hội viên">
+          {(error as Error)?.message || 'Không thể kết nối để đọc trạng thái gói tài khoản của bạn.'}
         </Alert>
         <Button variant="outline" onClick={() => refetch()} className="gap-2">
           <RefreshCw className="h-4 w-4" /> Thử lại
@@ -84,152 +101,253 @@ export function MembershipPage() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-8">
-      {/* Header */}
-      <div>
-        <h2 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-          <Award className="h-6 w-6 text-amber-500" /> Quản Lý Gói Hội Viên
+      {/* Editorial Header */}
+      <div className="space-y-1.5 border-b-2 border-border pb-5">
+        <h2 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight flex items-center gap-2.5">
+          <Award className="h-6 w-6 shrink-0" /> Quản lý gói hội viên
         </h2>
-        <p className="text-sm text-slate-500 mt-1">
-          Xem thông tin hạng tài khoản, giới hạn lượt luyện đề và thử nghiệm tính năng gói cước PRO.
+        <p className="text-sm text-ink-muted">
+          Kiểm tra hạng tài khoản hiện tại, hạn ngạch lượt luyện đề mỗi ngày và chuyển đổi gói trong môi trường thử nghiệm.
         </p>
       </div>
 
-      {/* Honest Demo Notification Alert */}
-      <Alert type="info" title="Thông báo môi trường thử nghiệm (Demo Only)">
-        <p className="text-xs leading-relaxed">
-          Tính năng tự đổi gói bên dưới chỉ áp dụng trong môi trường Demo học tập để kiểm tra quyền hạn và giới hạn số lượt thi (Quota). Trong môi trường Production thực tế, quyền PRO được kích hoạt thông qua cổng thanh toán đã xác thực.
+      {/* Transparent Demo Environment Alert (Synced with PricingPage) */}
+      <Alert type="warning" title="Môi trường thử nghiệm &amp; chính sách gói tài khoản (Demo)">
+        <p className="text-sm leading-relaxed">
+          Hệ thống hiện tại là nền tảng học tập thử nghiệm,{' '}
+          <strong>chưa tích hợp cổng thanh toán và không thu bất kỳ khoản phí thực tế nào</strong>. Mức giá
+          199.000 VNĐ/tháng chỉ mang tính mô phỏng. Khi cấu hình <code>ALLOW_DEMO_PLAN_CHANGE</code> được bật, bạn có
+          thể chuyển đổi qua lại giữa gói FREE (10 lượt/ngày) và gói PRO (1.000 lượt/ngày) ngay bên dưới.
         </p>
       </Alert>
 
       {/* Action Feedback */}
       {actionMessage && (
-        <Alert type={actionMessage.type} title={actionMessage.type === 'success' ? 'Thành công' : 'Không thể thực hiện'}>
+        <Alert type={actionMessage.type} title={actionMessage.type === 'success' ? 'Cập nhật thành công' : 'Không thể chuyển gói'}>
           {actionMessage.text}
         </Alert>
       )}
 
-      {/* Current Plan Overview Card */}
-      <Card className="border-slate-200 bg-white p-6 sm:p-8 shadow-card flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-        <div className="space-y-2">
-          <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-            Hạng gói tài khoản hiện tại:
+      {/* Current Membership Dossier */}
+      <Card variant="elevated" className="p-0 overflow-hidden">
+        <div className="bg-background border-b-2 border-border px-6 py-3 flex items-center justify-between gap-3">
+          <span className="text-xs font-bold uppercase tracking-wider text-ink-muted">
+            Trạng thái tài khoản hiện tại
           </span>
-          <div className="flex items-center gap-3">
-            <h3 className="text-3xl font-black text-slate-900">
-              Gói {membership?.planCode}
-            </h3>
-            <Badge variant={isPro ? 'pro' : 'secondary'} className="text-xs py-1 px-3">
-              {isPro ? 'Không giới hạn PRO' : 'Miễn phí cơ bản'}
-            </Badge>
-          </div>
-          <p className="text-xs text-slate-500">
-            Hạn ngạch luyện tập tối đa: <strong className="text-slate-800">{membership?.maxPracticePerDay} lượt thi / ngày</strong>
-          </p>
+          <Badge variant={isPro ? 'pro' : 'outline'}>
+            {isPro ? 'PRO · Hạn ngạch mở rộng' : 'FREE · Tiêu chuẩn'}
+          </Badge>
         </div>
 
-        {/* Quick Demo Switcher Button */}
-        <div className="shrink-0 flex flex-col gap-2 w-full md:w-auto">
-          {isPro ? (
-            <Button
-              variant="outline"
-              className="text-xs font-semibold gap-2 border-slate-300"
-              onClick={() => switchMutation.mutate('FREE')}
-              isLoading={switchMutation.isPending}
-            >
-              Chuyển về gói FREE (Demo)
-            </Button>
-          ) : (
-            <Button
-              variant="primary"
-              className="text-xs font-bold gap-2 shadow-sm"
-              onClick={() => switchMutation.mutate('PRO')}
-              isLoading={switchMutation.isPending}
-            >
-              <Sparkles className="h-4 w-4" /> Kích hoạt thử nghiệm PRO
-            </Button>
-          )}
+        <div className="p-6 sm:p-8 bg-surface flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          <div className="space-y-2">
+            <div className="flex items-center gap-3 flex-wrap">
+              <h3 className="text-3xl font-black text-foreground">Gói {membership?.planCode}</h3>
+              <Badge variant={isPro ? 'success' : 'secondary'}>
+                {membership?.status || 'ACTIVE'}
+              </Badge>
+            </div>
+            <p className="text-sm text-ink-muted">
+              Hạn ngạch tạo bài luyện tập mới:{' '}
+              <strong className="font-mono text-foreground">
+                {membership?.maxPracticePerDay} lượt / ngày
+              </strong>{' '}
+              (làm mới lúc 00:00 UTC).
+            </p>
+            <p className="text-xs text-ink-muted">
+              Quyền truy cập kho đề:{' '}
+              <strong className="text-foreground">
+                {isPro ? 'Toàn bộ đề FREE và đề chuyên sâu PRO' : 'Toàn bộ đề tiêu chuẩn FREE'}
+              </strong>
+              .
+            </p>
+          </div>
+
+          <div className="shrink-0 w-full md:w-auto">
+            {isPro ? (
+              <Button
+                variant="outline"
+                size="md"
+                className="w-full md:w-auto gap-2"
+                onClick={() => switchMutation.mutate('FREE')}
+                isLoading={switchMutation.isPending}
+              >
+                Chuyển về gói FREE (Demo)
+              </Button>
+            ) : (
+              <Button
+                variant="primary"
+                size="md"
+                className="w-full md:w-auto gap-2"
+                onClick={() => switchMutation.mutate('PRO')}
+                isLoading={switchMutation.isPending}
+              >
+                <Sparkles className="h-4 w-4" /> Kích hoạt PRO thử nghiệm
+              </Button>
+            )}
+          </div>
         </div>
       </Card>
 
-      {/* Plans Comparison Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+      {/* Plans Selection Cards (Synced with PricingPage) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
         {/* FREE PLAN */}
-        <Card className={`border p-6 flex flex-col justify-between ${!isPro ? 'border-primary ring-2 ring-primary/20 bg-white' : 'border-slate-200 bg-slate-50/50'}`}>
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <Badge variant="secondary">Cơ bản</Badge>
-              {!isPro && <span className="text-xs font-bold text-primary">● Đang sử dụng</span>}
+        <Card variant={!isPro ? 'elevated' : 'default'} className="p-0 overflow-hidden flex flex-col justify-between">
+          <div>
+            <div className="bg-background border-b-[1.5px] border-border px-6 py-3 flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-ink-muted">
+                Gói cơ bản
+              </span>
+              {!isPro ? (
+                <Badge variant="success">Đang sử dụng</Badge>
+              ) : (
+                <Badge variant="outline" className="font-mono">
+                  FREE
+                </Badge>
+              )}
             </div>
-            <div>
-              <h4 className="text-xl font-bold text-slate-900">Gói FREE</h4>
-              <p className="text-2xl font-black text-slate-900 mt-1">0 VNĐ</p>
-            </div>
-            <div className="space-y-2.5 text-xs text-slate-600 pt-2 border-t border-slate-100">
-              <div className="flex items-center gap-2">
-                <Check className="h-4 w-4 text-emerald-600 shrink-0" />
-                <span>10 lượt làm bài mỗi ngày</span>
+
+            <CardHeader className="pb-4">
+              <CardTitle className="text-2xl font-black text-foreground">Gói FREE</CardTitle>
+              <div className="font-mono text-3xl font-black text-foreground pt-2">
+                0 VNĐ <span className="font-sans text-xs font-medium text-ink-muted">/ mặc định</span>
               </div>
-              <div className="flex items-center gap-2">
-                <Check className="h-4 w-4 text-emerald-600 shrink-0" />
-                <span>Đề thi FREE tiêu chuẩn</span>
+              <CardDescription className="pt-1">
+                Phù hợp cho học viên làm quen với cấu trúc 7 phần thi và luyện tập hằng ngày.
+              </CardDescription>
+            </CardHeader>
+
+            <div className="px-6 pb-6 space-y-3 text-sm text-foreground">
+              <div className="flex items-start gap-2.5">
+                <Check className="h-4 w-4 shrink-0 mt-0.5" />
+                <span>
+                  Tối đa <strong className="font-mono">10 lượt/ngày</strong> tạo bài luyện tập mới
+                </span>
               </div>
-              <div className="flex items-center gap-2">
-                <Check className="h-4 w-4 text-emerald-600 shrink-0" />
-                <span>Lưu lịch sử bài thi</span>
+              <div className="flex items-start gap-2.5">
+                <Check className="h-4 w-4 shrink-0 mt-0.5" />
+                <span>Truy cập toàn bộ đề thi gắn nhãn FREE</span>
+              </div>
+              <div className="flex items-start gap-2.5">
+                <Check className="h-4 w-4 shrink-0 mt-0.5" />
+                <span>Tự động lưu đáp án, chấm điểm và lưu lịch sử thi</span>
               </div>
             </div>
           </div>
 
-          <div className="pt-6">
+          <CardFooter className="pt-0">
             <Button
               variant="outline"
               disabled={!isPro || switchMutation.isPending}
               onClick={() => switchMutation.mutate('FREE')}
-              className="w-full text-xs font-semibold"
+              isLoading={switchMutation.isPending && isPro}
+              className="w-full"
             >
-              {!isPro ? 'Gói hiện tại của bạn' : 'Chuyển về FREE'}
+              {!isPro ? 'Đang sử dụng gói này' : 'Chuyển về gói FREE (Demo)'}
             </Button>
-          </div>
+          </CardFooter>
         </Card>
 
         {/* PRO PLAN */}
-        <Card className={`border p-6 flex flex-col justify-between ${isPro ? 'border-primary ring-2 ring-primary/20 bg-white' : 'border-slate-200 bg-white'}`}>
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <Badge variant="pro">Cao cấp</Badge>
-              {isPro && <span className="text-xs font-bold text-primary">● Đang sử dụng</span>}
+        <Card variant={isPro ? 'elevated' : 'default'} className="p-0 overflow-hidden flex flex-col justify-between">
+          <div>
+            <div className="bg-primary border-b-2 border-border px-6 py-3 flex items-center justify-between">
+              <span className="text-xs font-extrabold uppercase tracking-wider text-foreground">
+                Hạn ngạch mở rộng
+              </span>
+              {isPro ? (
+                <Badge variant="success">Đang sử dụng</Badge>
+              ) : (
+                <Badge variant="outline" className="font-mono bg-surface">
+                  1.000 LƯỢT / NGÀY
+                </Badge>
+              )}
             </div>
-            <div>
-              <h4 className="text-xl font-bold text-primary">Gói PRO</h4>
-              <p className="text-2xl font-black text-slate-900 mt-1">199.000 VNĐ <span className="text-xs font-normal text-slate-400">/ tháng (Demo)</span></p>
-            </div>
-            <div className="space-y-2.5 text-xs text-slate-700 pt-2 border-t border-slate-100 font-medium">
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="h-4 w-4 text-primary shrink-0" />
-                <span>1.000 lượt làm bài mỗi ngày</span>
+
+            <CardHeader className="pb-4">
+              <CardTitle className="text-2xl font-black text-foreground">Gói PRO</CardTitle>
+              <div className="font-mono text-3xl font-black text-foreground pt-2">
+                199.000 VNĐ{' '}
+                <span className="font-sans text-xs font-medium text-ink-muted">/ tháng (Giá mô phỏng)</span>
               </div>
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="h-4 w-4 text-primary shrink-0" />
-                <span>Mở khóa toàn bộ đề Premium</span>
+              <CardDescription className="pt-1">
+                Mở khóa toàn bộ đề thi nâng cao và tăng hạn ngạch lên 1.000 lượt luyện tập mỗi ngày (kích hoạt thử
+                nghiệm miễn phí).
+              </CardDescription>
+            </CardHeader>
+
+            <div className="px-6 pb-6 space-y-3 text-sm text-foreground">
+              <div className="flex items-start gap-2.5 font-semibold">
+                <Check className="h-4 w-4 shrink-0 mt-0.5" />
+                <span>
+                  Tối đa <strong className="font-mono">1.000 lượt/ngày</strong> tạo bài luyện tập mới
+                </span>
               </div>
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="h-4 w-4 text-primary shrink-0" />
-                <span>Xem giải thích ngữ pháp chi tiết</span>
+              <div className="flex items-start gap-2.5 font-semibold">
+                <Check className="h-4 w-4 shrink-0 mt-0.5" />
+                <span>Mở khóa toàn bộ đề thi gắn nhãn PRO và FREE</span>
+              </div>
+              <div className="flex items-start gap-2.5">
+                <Check className="h-4 w-4 shrink-0 mt-0.5" />
+                <span>Xem giải thích chi tiết từng câu sau khi bài thi được chấm</span>
               </div>
             </div>
           </div>
 
-          <div className="pt-6">
+          <CardFooter className="pt-0">
             <Button
               variant="primary"
               disabled={isPro || switchMutation.isPending}
               onClick={() => switchMutation.mutate('PRO')}
-              className="w-full text-xs font-bold gap-1.5 shadow-sm"
+              isLoading={switchMutation.isPending && !isPro}
+              className="w-full gap-1.5"
             >
-              <Zap className="h-3.5 w-3.5 fill-current" />
-              {isPro ? 'Gói hiện tại của bạn' : 'Kích hoạt thử nghiệm PRO'}
+              <Zap className="h-4 w-4" />
+              {isPro ? 'Đang sử dụng gói này' : 'Kích hoạt PRO thử nghiệm'}
             </Button>
-          </div>
+          </CardFooter>
+        </Card>
+      </div>
+
+      {/* Feature Comparison Table (Synced with PricingPage) */}
+      <div className="space-y-4">
+        <h3 className="text-xl font-extrabold text-foreground">Bảng đối chiếu quyền lợi tài khoản</h3>
+        <Card variant="flat" className="overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow className="hover:bg-muted">
+                <TableHead>Quyền lợi trong hệ thống</TableHead>
+                <TableHead className="text-center w-36">Gói FREE</TableHead>
+                <TableHead className="text-center w-44 bg-primary/40">Gói PRO (Mô phỏng)</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow>
+                <TableCell className="font-semibold">Giới hạn lượt thi mới mỗi ngày (UTC)</TableCell>
+                <TableCell className="text-center font-mono font-bold">10 lượt</TableCell>
+                <TableCell className="text-center font-mono font-black bg-primary/15">1.000 lượt</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell className="font-semibold">Truy cập đề thi tiêu chuẩn (FREE)</TableCell>
+                <TableCell className="text-center font-bold">Có</TableCell>
+                <TableCell className="text-center font-bold bg-primary/15">Có</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell className="font-semibold">Truy cập đề thi chuyên sâu (PRO)</TableCell>
+                <TableCell className="text-center text-ink-muted">
+                  <span className="inline-flex items-center gap-1">
+                    <Minus className="h-4 w-4" /> Không
+                  </span>
+                </TableCell>
+                <TableCell className="text-center font-bold bg-primary/15">Mở khóa toàn bộ</TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell className="font-semibold">Lưu đáp án tự động &amp; xem lời giải sau khi nộp</TableCell>
+                <TableCell className="text-center font-bold">Có</TableCell>
+                <TableCell className="text-center font-bold bg-primary/15">Có</TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
         </Card>
       </div>
     </div>

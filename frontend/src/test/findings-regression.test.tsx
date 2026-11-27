@@ -224,9 +224,9 @@ describe('Finding #5 & Scope: LearnerDashboardPage MetricCard Adoption', () => {
 
     // Check titles of the 4 MetricCard molecules
     expect(screen.getByText('Lượt thi hôm nay')).toBeInTheDocument();
-    expect(screen.getByText('Gói Hội Viên')).toBeInTheDocument();
-    expect(screen.getByText('Đề Đã Chấm Điểm')).toBeInTheDocument();
-    expect(screen.getByText('Độ Chính Xác Trung Bình')).toBeInTheDocument();
+    expect(screen.getByText('Gói hội viên')).toBeInTheDocument();
+    expect(screen.getByText('Đề đã chấm điểm')).toBeInTheDocument();
+    expect(screen.getByText('Tỷ lệ đúng tổng thể')).toBeInTheDocument();
 
     // Check Quota reset note
     expect(screen.getByText('Làm mới lúc 00:00 UTC')).toBeInTheDocument();
