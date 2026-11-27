@@ -16,29 +16,27 @@ export function PageHeroBanner({
   title,
   description,
   actions,
-  gradient = 'from-blue-600 via-blue-700 to-indigo-800',
   className,
 }: PageHeroBannerProps) {
   return (
     <div
       className={cn(
-        'flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gradient-to-r p-6 sm:p-8 rounded-2xl text-white shadow-card',
-        gradient,
+        'flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 bg-surface text-foreground p-6 sm:p-8 rounded-lg border-2 border-border border-l-8 border-l-primary shadow-brutal',
         className
       )}
     >
       <div className="space-y-2 max-w-2xl">
         {badgeText && (
           <div className="flex items-center gap-2">
-            <Badge variant="outline" className="border-white/30 bg-white/10 text-white font-bold text-[11px] tracking-wider uppercase">
+            <Badge variant="default" className="font-mono uppercase tracking-wider">
               {badgeText}
             </Badge>
           </div>
         )}
-        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight leading-tight">
+        <h1 className="text-2xl sm:text-3xl font-black tracking-tight leading-tight text-foreground">
           {title}
         </h1>
-        <p className="text-xs sm:text-sm text-blue-100 leading-relaxed">
+        <p className="text-sm text-ink-muted leading-relaxed">
           {description}
         </p>
       </div>

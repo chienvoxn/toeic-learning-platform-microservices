@@ -20,7 +20,7 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
     case 'PRO':
       return <Badge variant="pro" className={className}>Hội viên PRO</Badge>;
     case 'FREE':
-      return <Badge variant="secondary" className={className}>Miễn phí</Badge>;
+      return <Badge variant="outline" className={className}>Miễn phí</Badge>;
     default:
       return <Badge variant="outline" className={className}>{status}</Badge>;
   }

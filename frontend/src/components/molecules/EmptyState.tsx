@@ -20,12 +20,17 @@ export function EmptyState({
   className,
 }: EmptyStateProps) {
   return (
-    <div className={cn('flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 p-8 text-center bg-slate-50/50', className)}>
-      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-blue-50 text-primary mb-4 shadow-xs">
-        <Icon className="h-7 w-7" />
+    <div
+      className={cn(
+        'flex flex-col items-center justify-center rounded-lg border-[1.5px] border-dashed border-border p-8 text-center bg-surface',
+        className
+      )}
+    >
+      <div className="flex h-12 w-12 items-center justify-center rounded-md bg-muted border border-border text-foreground mb-4">
+        <Icon className="h-6 w-6" />
       </div>
-      <h3 className="text-base font-semibold text-slate-900 mb-1">{title}</h3>
-      <p className="text-sm text-slate-500 max-w-sm mb-5">{description}</p>
+      <h3 className="text-base font-extrabold text-foreground mb-1">{title}</h3>
+      <p className="text-sm text-ink-muted max-w-sm mb-5 leading-relaxed">{description}</p>
       {actionText && onAction && (
         <Button variant="primary" size="md" onClick={onAction}>
           {actionText}

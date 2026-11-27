@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LucideIcon, GraduationCap, LogOut, X } from 'lucide-react';
+import { LucideIcon, LogOut, X } from 'lucide-react';
 import { Button } from '@/components/atoms/Button';
 import { cn } from '@/lib/utils';
 
@@ -38,38 +38,46 @@ export function DashboardSidebar({
 
   const roleStyles = {
     learner: {
-      brandIconBg: 'bg-primary',
-      brandSubtitle: 'text-primary',
-      activeNav: 'bg-blue-50 text-primary font-bold shadow-xs',
-      activeIcon: 'text-primary',
+      brandIconBg: 'bg-primary text-foreground border-[1.5px] border-border',
+      brandSubtitle: 'text-ink-muted',
+      activeNav: 'bg-background text-foreground font-extrabold border-[1.5px] border-border shadow-subtle',
+      activeIcon: 'text-foreground',
     },
     teacher: {
-      brandIconBg: 'bg-blue-600',
-      brandSubtitle: 'text-blue-600',
-      activeNav: 'bg-blue-50 text-blue-700 font-bold shadow-xs',
-      activeIcon: 'text-blue-600',
+      brandIconBg: 'bg-secondary text-foreground border-[1.5px] border-border',
+      brandSubtitle: 'text-ink-muted',
+      activeNav: 'bg-secondary/45 text-foreground font-extrabold border-[1.5px] border-border shadow-subtle',
+      activeIcon: 'text-foreground',
     },
     admin: {
-      brandIconBg: 'bg-slate-900',
-      brandSubtitle: 'text-rose-600',
-      activeNav: 'bg-rose-50 text-rose-700 font-bold shadow-xs',
-      activeIcon: 'text-rose-600',
+      brandIconBg: 'bg-ink text-surface border-[1.5px] border-border',
+      brandSubtitle: 'text-ink-muted',
+      activeNav: 'bg-warning/50 text-foreground font-extrabold border-[1.5px] border-border shadow-subtle',
+      activeIcon: 'text-foreground',
     },
   };
 
   const style = roleStyles[workspaceRole];
 
   const renderSidebar = (isMobile: boolean) => (
-    <div className="flex flex-col h-full bg-white">
+    <div className="flex flex-col h-full bg-surface text-foreground">
       {/* Brand Header */}
-      <div className="h-16 px-6 flex items-center justify-between border-b border-slate-100">
-        <Link to="/" className="flex items-center gap-2.5">
-          <div className={cn('h-9 w-9 rounded-xl flex items-center justify-center text-white shadow-xs', style.brandIconBg)}>
-            <GraduationCap className="h-5 w-5" />
+      <div className="h-16 px-5 flex items-center justify-between border-b-[1.5px] border-border">
+        <Link
+          to="/"
+          className="flex items-center gap-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
+        >
+          <div className={cn('h-9 w-9 rounded-sm flex items-center justify-center shrink-0', style.brandIconBg)}>
+            <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
+              <path d="M4 5.5H20V9H13.75V19H10.25V9H4V5.5Z" fill="currentColor" />
+              <rect x="16.5" y="13" width="3.5" height="6" fill="currentColor" />
+            </svg>
           </div>
           <div className="flex flex-col">
-            <span className="font-bold text-base text-slate-900 leading-tight">{brandTitle}</span>
-            <span className={cn('text-[10px] font-bold uppercase tracking-wider', style.brandSubtitle)}>{brandSubtitle}</span>
+            <span className="font-black text-base text-foreground leading-tight tracking-tight">{brandTitle}</span>
+            <span className={cn('font-mono text-[10px] font-bold uppercase tracking-wider', style.brandSubtitle)}>
+              {brandSubtitle}
+            </span>
           </div>
         </Link>
 
@@ -77,7 +85,7 @@ export function DashboardSidebar({
           <button
             type="button"
             onClick={onCloseMobile}
-            className="md:hidden p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+            className="md:hidden p-1.5 rounded-sm border border-border bg-surface text-foreground hover:bg-muted transition-colors"
             aria-label="Đóng menu điều hướng"
           >
             <X className="h-5 w-5" />
@@ -86,16 +94,18 @@ export function DashboardSidebar({
       </div>
 
       {/* User Card Slot (if any) */}
-      {userCard && <div className="border-b border-slate-100">{userCard}</div>}
+      {userCard && <div className="border-b border-border/20">{userCard}</div>}
 
       {/* Quick Switch Slot */}
       {quickSwitchBanner}
 
       {/* Nav Items List */}
-      <nav className="p-4 space-y-1.5 flex-1 overflow-y-auto">
+      <nav className="p-4 space-y-1.5 flex-1 overflow-y-auto" aria-label="Điều hướng không gian làm việc">
         {navItems.map((item) => {
           const Icon = item.icon;
-          const active = location.pathname === item.path || (item.path !== `/${workspaceRole}/dashboard` && location.pathname.startsWith(item.path));
+          const active =
+            location.pathname === item.path ||
+            (item.path !== `/${workspaceRole}/dashboard` && location.pathname.startsWith(item.path));
 
           return (
             <Link
@@ -103,16 +113,18 @@ export function DashboardSidebar({
               to={item.path}
               onClick={isMobile ? onCloseMobile : undefined}
               className={cn(
-                'flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-colors',
-                active ? style.activeNav : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                'flex items-center justify-between px-3.5 py-2.5 rounded-md text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                active
+                  ? style.activeNav
+                  : 'border border-transparent font-semibold text-ink-muted hover:bg-muted hover:text-foreground'
               )}
             >
               <div className="flex items-center gap-3">
-                <Icon className={cn('h-4 w-4 shrink-0', active ? style.activeIcon : 'text-slate-400')} />
+                <Icon className={cn('h-4 w-4 shrink-0', active ? style.activeIcon : 'text-ink-muted')} />
                 <span>{item.label}</span>
               </div>
               {item.badge && (
-                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-blue-100 text-blue-700">
+                <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded-sm border border-border bg-muted text-foreground">
                   {item.badge}
                 </span>
               )}
@@ -123,14 +135,14 @@ export function DashboardSidebar({
 
       {/* Logout Action */}
       {onLogout && (
-        <div className="p-4 border-t border-slate-100 bg-slate-50/50">
+        <div className="p-4 border-t border-border/20 bg-background/60">
           <Button
-            variant="ghost"
+            variant="outline"
             size="sm"
             onClick={onLogout}
-            className="w-full justify-start text-slate-600 hover:text-rose-600 hover:bg-rose-50 text-xs font-semibold"
+            className="w-full justify-start text-foreground hover:bg-destructive/30 text-xs font-bold"
           >
-            <LogOut className="h-4 w-4 mr-2" /> Đăng xuất
+            <LogOut className="h-4 w-4" /> Đăng xuất
           </Button>
         </div>
       )}
@@ -140,7 +152,7 @@ export function DashboardSidebar({
   return (
     <>
       {/* Desktop Sticky Sidebar */}
-      <aside className="hidden md:flex w-64 border-r border-slate-200 flex-col shrink-0 sticky top-0 h-screen z-30">
+      <aside className="hidden md:flex w-64 border-r-[1.5px] border-border flex-col shrink-0 sticky top-0 h-screen z-30">
         {renderSidebar(false)}
       </aside>
 
@@ -148,11 +160,11 @@ export function DashboardSidebar({
       {isOpenMobile && (
         <div className="fixed inset-0 z-50 md:hidden flex">
           <div
-            className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs transition-opacity animate-in fade-in"
+            className="fixed inset-0 bg-ink/60 transition-opacity motion-reduce:transition-none"
             onClick={onCloseMobile}
             aria-hidden="true"
           />
-          <div className="relative w-72 max-w-[85vw] h-full shadow-2xl z-10 animate-in slide-in-from-left duration-200">
+          <div className="relative w-72 max-w-[85vw] h-full border-r-2 border-border shadow-brutal-lg z-10">
             {renderSidebar(true)}
           </div>
         </div>

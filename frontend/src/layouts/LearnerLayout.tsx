@@ -46,31 +46,31 @@ export function LearnerLayout() {
   // Quick Multi-role Switch Banner if Teacher or Admin
   const quickSwitchBanner = (hasRole('TEACHER') || hasRole('ADMIN')) ? (
     <div className="px-4 pt-3 pb-1">
-      <div className="p-2.5 rounded-xl bg-blue-50/60 border border-blue-100 space-y-1.5">
-        <span className="text-[10px] font-bold text-blue-900 uppercase tracking-wider block">
+      <div className="p-2.5 rounded-md bg-background border border-border space-y-2">
+        <span className="font-mono text-[10px] font-bold text-ink-muted uppercase tracking-wider block">
           Chuyển nhanh không gian
         </span>
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-1.5">
           {hasRole('TEACHER') && (
             <Link
               to="/teacher/dashboard"
-              className="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-white hover:bg-blue-100/50 text-blue-700 text-xs font-semibold border border-blue-200/60 shadow-2xs transition-colors"
+              className="flex items-center justify-between px-2.5 py-1.5 rounded-sm bg-surface hover:bg-secondary/40 text-foreground text-xs font-bold border border-border transition-colors"
             >
               <span className="flex items-center gap-1.5">
-                <BookOpenCheck className="h-3.5 w-3.5 text-blue-600" /> Giảng viên
+                <BookOpenCheck className="h-3.5 w-3.5 text-foreground" /> Giảng viên
               </span>
-              <span className="text-[10px] text-blue-500">Sang soạn đề →</span>
+              <span className="font-mono text-[10px] text-ink-muted">Sang soạn đề →</span>
             </Link>
           )}
           {hasRole('ADMIN') && (
             <Link
               to="/admin/dashboard"
-              className="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-white hover:bg-rose-50 text-rose-700 text-xs font-semibold border border-rose-200/60 shadow-2xs transition-colors"
+              className="flex items-center justify-between px-2.5 py-1.5 rounded-sm bg-surface hover:bg-warning/50 text-foreground text-xs font-bold border border-border transition-colors"
             >
               <span className="flex items-center gap-1.5">
-                <ShieldAlert className="h-3.5 w-3.5 text-rose-600" /> Quản trị
+                <ShieldAlert className="h-3.5 w-3.5 text-foreground" /> Quản trị
               </span>
-              <span className="text-[10px] text-rose-500">Quản trị viên →</span>
+              <span className="font-mono text-[10px] text-ink-muted">Quản trị viên →</span>
             </Link>
           )}
         </div>
@@ -80,16 +80,16 @@ export function LearnerLayout() {
 
   // Sidebar User Profile Card
   const userCard = (
-    <div className="p-4 bg-slate-50/50">
-      <div className="p-3 bg-white rounded-xl border border-slate-200/80 shadow-xs space-y-1">
-        <div className="flex items-center justify-between">
-          <span className="text-[11px] font-semibold text-slate-500">Gói hiện tại:</span>
-          <Badge variant={membership?.planCode === 'PRO' ? 'pro' : 'secondary'} className="text-[10px] px-1.5 py-0">
+    <div className="p-4 bg-background/60">
+      <div className="p-3 bg-surface rounded-md border border-border space-y-1">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-xs font-semibold text-ink-muted">Gói hiện tại:</span>
+          <Badge variant={membership?.planCode === 'PRO' ? 'pro' : 'outline'} className="text-[10px] px-1.5 py-0">
             {membership?.planCode === 'PRO' ? 'PRO' : 'FREE'}
           </Badge>
         </div>
-        <p className="text-sm font-bold text-slate-900 truncate">{user?.displayName}</p>
-        <p className="text-[11px] text-slate-400 truncate">{user?.email}</p>
+        <p className="text-sm font-bold text-foreground truncate">{user?.displayName}</p>
+        <p className="text-xs text-ink-muted truncate">{user?.email}</p>
       </div>
     </div>
   );
@@ -99,7 +99,7 @@ export function LearnerLayout() {
       workspaceRole="learner"
       brandSubtitle="Học Viên"
       headerTitle={getPageTitle()}
-      headerBadge={membership?.planCode === 'PRO' ? 'PRO Member' : 'Free Member'}
+      headerBadge={membership?.planCode === 'PRO' ? 'PRO Member' : 'Free Plan'}
       navItems={navItems}
       quickSwitchBanner={quickSwitchBanner}
       userCard={userCard}

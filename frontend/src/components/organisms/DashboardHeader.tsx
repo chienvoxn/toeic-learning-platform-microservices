@@ -19,31 +19,31 @@ export function DashboardHeader({
   actions,
 }: DashboardHeaderProps) {
   return (
-    <header className="h-16 border-b border-slate-200 bg-white px-4 sm:px-6 flex items-center justify-between sticky top-0 z-20 shadow-2xs">
-      <div className="flex items-center gap-3">
+    <header className="h-16 border-b-[1.5px] border-border bg-surface text-foreground px-4 sm:px-6 flex items-center justify-between sticky top-0 z-20">
+      <div className="flex items-center gap-3 min-w-0">
         {onOpenMobile && (
           <button
             type="button"
             onClick={onOpenMobile}
-            className="md:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors"
+            className="md:hidden p-2 rounded-sm border border-border bg-surface text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             aria-label="Mở menu điều hướng"
           >
             <Menu className="h-5 w-5" />
           </button>
         )}
-        <div className="flex items-center gap-2.5">
-          <h1 className="text-base font-bold text-slate-900 truncate max-w-[200px] sm:max-w-md">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <h1 className="text-base sm:text-lg font-extrabold text-foreground truncate max-w-[200px] sm:max-w-md tracking-tight">
             {title}
           </h1>
           {badgeText && (
-            <Badge variant="outline" className="hidden sm:inline-flex text-[11px] font-normal text-slate-600 border-slate-200 bg-slate-50">
+            <Badge variant="secondary" className="hidden sm:inline-flex font-mono text-[11px]">
               {badgeText}
             </Badge>
           )}
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2.5 shrink-0">
         <WorkspaceSwitcher currentWorkspace={currentWorkspace} />
         {actions}
       </div>
