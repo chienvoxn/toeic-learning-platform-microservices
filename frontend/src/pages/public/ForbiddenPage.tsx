@@ -15,9 +15,9 @@ export function ForbiddenPage() {
         </div>
 
         <div className="p-8 space-y-5 bg-surface">
-          <div className="font-mono text-5xl font-black text-foreground tracking-tight">403</div>
+          <div className="font-mono text-5xl font-extrabold text-foreground tracking-tight">403</div>
           <div className="space-y-2">
-            <h1 className="text-2xl font-black text-foreground tracking-tight">
+            <h1 className="text-2xl font-extrabold text-foreground tracking-tight">
               Không có quyền truy cập
             </h1>
             <p className="text-sm text-ink-muted leading-relaxed">

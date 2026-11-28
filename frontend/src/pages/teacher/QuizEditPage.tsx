@@ -768,7 +768,7 @@ export function QuizEditPage() {
             </Button>
             <div className="space-y-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <h1 className="text-lg font-black text-foreground truncate max-w-md tracking-tight">
+                <h1 className="text-lg font-extrabold text-foreground truncate max-w-md tracking-tight">
                   {title || 'Đề thi chưa đặt tiêu đề'}
                 </h1>
                 <StatusBadge status="DRAFT" />
@@ -1045,7 +1045,7 @@ export function QuizEditPage() {
               {/* Question Editor Header */}
               <div className="flex flex-wrap items-center justify-between gap-3 border-b-[1.5px] border-border pb-3">
                 <div className="flex items-center gap-2.5">
-                  <span className="font-mono text-sm font-black bg-secondary px-2.5 py-1 rounded-sm border border-border text-foreground">
+                  <span className="font-mono text-sm font-extrabold bg-secondary px-2.5 py-1 rounded-sm border border-border text-foreground">
                     Câu #{activeQuestionIdx + 1} / {questions.length}
                   </span>
                   <Badge variant="outline" className="text-xs">

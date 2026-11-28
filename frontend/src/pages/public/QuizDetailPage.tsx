@@ -205,7 +205,7 @@ export function QuizDetailPage() {
             <span className="text-xs font-bold uppercase tracking-wider text-ink-muted">
               Thông tin đề thi · Part {quiz.part}
             </span>
-            <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
               {quiz.title}
             </h1>
             <p className="text-sm text-ink-muted font-medium">{formatPartName(quiz.part)}</p>
@@ -217,13 +217,13 @@ export function QuizDetailPage() {
               <div className="flex items-center gap-1.5 text-xs font-bold text-ink-muted">
                 <BookOpen className="h-3.5 w-3.5" /> Số lượng câu hỏi
               </div>
-              <p className="font-mono text-xl font-black text-foreground">{questions.length} câu</p>
+              <p className="font-mono tabular-nums text-xl font-extrabold text-foreground">{questions.length} câu</p>
             </div>
             <div className="p-4 rounded-md bg-background border border-border space-y-1">
               <div className="flex items-center gap-1.5 text-xs font-bold text-ink-muted">
                 <Clock className="h-3.5 w-3.5" /> Thời lượng gợi ý
               </div>
-              <p className="font-mono text-xl font-black text-foreground">
+              <p className="font-mono tabular-nums text-xl font-extrabold text-foreground">
                 ~{Math.round(questions.length * 1.2)} phút
               </p>
             </div>
@@ -231,7 +231,7 @@ export function QuizDetailPage() {
               <div className="flex items-center gap-1.5 text-xs font-bold text-ink-muted">
                 <ShieldCheck className="h-3.5 w-3.5" /> Hình thức chấm
               </div>
-              <p className="font-mono text-xl font-black text-foreground">Tự động</p>
+              <p className="font-sans text-xl font-extrabold text-foreground">Tự động</p>
             </div>
           </div>
 
@@ -262,7 +262,7 @@ export function QuizDetailPage() {
             <FileText className="h-5 w-5" /> Xem trước cấu trúc câu hỏi ({questions.length})
           </h2>
           <span className="text-xs font-semibold text-ink-muted">
-            Đáp án đúng chỉ hiển thị sau khi nộp bài
+            Kết quả chấm và lời giải hiển thị sau khi hoàn thành bài thi
           </span>
         </div>
 

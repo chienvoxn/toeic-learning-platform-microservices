@@ -28,12 +28,12 @@ export function PageHeroBanner({
       <div className="space-y-2 max-w-2xl">
         {badgeText && (
           <div className="flex items-center gap-2">
-            <Badge variant="default" className="font-mono uppercase tracking-wider">
+            <Badge variant="default" className="uppercase tracking-wider">
               {badgeText}
             </Badge>
           </div>
         )}
-        <h1 className="text-2xl sm:text-3xl font-black tracking-tight leading-tight text-foreground">
+        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight leading-tight text-foreground">
           {title}
         </h1>
         <p className="text-sm text-ink-muted leading-relaxed">

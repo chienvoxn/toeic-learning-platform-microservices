@@ -37,15 +37,15 @@ export function Pagination({
       {totalItems !== undefined && pageSize !== undefined ? (
         <span>
           Hiển thị{' '}
-          <span className="font-mono font-bold text-foreground">
+          <span className="font-mono tabular-nums font-bold text-foreground">
             {currentPage * pageSize + 1}–{Math.min((currentPage + 1) * pageSize, totalItems)}
           </span>{' '}
-          trên tổng số <span className="font-mono font-bold text-foreground">{totalItems}</span>
+          trên tổng số <span className="font-mono tabular-nums font-bold text-foreground">{totalItems}</span>
         </span>
       ) : (
         <span>
-          Trang <span className="font-mono font-bold text-foreground">{displayCurrent}</span> /{' '}
-          <span className="font-mono font-bold text-foreground">{totalPages}</span>
+          Trang <span className="font-mono tabular-nums font-bold text-foreground">{displayCurrent}</span> /{' '}
+          <span className="font-mono tabular-nums font-bold text-foreground">{totalPages}</span>
         </span>
       )}
 
@@ -60,7 +60,7 @@ export function Pagination({
         >
           <ChevronLeft className="h-3.5 w-3.5" /> Trước
         </Button>
-        <span className="px-2.5 py-1 rounded-sm border border-border bg-muted font-mono text-foreground font-bold">
+        <span className="px-2.5 py-1 rounded-sm border border-border bg-muted font-mono tabular-nums text-foreground font-bold">
           {displayCurrent} / {totalPages}
         </span>
         <Button

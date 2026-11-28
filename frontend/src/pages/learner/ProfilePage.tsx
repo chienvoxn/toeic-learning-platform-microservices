@@ -192,7 +192,7 @@ export function ProfilePage() {
             </AvatarFallback>
           </Avatar>
           <div className="space-y-1">
-            <h2 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
               Tài khoản cá nhân
             </h2>
             <p className="text-sm text-ink-muted">

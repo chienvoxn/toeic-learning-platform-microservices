@@ -272,7 +272,7 @@ export function QuestionCanvas({
                     }`}
                   >
                     <span
-                      className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-sm border-[1.5px] border-border font-mono text-xs font-black transition-colors ${
+                      className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-sm border-[1.5px] border-border font-mono text-xs font-extrabold transition-colors ${
                         isSelected
                           ? 'bg-primary text-foreground'
                           : 'bg-background text-foreground'
@@ -301,37 +301,40 @@ export function QuestionCanvas({
       </div>
 
       {/* Footer Navigation Controls */}
-      <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t-[1.5px] border-border mt-auto">
-        <Button
-          type="button"
-          variant="outline"
-          size="md"
-          onClick={onPrev}
-          disabled={!hasPrev || disabled}
-          className="text-xs sm:text-sm"
-        >
-          <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden="true" />
-          <span>Câu trước</span>
-        </Button>
+      <div className="space-y-3 pt-4 border-t-[1.5px] border-border mt-auto">
+        <div className="flex items-center justify-between gap-3">
+          <Button
+            type="button"
+            variant="outline"
+            size="md"
+            onClick={onPrev}
+            disabled={!hasPrev || disabled}
+            className="text-xs sm:text-sm"
+          >
+            <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden="true" />
+            <span>Câu trước</span>
+          </Button>
 
-        <span className="text-xs font-mono text-ink-muted hidden md:inline text-center">
+          <Button
+            type="button"
+            variant="primary"
+            size="md"
+            onClick={onNext}
+            disabled={!hasNext || disabled}
+            className="text-xs sm:text-sm"
+          >
+            <span>Câu tiếp theo</span>
+            <ArrowRight className="h-4 w-4 shrink-0" aria-hidden="true" />
+          </Button>
+        </div>
+
+        {/* Dedicated Shortcut Guide Row */}
+        <p className="text-[11px] sm:text-xs font-mono text-ink-muted text-center pt-2 border-t border-border/20 leading-relaxed select-none">
           {validChoices.length === 3
             ? 'Phím A–C hoặc 1–3: Chọn đáp án'
             : 'Phím A–D hoặc 1–4: Chọn đáp án'}{' '}
           · Phím M/F: Đánh dấu · Phím ←/→: Chuyển câu
-        </span>
-
-        <Button
-          type="button"
-          variant="primary"
-          size="md"
-          onClick={onNext}
-          disabled={!hasNext || disabled}
-          className="text-xs sm:text-sm"
-        >
-          <span>Câu tiếp theo</span>
-          <ArrowRight className="h-4 w-4 shrink-0" aria-hidden="true" />
-        </Button>
+        </p>
       </div>
     </Card>
   );

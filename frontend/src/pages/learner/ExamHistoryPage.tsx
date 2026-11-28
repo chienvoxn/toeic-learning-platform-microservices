@@ -105,7 +105,7 @@ export function ExamHistoryPage() {
       {/* Editorial Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 border-b-2 border-border pb-5">
         <div className="space-y-1.5">
-          <h2 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight flex items-center gap-2.5">
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight flex items-center gap-2.5">
             <History className="h-6 w-6 shrink-0" /> Lịch sử luyện đề
           </h2>
           <p className="text-sm text-ink-muted">
@@ -261,7 +261,7 @@ export function ExamHistoryPage() {
                     <span className="md:hidden text-xs font-bold text-ink-muted">Kết quả:</span>
                     {isGraded ? (
                       <div className="text-right">
-                        <div className="font-mono text-base font-black text-foreground">
+                        <div className="font-mono tabular-nums text-base font-extrabold text-foreground">
                           {attempt.correct ?? 0}
                           <span className="text-xs font-semibold text-ink-muted">/{attempt.total}</span>
                         </div>

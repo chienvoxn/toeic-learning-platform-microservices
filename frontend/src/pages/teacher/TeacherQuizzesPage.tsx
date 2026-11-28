@@ -155,7 +155,7 @@ export function TeacherQuizzesPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b-[1.5px] border-border pb-4">
         <div className="space-y-1">
-          <h1 className="text-2xl font-black text-foreground tracking-tight">Kho đề thi của tôi</h1>
+          <h1 className="text-2xl font-extrabold text-foreground tracking-tight">Kho đề thi của tôi</h1>
           <p className="text-sm text-ink-muted">
             Quản lý toàn bộ đề bản nháp và đề đã xuất bản thuộc quyền sở hữu giảng viên
           </p>

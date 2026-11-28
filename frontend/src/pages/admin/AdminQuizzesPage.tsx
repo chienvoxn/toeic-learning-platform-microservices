@@ -156,10 +156,10 @@ export function AdminQuizzesPage() {
       header: 'Đề thi & chủ sở hữu',
       render: (quiz) => (
         <div className="max-w-xs space-y-0.5">
-          <span className="font-extrabold text-foreground block truncate" title={quiz.title}>
+          <span className="font-extrabold text-foreground block break-words" tabIndex={0} title={quiz.title}>
             {quiz.title}
           </span>
-          <span className="font-mono text-[11px] text-ink-muted block truncate" title={`Owner UUID: ${quiz.ownerUserId}`}>
+          <span className="font-mono text-[11px] text-ink-muted block break-all select-all" tabIndex={0} title={`Owner UUID: ${quiz.ownerUserId}`}>
             Tác giả: {quiz.ownerUserId.slice(0, 8)}...
           </span>
         </div>
@@ -206,7 +206,7 @@ export function AdminQuizzesPage() {
       render: (quiz) => {
         const isPublished = quiz.status === 'PUBLISHED';
         return (
-          <div className="flex items-center justify-end gap-2">
+          <div className="flex items-center justify-end gap-2 whitespace-nowrap">
             <Button
               variant="outline"
               size="sm"
@@ -246,7 +246,7 @@ export function AdminQuizzesPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b-[1.5px] border-border pb-4">
         <div className="space-y-1">
-          <h1 className="text-2xl font-black text-foreground tracking-tight flex items-center gap-2">
+          <h1 className="text-2xl font-extrabold text-foreground tracking-tight flex items-center gap-2">
             <ShieldCheck className="h-6 w-6 text-foreground" /> Kiểm duyệt &amp; quản trị kho đề thi
           </h1>
           <p className="text-sm text-ink-muted">

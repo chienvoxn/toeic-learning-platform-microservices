@@ -6,6 +6,17 @@ import { WorkspaceSwitcher } from '@/components/navigation/WorkspaceSwitcher';
 import { LogIn, UserPlus, LogOut, Menu, X, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+const ROLE_LABELS: Record<string, string> = {
+  LEARNER: 'Học viên',
+  TEACHER: 'Giảng viên',
+  ADMIN: 'Quản trị viên',
+};
+
+function formatRoleList(roles?: string[]): string {
+  if (!roles || roles.length === 0) return 'Học viên';
+  return roles.map((r) => ROLE_LABELS[r.toUpperCase()] || r).join(', ');
+}
+
 export function PublicNavbar() {
   const { isAuthenticated, user, hasRole, logout } = useAuth();
   const location = useLocation();
@@ -47,11 +58,11 @@ export function PublicNavbar() {
             </svg>
           </div>
           <div className="flex flex-col">
-            <span className="font-black text-lg text-foreground tracking-tight leading-none">
+            <span className="font-extrabold text-lg text-foreground tracking-tight leading-none">
               TOEIC Master
             </span>
             <span className="text-[10px] font-bold uppercase tracking-wider text-ink-muted mt-1">
-              ETS Format · Practice Lab
+              Listening &amp; Reading · Practice Lab
             </span>
           </div>
         </Link>
@@ -123,7 +134,7 @@ export function PublicNavbar() {
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="p-2 rounded-sm border border-border bg-surface text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            aria-label="Toggle menu"
+            aria-label={mobileMenuOpen ? 'Đóng menu điều hướng' : 'Mở menu điều hướng'}
             aria-expanded={mobileMenuOpen}
           >
             {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -158,9 +169,9 @@ export function PublicNavbar() {
           <div className="pt-3 border-t border-border/20 flex flex-col gap-2">
             {isAuthenticated ? (
               <>
-                <div className="px-3 py-2 bg-background border border-border rounded-sm flex items-center justify-between text-xs">
-                  <span className="font-bold text-foreground">{user?.displayName}</span>
-                  <span className="font-mono text-ink-muted">{user?.roles?.join(', ')}</span>
+                <div className="px-3 py-2 bg-background border border-border rounded-sm flex items-center justify-between gap-2 text-xs">
+                  <span className="font-bold text-foreground truncate">{user?.displayName}</span>
+                  <span className="font-sans font-semibold text-ink-muted shrink-0">{formatRoleList(user?.roles)}</span>
                 </div>
                 <Link to={getWorkspacePath()} onClick={() => setMobileMenuOpen(false)}>
                   <Button variant="primary" className="w-full justify-center">

@@ -36,7 +36,7 @@ export function DashboardHeader({
             {title}
           </h1>
           {badgeText && (
-            <Badge variant="secondary" className="hidden sm:inline-flex font-mono text-[11px]">
+            <Badge variant="secondary" className="hidden sm:inline-flex text-[11px] font-bold">
               {badgeText}
             </Badge>
           )}

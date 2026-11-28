@@ -203,16 +203,27 @@ export function AdminDashboardPage() {
                 <div className="divide-y divide-border/20 border border-border rounded-md bg-background">
                   {usersData.users.slice(0, 3).map((u) => (
                     <div key={u.userId} className="px-3 py-2 flex items-center justify-between gap-2 text-xs">
-                      <div className="min-w-0">
-                        <p className="font-bold text-foreground truncate">{u.displayName || '(Chưa đặt tên)'}</p>
-                        <p className="font-mono text-[11px] text-ink-muted truncate">{u.email}</p>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-bold text-foreground break-words" tabIndex={0} title={u.displayName || '(Chưa đặt tên)'}>
+                          {u.displayName || '(Chưa đặt tên)'}
+                        </p>
+                        <p className="font-mono text-[11px] text-ink-muted break-all select-all" tabIndex={0} title={u.email}>
+                          {u.email}
+                        </p>
                       </div>
-                      <div className="flex gap-1 shrink-0">
-                        {u.roles.map((r) => (
-                          <Badge key={r} variant={r === 'ADMIN' ? 'warning' : 'outline'} className="text-[10px]">
-                            {r}
-                          </Badge>
-                        ))}
+                      <div className="flex flex-wrap gap-1 justify-end shrink-0">
+                        {u.roles.map((r) => {
+                          const variant = r === 'ADMIN' ? 'warning' : r === 'TEACHER' ? 'secondary' : 'outline';
+                          return (
+                            <Badge
+                              key={r}
+                              variant={variant}
+                              className={r === 'TEACHER' ? 'bg-secondary text-foreground text-[10px]' : 'text-[10px]'}
+                            >
+                              {r}
+                            </Badge>
+                          );
+                        })}
                       </div>
                     </div>
                   ))}
@@ -268,7 +279,7 @@ export function AdminDashboardPage() {
                   {quizzesData.quizzes.slice(0, 3).map((q) => (
                     <div key={q.id} className="px-3 py-2 flex items-center justify-between gap-2 text-xs">
                       <div className="min-w-0">
-                        <p className="font-bold text-foreground truncate">{q.title}</p>
+                        <p className="font-bold text-foreground truncate" title={q.title}>{q.title}</p>
                         <p className="font-mono text-[11px] text-ink-muted">
                           Part {q.part} • {q.count} câu • v{q.version}
                         </p>

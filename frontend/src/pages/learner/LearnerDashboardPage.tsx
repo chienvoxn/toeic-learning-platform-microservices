@@ -408,7 +408,7 @@ export function LearnerDashboardPage() {
                       <div className="flex items-center justify-between sm:justify-end gap-4 shrink-0 pt-3 sm:pt-0 border-t sm:border-t-0 border-border/20">
                         {isGraded ? (
                           <div className="text-left sm:text-right">
-                            <div className="font-mono text-lg font-black text-foreground">
+                            <div className="font-mono tabular-nums text-lg font-extrabold text-foreground">
                               {attempt.correct ?? 0}/{attempt.total}
                             </div>
                             <span className="font-mono text-xs font-bold text-ink-muted">

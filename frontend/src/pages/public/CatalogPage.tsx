@@ -95,10 +95,10 @@ export function CatalogPage() {
       {/* Editorial Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b-2 border-border pb-6">
         <div className="space-y-2">
-          <Badge variant="outline" className="font-mono uppercase tracking-wider">
+          <Badge variant="outline" className="uppercase tracking-wider">
             Ngân hàng đề thi TOEIC
           </Badge>
-          <h1 className="text-3xl sm:text-4xl font-black text-foreground tracking-tight">
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight">
             Kho đề thi TOEIC Master
           </h1>
           <p className="text-sm sm:text-base text-ink-muted max-w-2xl leading-relaxed">
@@ -143,7 +143,7 @@ export function CatalogPage() {
 
       {/* Error State */}
       {isError && (
-        <Alert type="error" title="Không thể tải danh sách đề thi">
+        <Alert type="error" title="Chưa thể tải danh sách đề thi. Vui lòng thử lại.">
           <div className="space-y-3">
             <p>{(error as Error)?.message || 'Đã xảy ra lỗi khi kết nối với máy chủ nội dung.'}</p>
             <Button variant="outline" size="sm" onClick={() => refetch()} className="gap-1.5">
