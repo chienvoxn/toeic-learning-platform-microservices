@@ -66,7 +66,7 @@ export function MembershipPage() {
       const message =
         err instanceof Error
           ? err.message
-          : 'Không thể chuyển đổi gói hội viên. Tính năng đổi gói thử nghiệm (ALLOW_DEMO_PLAN_CHANGE) có thể đang tắt trên hệ thống.';
+          : 'Không thể chuyển đổi gói hội viên. Tính năng đổi gói thử nghiệm có thể đang tắt trên hệ thống.';
       setActionMessage({
         type: 'error',
         text: message,
@@ -103,7 +103,7 @@ export function MembershipPage() {
     <div className="max-w-5xl mx-auto space-y-8">
       {/* Editorial Header */}
       <div className="space-y-1.5 border-b-2 border-border pb-5">
-        <h2 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight flex items-center gap-2.5">
+        <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight flex items-center gap-2.5">
           <Award className="h-6 w-6 shrink-0" /> Quản lý gói hội viên
         </h2>
         <p className="text-sm text-ink-muted">
@@ -116,7 +116,7 @@ export function MembershipPage() {
         <p className="text-sm leading-relaxed">
           Hệ thống hiện tại là nền tảng học tập thử nghiệm,{' '}
           <strong>chưa tích hợp cổng thanh toán và không thu bất kỳ khoản phí thực tế nào</strong>. Mức giá
-          199.000 VNĐ/tháng chỉ mang tính mô phỏng. Khi cấu hình <code>ALLOW_DEMO_PLAN_CHANGE</code> được bật, bạn có
+          199.000 VNĐ/tháng chỉ mang tính mô phỏng. Khi tính năng đổi gói thử nghiệm được bật, bạn có
           thể chuyển đổi qua lại giữa gói FREE (10 lượt/ngày) và gói PRO (1.000 lượt/ngày) ngay bên dưới.
         </p>
       </Alert>
@@ -142,7 +142,7 @@ export function MembershipPage() {
         <div className="p-6 sm:p-8 bg-surface flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div className="space-y-2">
             <div className="flex items-center gap-3 flex-wrap">
-              <h3 className="text-3xl font-black text-foreground">Gói {membership?.planCode}</h3>
+              <h3 className="text-3xl font-extrabold text-foreground">Gói {membership?.planCode}</h3>
               <Badge variant={isPro ? 'success' : 'secondary'}>
                 {membership?.status || 'ACTIVE'}
               </Badge>
@@ -208,8 +208,8 @@ export function MembershipPage() {
             </div>
 
             <CardHeader className="pb-4">
-              <CardTitle className="text-2xl font-black text-foreground">Gói FREE</CardTitle>
-              <div className="font-mono text-3xl font-black text-foreground pt-2">
+              <CardTitle className="text-2xl font-extrabold text-foreground">Gói FREE</CardTitle>
+              <div className="font-mono tabular-nums text-3xl font-extrabold text-foreground pt-2">
                 0 VNĐ <span className="font-sans text-xs font-medium text-ink-muted">/ mặc định</span>
               </div>
               <CardDescription className="pt-1">
@@ -265,8 +265,8 @@ export function MembershipPage() {
             </div>
 
             <CardHeader className="pb-4">
-              <CardTitle className="text-2xl font-black text-foreground">Gói PRO</CardTitle>
-              <div className="font-mono text-3xl font-black text-foreground pt-2">
+              <CardTitle className="text-2xl font-extrabold text-foreground">Gói PRO</CardTitle>
+              <div className="font-mono tabular-nums text-3xl font-extrabold text-foreground pt-2">
                 199.000 VNĐ{' '}
                 <span className="font-sans text-xs font-medium text-ink-muted">/ tháng (Giá mô phỏng)</span>
               </div>
@@ -324,8 +324,8 @@ export function MembershipPage() {
             <TableBody>
               <TableRow>
                 <TableCell className="font-semibold">Giới hạn lượt thi mới mỗi ngày (UTC)</TableCell>
-                <TableCell className="text-center font-mono font-bold">10 lượt</TableCell>
-                <TableCell className="text-center font-mono font-black bg-primary/15">1.000 lượt</TableCell>
+                <TableCell className="text-center font-mono tabular-nums font-bold">10 lượt</TableCell>
+                <TableCell className="text-center font-mono tabular-nums font-extrabold bg-primary/15">1.000 lượt</TableCell>
               </TableRow>
               <TableRow>
                 <TableCell className="font-semibold">Truy cập đề thi tiêu chuẩn (FREE)</TableCell>

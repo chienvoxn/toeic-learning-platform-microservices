@@ -63,11 +63,11 @@ export function LoginPage() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10 sm:py-16">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-12 lg:py-16">
       <div className="border-2 border-border rounded-lg shadow-brutal-lg overflow-hidden bg-surface grid grid-cols-1 lg:grid-cols-12">
         {/* Left Brand & Editorial Context Panel */}
-        <div className="lg:col-span-5 bg-muted border-b-2 lg:border-b-0 lg:border-r-2 border-border p-7 sm:p-9 flex flex-col justify-between gap-8">
-          <div className="space-y-5">
+        <div className="lg:col-span-5 bg-muted border-b-2 lg:border-b-0 lg:border-r-2 border-border p-5 sm:p-8 lg:p-9 flex flex-col justify-between gap-6 sm:gap-8">
+          <div className="space-y-4 sm:space-y-5">
             <Link to="/" className="inline-flex items-center gap-2.5">
               <div className="h-9 w-9 rounded-sm border-[1.5px] border-border bg-primary text-foreground flex items-center justify-center">
                 <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
@@ -75,14 +75,14 @@ export function LoginPage() {
                   <rect x="16.5" y="13" width="3.5" height="6" fill="currentColor" />
                 </svg>
               </div>
-              <span className="font-black text-lg text-foreground tracking-tight">TOEIC Master</span>
+              <span className="font-extrabold text-lg text-foreground tracking-tight">TOEIC Master</span>
             </Link>
 
             <div className="space-y-2.5">
               <span className="text-xs font-bold uppercase tracking-wider text-ink-muted block">
                 Cổng đăng nhập
               </span>
-              <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight leading-tight">
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight leading-tight">
                 Tiếp tục lộ trình luyện đề của bạn
               </h1>
               <p className="text-sm text-ink-muted leading-relaxed">
@@ -125,10 +125,10 @@ export function LoginPage() {
         </div>
 
         {/* Right Form Panel */}
-        <div className="lg:col-span-7 p-7 sm:p-10 bg-surface flex flex-col justify-center">
+        <div className="lg:col-span-7 p-5 sm:p-8 lg:p-10 bg-surface flex flex-col justify-center">
           <div className="space-y-6 max-w-md w-full mx-auto">
             <div className="space-y-1.5 border-b border-border/20 pb-4">
-              <h2 className="text-2xl font-black text-foreground tracking-tight">Đăng nhập</h2>
+              <h2 className="text-2xl font-extrabold text-foreground tracking-tight">Đăng nhập</h2>
               <p className="text-sm text-ink-muted">
                 Nhập email và mật khẩu tài khoản TOEIC Master của bạn.
               </p>

@@ -45,6 +45,16 @@ import {
   Pagination,
   SearchInput,
 } from '@/components/molecules';
+import { PageHeroBanner } from '@/components/organisms/PageHeroBanner';
+import { DataTable, Column } from '@/components/organisms/DataTable';
+import { QuizCard } from '@/features/catalog/QuizCard';
+import { QuizFilters } from '@/features/catalog/QuizFilters';
+import { QuestionCanvas } from '@/features/exam/QuestionCanvas';
+import { QuestionPalette } from '@/features/exam/QuestionPalette';
+import { AutosaveIndicator } from '@/features/exam/AutosaveIndicator';
+import { AutosaveStatus } from '@/features/exam/types';
+import { QuizView } from '@/types/quiz';
+import { AttemptQuestion } from '@/types/attempt';
 import { formatPartName, formatTime } from '@/lib/utils';
 import { BookOpen, Clock, Info, Layers, ShieldCheck, Trash2 } from 'lucide-react';
 
@@ -67,6 +77,63 @@ const SAMPLE_QUIZ_ROWS = [
   { id: 'Q-204', title: 'Sample Listening Part 2 Rapid Response', part: 2, questions: 25, tier: 'FREE', status: 'IN_PROGRESS', version: 'v3' },
 ] as const;
 
+const SAMPLE_CATALOG_QUIZZES: QuizView[] = [
+  { id: 'sample-q1', title: '[SAMPLE] Part 1 — Photographs Practice #01', part: 1, premium: false, count: 6 },
+  { id: 'sample-q2', title: '[SAMPLE] Part 5 — Business Grammar Drill', part: 5, premium: true, count: 30 },
+  { id: 'sample-q3', title: '[SAMPLE] Part 7 — Double Passage Comprehension', part: 7, premium: true, count: 15 },
+];
+
+interface SampleAdminUserRow {
+  id: string;
+  name: string;
+  email: string;
+  roles: Array<'LEARNER' | 'TEACHER' | 'ADMIN'>;
+  status: string;
+}
+
+const SAMPLE_ADMIN_USERS: SampleAdminUserRow[] = [
+  { id: 'U-101', name: 'Nguyễn Minh Anh', email: 'minh.anh@sample.toeic.local', roles: ['LEARNER', 'TEACHER'], status: 'ACTIVE' },
+  { id: 'U-102', name: 'Trần Quốc Bảo (Long Email Overflow Check)', email: 'tran.quoc.bao.administrator@sample-domain.toeic.local', roles: ['LEARNER', 'ADMIN'], status: 'ACTIVE' },
+  { id: 'U-103', name: 'Lê Hoàng Nam', email: 'hoang.nam@sample.toeic.local', roles: ['LEARNER'], status: 'ACTIVE' },
+];
+
+const SAMPLE_EXAM_QUESTIONS: AttemptQuestion[] = [
+  {
+    id: 'sample-eq-1',
+    position: 1,
+    prompt: '[SAMPLE] Ms. Tanaka requested that all department managers _______ their quarterly budgets before Friday.',
+    choices: { A: 'submit', B: 'submitting', C: 'submitted', D: 'submits' },
+    selectedChoice: 'A',
+    correct: null,
+    explanation: null,
+  },
+  {
+    id: 'sample-eq-2',
+    position: 2,
+    prompt: '[SAMPLE] Where is the annual training workshop scheduled to take place?',
+    choices: { A: 'In the main conference room.', B: 'At 9:00 AM tomorrow.', C: 'Yes, everyone is invited.' },
+    selectedChoice: null,
+    correct: null,
+    explanation: null,
+  },
+  {
+    id: 'sample-eq-3',
+    position: 3,
+    prompt: '[SAMPLE] What is the main purpose of the memorandum?',
+    passageText:
+      'MEMORANDUM\nTo: All Regional Sales Representatives\nFrom: Operations Department\nDate: November 27\nSubject: Updated Travel Reimbursement Guidelines\n\nEffective next month, all receipts for client meals and hotel accommodations must be uploaded to the finance portal within five business days of completing travel.',
+    choices: {
+      A: 'To announce a change in expense reporting procedures',
+      B: 'To introduce a new regional sales manager',
+      C: 'To postpone the upcoming sales conference',
+      D: 'To confirm hotel reservations for the team',
+    },
+    selectedChoice: null,
+    correct: null,
+    explanation: null,
+  },
+];
+
 export function DesignSystemPreview() {
   const [emailSample, setEmailSample] = useState('');
   const [passwordSample, setPasswordSample] = useState('1234');
@@ -75,6 +142,49 @@ export function DesignSystemPreview() {
   const [searchSample, setSearchSample] = useState('');
   const [filterSample, setFilterSample] = useState<'ALL' | 'FREE' | 'PRO'>('ALL');
   const [pageSample, setPageSample] = useState(0);
+
+  // Interactive sample exam composition state (DEV ONLY, zero API calls)
+  const [examIdx, setExamIdx] = useState(0);
+  const [examAnswers, setExamAnswers] = useState<Record<string, 'A' | 'B' | 'C' | 'D'>>({
+    'sample-eq-1': 'A',
+  });
+  const [examBookmarks, setExamBookmarks] = useState<Set<string>>(() => new Set(['sample-eq-2']));
+  const [autosaveDemoStatus, setAutosaveDemoStatus] = useState<AutosaveStatus>('saved');
+
+  const adminUserColumns: Column<SampleAdminUserRow>[] = [
+    {
+      key: 'name',
+      header: 'Người dùng (Sample)',
+      render: (u) => (
+        <div className="min-w-0 max-w-xs">
+          <p className="font-bold text-foreground break-words" tabIndex={0} title={u.name}>{u.name}</p>
+          <p className="font-mono text-xs text-ink-muted break-all select-all" tabIndex={0} title={u.email}>{u.email}</p>
+        </div>
+      ),
+    },
+    {
+      key: 'roles',
+      header: 'Vai trò phân quyền',
+      render: (u) => (
+        <div className="flex flex-wrap gap-1.5">
+          {u.roles.map((r) => (
+            <Badge
+              key={r}
+              variant={r === 'ADMIN' ? 'warning' : r === 'TEACHER' ? 'secondary' : 'outline'}
+              className={r === 'TEACHER' ? 'bg-secondary text-foreground text-[11px]' : 'text-[11px]'}
+            >
+              {r}
+            </Badge>
+          ))}
+        </div>
+      ),
+    },
+    {
+      key: 'status',
+      header: 'Trạng thái',
+      render: (u) => <StatusBadge status={u.status} />,
+    },
+  ];
 
   const passwordError =
     passwordSample.length > 0 && passwordSample.length < 8
@@ -89,10 +199,10 @@ export function DesignSystemPreview() {
           <div className="lg:col-span-8 space-y-4">
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant="default">DEV ONLY PREVIEW</Badge>
-              <Badge variant="outline" className="font-mono">Waves 1–3 Showcase</Badge>
+              <Badge variant="outline" className="font-mono">Design System &amp; Workspace Showcase</Badge>
               <Badge variant="secondary">Sample Data — No API Calls</Badge>
             </div>
-            <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-foreground leading-[1.08]">
+            <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-foreground leading-[1.08]">
               TOEIC Master — Editorial Design System
             </h1>
             <p className="text-base text-ink-muted max-w-2xl leading-relaxed">
@@ -145,8 +255,8 @@ export function DesignSystemPreview() {
 
           <Card variant="flat" className="p-6 space-y-6">
             <div className="space-y-1.5 border-b border-border/20 pb-4">
-              <span className="font-mono text-xs text-ink-muted">Display — text-4xl font-black tracking-tight</span>
-              <p className="text-3xl sm:text-4xl font-black tracking-tight text-foreground">
+              <span className="font-mono text-xs text-ink-muted">Display — text-4xl font-extrabold tracking-tight</span>
+              <p className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground">
                 Luyện Đề Đọc Hiểu &amp; Nghe Hiểu Có Hệ Thống
               </p>
             </div>
@@ -567,6 +677,145 @@ export function DesignSystemPreview() {
               <Button variant="outline">Chi tiết</Button>
             </CardFooter>
           </Card>
+        </section>
+
+        {/* 10. Production Workspace & Exam Compositions (SAMPLE / DEV ONLY) */}
+        <section className="space-y-8">
+          <div className="flex flex-wrap items-baseline justify-between gap-3 border-b-2 border-border pb-3">
+            <div className="flex items-baseline gap-3">
+              <span className="font-mono text-sm font-bold bg-primary px-2 py-0.5 border border-border rounded-sm">10</span>
+              <h2 className="text-2xl font-extrabold tracking-tight">
+                Workspace &amp; Exam Compositions
+              </h2>
+            </div>
+            <Badge variant="warning">SAMPLE / DEV ONLY — NO API CALLS</Badge>
+          </div>
+
+          {/* 10.1 PageHeroBanner Showcase */}
+          <div className="space-y-3">
+            <h3 className="text-sm font-extrabold uppercase tracking-wider text-ink-muted">
+              Sample Workspace Hero Banner (Learner / Teacher / Admin)
+            </h3>
+            <PageHeroBanner
+              badgeText="SAMPLE / DEV ONLY · Không gian học viên"
+              title="Xin chào, Nguyễn Minh Anh"
+              description="Minh họa thành phần PageHeroBanner thực tế dùng dữ liệu mẫu tĩnh để kiểm tra khoảng cách, phân cấp tiêu đề và nhóm nút CTA trên đa màn hình."
+              actions={
+                <div className="flex flex-wrap gap-2">
+                  <Button variant="primary" size="md">Tiếp tục bài đang làm</Button>
+                  <Button variant="outline" size="md">Kho đề thi</Button>
+                </div>
+              }
+            />
+          </div>
+
+          {/* 10.2 QuizFilters + QuizCard Grid */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-extrabold uppercase tracking-wider text-ink-muted">
+              Sample Catalog Filters &amp; QuizCard Grid
+            </h3>
+            <QuizFilters
+              searchQuery={searchSample}
+              onSearchChange={setSearchSample}
+              selectedPart={0}
+              onPartChange={() => undefined}
+              selectedTier={filterSample}
+              onTierChange={setFilterSample}
+              selectedSkill="ALL"
+              onSkillChange={() => undefined}
+            />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {SAMPLE_CATALOG_QUIZZES.map((quiz) => (
+                <QuizCard key={quiz.id} quiz={quiz} />
+              ))}
+            </div>
+          </div>
+
+          {/* 10.3 Admin Multi-Role DataTable */}
+          <div className="space-y-3">
+            <h3 className="text-sm font-extrabold uppercase tracking-wider text-ink-muted">
+              Sample Admin Multi-Role DataTable (Long Email &amp; Badge Contrast)
+            </h3>
+            <DataTable
+              columns={adminUserColumns}
+              data={SAMPLE_ADMIN_USERS}
+              keyExtractor={(u) => u.id}
+            />
+          </div>
+
+          {/* 10.4 Exam Canvas & Palette Composition */}
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="space-y-1">
+                <h3 className="text-sm font-extrabold uppercase tracking-wider text-ink-muted">
+                  Sample Exam QuestionCanvas &amp; QuestionPalette (Interactive Dev Demo)
+                </h3>
+                <p className="text-xs text-ink-muted">
+                  Ghi chú: AutosaveIndicator chỉ mô phỏng các trạng thái lưu mẫu (saved/saving/error) trong môi trường dev; không gửi request mutation lên máy chủ.
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <AutosaveIndicator
+                  status={autosaveDemoStatus}
+                  hasPendingChanges={autosaveDemoStatus === 'saving'}
+                  lastSavedAt={new Date()}
+                  errorMessage="Demo trạng thái lỗi đồng bộ"
+                  onRetry={() => setAutosaveDemoStatus('saved')}
+                />
+                <div className="flex gap-1">
+                  {(['saved', 'saving', 'error'] as const).map((st) => (
+                    <Button
+                      key={st}
+                      size="sm"
+                      variant={autosaveDemoStatus === st ? 'secondary' : 'outline'}
+                      onClick={() => setAutosaveDemoStatus(st)}
+                    >
+                      {st}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+              <div className="lg:col-span-8 flex flex-col">
+                <QuestionCanvas
+                  question={SAMPLE_EXAM_QUESTIONS[examIdx]}
+                  currentIndex={examIdx}
+                  totalQuestions={SAMPLE_EXAM_QUESTIONS.length}
+                  selectedChoice={examAnswers[SAMPLE_EXAM_QUESTIONS[examIdx].id] ?? null}
+                  isBookmarked={examBookmarks.has(SAMPLE_EXAM_QUESTIONS[examIdx].id)}
+                  onSelectChoice={(choice) =>
+                    setExamAnswers((prev) => ({ ...prev, [SAMPLE_EXAM_QUESTIONS[examIdx].id]: choice }))
+                  }
+                  onToggleBookmark={() =>
+                    setExamBookmarks((prev) => {
+                      const next = new Set(prev);
+                      const qId = SAMPLE_EXAM_QUESTIONS[examIdx].id;
+                      if (next.has(qId)) next.delete(qId);
+                      else next.add(qId);
+                      return next;
+                    })
+                  }
+                  onPrev={() => setExamIdx((i) => Math.max(0, i - 1))}
+                  onNext={() => setExamIdx((i) => Math.min(SAMPLE_EXAM_QUESTIONS.length - 1, i + 1))}
+                  hasPrev={examIdx > 0}
+                  hasNext={examIdx < SAMPLE_EXAM_QUESTIONS.length - 1}
+                />
+              </div>
+              <div className="lg:col-span-4">
+                <QuestionPalette
+                  questions={SAMPLE_EXAM_QUESTIONS}
+                  currentIndex={examIdx}
+                  selectedAnswers={examAnswers}
+                  bookmarks={examBookmarks}
+                  onSelectQuestion={setExamIdx}
+                  onSubmitClick={() => setAutosaveDemoStatus('saved')}
+                  isSubmitting={false}
+                />
+              </div>
+            </div>
+          </div>
         </section>
       </div>
     </div>

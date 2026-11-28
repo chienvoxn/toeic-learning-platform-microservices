@@ -74,8 +74,8 @@ export function DashboardSidebar({
             </svg>
           </div>
           <div className="flex flex-col">
-            <span className="font-black text-base text-foreground leading-tight tracking-tight">{brandTitle}</span>
-            <span className={cn('font-mono text-[10px] font-bold uppercase tracking-wider', style.brandSubtitle)}>
+            <span className="font-extrabold text-base text-foreground leading-tight tracking-tight">{brandTitle}</span>
+            <span className={cn('font-sans text-[11px] font-bold uppercase tracking-wider', style.brandSubtitle)}>
               {brandSubtitle}
             </span>
           </div>

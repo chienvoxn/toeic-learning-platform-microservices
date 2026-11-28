@@ -87,7 +87,7 @@ export function MetricCard({
         </div>
       </div>
       <div className="flex items-baseline justify-between gap-2">
-        <div className={cn('font-mono text-2xl sm:text-3xl font-black tracking-tight', scheme.valueText)}>
+        <div className={cn('font-mono tabular-nums text-2xl sm:text-3xl font-extrabold tracking-tight', scheme.valueText)}>
           {value}
         </div>
         {trend && (

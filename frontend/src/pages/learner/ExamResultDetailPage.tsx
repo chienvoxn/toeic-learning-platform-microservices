@@ -203,7 +203,7 @@ export function ExamResultDetailPage() {
               <span className="text-xs font-bold uppercase tracking-wider text-ink-muted">
                 Báo cáo kết quả luyện tập
               </span>
-              <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
                 {quiz?.title || 'Báo cáo bài luyện thi TOEIC'}
               </h1>
               {summary.isGraded && (
@@ -223,7 +223,7 @@ export function ExamResultDetailPage() {
                 <span className="block text-[11px] font-bold uppercase tracking-wider text-ink-muted">
                   Tỷ lệ đúng
                 </span>
-                <span className="font-mono text-2xl font-black text-foreground">
+                <span className="font-mono tabular-nums text-2xl font-extrabold text-foreground">
                   {summary.isGraded ? `${summary.percentage}%` : '—'}
                 </span>
               </div>
@@ -232,7 +232,7 @@ export function ExamResultDetailPage() {
                 <span className="block text-[11px] font-bold uppercase tracking-wider text-ink-muted">
                   Câu đúng
                 </span>
-                <span className="font-mono text-2xl font-black text-foreground">
+                <span className="font-mono tabular-nums text-2xl font-extrabold text-foreground">
                   {summary.isGraded ? summary.correctCount : '—'}
                 </span>
               </div>
@@ -241,7 +241,7 @@ export function ExamResultDetailPage() {
                 <span className="block text-[11px] font-bold uppercase tracking-wider text-ink-muted">
                   Câu sai
                 </span>
-                <span className="font-mono text-2xl font-black text-foreground">
+                <span className="font-mono tabular-nums text-2xl font-extrabold text-foreground">
                   {summary.isGraded ? summary.incorrectCount : '—'}
                 </span>
               </div>
@@ -250,7 +250,7 @@ export function ExamResultDetailPage() {
                 <span className="block text-[11px] font-bold uppercase tracking-wider text-ink-muted">
                   Bỏ trống
                 </span>
-                <span className="font-mono text-2xl font-black text-foreground">
+                <span className="font-mono tabular-nums text-2xl font-extrabold text-foreground">
                   {summary.unansweredCount}
                 </span>
               </div>
@@ -330,7 +330,7 @@ export function ExamResultDetailPage() {
                     )}
                   >
                     <div className="flex items-center gap-2.5">
-                      <span className="font-mono text-xs font-black px-2.5 py-1 rounded-sm border border-border bg-surface text-foreground">
+                      <span className="font-mono tabular-nums text-xs font-extrabold px-2.5 py-1 rounded-sm border border-border bg-surface text-foreground">
                         Câu {String(q.position).padStart(2, '0')}
                       </span>
                       <span className="font-mono text-xs font-bold text-ink-muted">

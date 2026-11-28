@@ -71,7 +71,7 @@ export function QuestionPalette({
         <div className="space-y-2">
           <div className="flex items-center justify-between text-xs font-extrabold text-foreground">
             <span>Tiến độ làm bài</span>
-            <span className="font-mono">
+            <span className="font-mono tabular-nums">
               {progressPercent}% ({answeredCount}/{total})
             </span>
           </div>

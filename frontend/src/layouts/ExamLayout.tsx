@@ -82,7 +82,7 @@ export function ExamLayout() {
           </div>
           <div className="flex flex-col">
             <div className="flex items-center gap-2">
-              <span className="font-black text-base text-foreground leading-tight tracking-tight">
+              <span className="font-extrabold text-base text-foreground leading-tight tracking-tight">
                 TOEIC Master
               </span>
               <Badge variant="outline" className="text-[10px] font-mono hidden sm:inline-flex">

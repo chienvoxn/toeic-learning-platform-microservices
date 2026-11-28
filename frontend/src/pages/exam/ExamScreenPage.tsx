@@ -561,7 +561,7 @@ export function ExamScreenPage() {
             <ShieldAlert className="h-7 w-7" aria-hidden="true" />
           </div>
           <div className="space-y-2">
-            <h1 className="text-xl font-black text-foreground">Không thể mở phòng luyện thi</h1>
+            <h1 className="text-xl font-extrabold text-foreground">Không thể mở phòng luyện thi</h1>
             <p className="text-sm text-ink-muted leading-relaxed">{errorMsg}</p>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
@@ -636,7 +636,7 @@ export function ExamScreenPage() {
               <Badge variant="outline" className="font-mono text-[11px]">
                 Lượt thi #{attempt.id.slice(0, 8)}
               </Badge>
-              <h1 className="text-base sm:text-lg font-black text-foreground tracking-tight truncate max-w-2xl">
+              <h1 className="text-base sm:text-lg font-extrabold text-foreground tracking-tight truncate max-w-2xl">
                 {quiz ? quiz.title : 'Bài luyện thi TOEIC'}
               </h1>
             </div>
@@ -669,7 +669,7 @@ export function ExamScreenPage() {
                 <span className="text-[10px] font-bold uppercase tracking-wider text-ink-muted">
                   Thời gian tham khảo
                 </span>
-                <span className="font-mono font-black text-sm text-foreground">
+                <span className="font-mono tabular-nums font-extrabold text-sm text-foreground">
                   {formattedRemaining}
                 </span>
               </div>

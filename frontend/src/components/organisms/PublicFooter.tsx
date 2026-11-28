@@ -13,7 +13,7 @@ export function PublicFooter() {
                   <rect x="16.5" y="13" width="3.5" height="6" fill="currentColor" />
                 </svg>
               </div>
-              <span className="font-black text-base text-foreground tracking-tight">TOEIC Master</span>
+              <span className="font-extrabold text-base text-foreground tracking-tight">TOEIC Master</span>
             </div>
             <p className="text-sm text-ink-muted leading-relaxed max-w-md">
               Nền tảng luyện thi TOEIC theo chuẩn cấu trúc Listening (Part 1–4) và Reading (Part 5–7), hỗ trợ chấm điểm tự động và giải thích chi tiết sau khi nộp bài.
@@ -96,10 +96,10 @@ export function PublicFooter() {
         </div>
 
         <div className="mt-10 pt-6 border-t border-border/20 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-ink-muted">
-          <p>© 2026 TOEIC Master. Nền tảng luyện thi chuẩn cấu trúc ETS.</p>
+          <p>© 2026 TOEIC Master. Nền tảng luyện thi TOEIC trực tuyến theo cấu trúc Listening &amp; Reading.</p>
           <div className="flex gap-6 font-medium">
             <span>Học tập &amp; Đánh giá</span>
-            <span>ETS Format · 7 Parts</span>
+            <span>Listening &amp; Reading · 7 Parts</span>
           </div>
         </div>
       </div>

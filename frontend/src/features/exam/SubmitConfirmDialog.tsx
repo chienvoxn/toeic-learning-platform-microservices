@@ -74,16 +74,16 @@ export function SubmitConfirmDialog({
         <div className="rounded-md border-[1.5px] border-border bg-background p-4 space-y-2.5 text-sm">
           <div className="flex items-center justify-between text-ink-muted">
             <span>Tổng số câu:</span>
-            <span className="font-mono font-extrabold text-foreground">{totalQuestions}</span>
+            <span className="font-mono tabular-nums font-extrabold text-foreground">{totalQuestions}</span>
           </div>
           <div className="flex items-center justify-between text-ink-muted">
             <span>Đã trả lời:</span>
-            <span className="font-mono font-extrabold text-foreground">{answeredCount}</span>
+            <span className="font-mono tabular-nums font-extrabold text-foreground">{answeredCount}</span>
           </div>
           <div className="flex items-center justify-between text-ink-muted">
             <span>Chưa trả lời:</span>
             <span
-              className={`font-mono font-extrabold ${
+              className={`font-mono tabular-nums font-extrabold ${
                 unansweredCount > 0 ? 'text-destructive-foreground bg-destructive/40 px-1.5 rounded-xs border border-border' : 'text-foreground'
               }`}
             >
@@ -92,7 +92,7 @@ export function SubmitConfirmDialog({
           </div>
           <div className="flex items-center justify-between text-ink-muted pt-1 border-t border-border/30">
             <span>Đã đánh dấu:</span>
-            <span className="font-mono font-extrabold text-foreground">{bookmarkedCount}</span>
+            <span className="font-mono tabular-nums font-extrabold text-foreground">{bookmarkedCount}</span>
           </div>
         </div>
 

@@ -98,7 +98,7 @@ export function QuizCreatePage() {
             <ArrowLeft className="h-4 w-4" /> Quay lại
           </Button>
           <div>
-            <h1 className="text-xl font-black text-foreground tracking-tight">
+            <h1 className="text-xl font-extrabold text-foreground tracking-tight">
               Khởi tạo bản nháp đề thi mới
             </h1>
             <p className="text-xs text-ink-muted">
@@ -135,7 +135,7 @@ export function QuizCreatePage() {
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
               <label htmlFor="quiz-create-title" className="text-sm font-bold text-foreground">
-                Tiêu đề đề thi <span className="text-destructive-foreground">*</span>
+                Tiêu đề đề thi <span className="text-foreground font-extrabold" aria-hidden="true">*</span>
               </label>
               <span className="font-mono text-xs text-ink-muted">{title.length}/255</span>
             </div>

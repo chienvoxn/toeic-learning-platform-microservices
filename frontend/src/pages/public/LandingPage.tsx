@@ -50,17 +50,17 @@ export function LandingPage() {
           {/* Left Column: Editorial Headline & Factual Specs */}
           <div className="lg:col-span-7 space-y-7">
             <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="outline" className="font-mono uppercase tracking-wider">
-                ETS Format · 7 Parts
+              <Badge variant="outline" className="uppercase tracking-wider">
+                Cấu trúc 7 Parts
               </Badge>
-              <Badge variant="secondary" className="font-mono">
+              <Badge variant="secondary">
                 Listening &amp; Reading
               </Badge>
             </div>
 
-            <h1 className="text-4xl sm:text-5xl xl:text-6xl font-black text-foreground tracking-tight leading-[1.14]">
+            <h1 className="text-4xl sm:text-5xl xl:text-6xl font-extrabold text-foreground tracking-tight leading-[1.22] sm:leading-[1.18] xl:leading-[1.16]">
               Luyện thi TOEIC{' '}
-              <span className="inline-block bg-primary px-2.5 py-0.5 border-2 border-border shadow-subtle mt-1">
+              <span className="inline-block bg-primary px-3 py-1 border-2 border-border shadow-subtle my-1 align-baseline">
                 đúng cấu trúc,
               </span>{' '}
               rõ từng lỗi sai.
@@ -86,19 +86,19 @@ export function LandingPage() {
             {/* Factual Platform Specification Strip */}
             <div className="pt-6 border-t-2 border-border grid grid-cols-2 sm:grid-cols-4 gap-4">
               <div>
-                <p className="font-mono text-2xl font-black text-foreground">07 Parts</p>
+                <p className="font-mono tabular-nums text-2xl font-extrabold text-foreground">07 Parts</p>
                 <p className="text-xs text-ink-muted font-medium mt-0.5">Listening &amp; Reading</p>
               </div>
               <div>
-                <p className="font-mono text-2xl font-black text-foreground">10 lượt</p>
+                <p className="font-mono tabular-nums text-2xl font-extrabold text-foreground">10 lượt</p>
                 <p className="text-xs text-ink-muted font-medium mt-0.5">Miễn phí mỗi ngày</p>
               </div>
               <div>
-                <p className="font-mono text-2xl font-black text-foreground">Autosave</p>
+                <p className="font-mono text-2xl font-extrabold text-foreground">Autosave</p>
                 <p className="text-xs text-ink-muted font-medium mt-0.5">Lưu từng câu hỏi</p>
               </div>
               <div>
-                <p className="font-mono text-2xl font-black text-foreground">Tự động</p>
+                <p className="font-sans text-2xl font-extrabold text-foreground">Tự động</p>
                 <p className="text-xs text-ink-muted font-medium mt-0.5">Chấm điểm &amp; giải thích</p>
               </div>
             </div>
@@ -108,10 +108,10 @@ export function LandingPage() {
           <div className="lg:col-span-5">
             <Card variant="elevated" className="overflow-hidden p-0">
               <div className="bg-ink text-surface px-4 py-2.5 flex items-center justify-between gap-2 border-b-2 border-border">
-                <span className="font-mono text-xs font-bold tracking-wider uppercase">
+                <span className="font-sans text-xs font-bold tracking-wider uppercase">
                   Minh họa phòng thi · Part 5
                 </span>
-                <span className="font-mono text-xs font-bold bg-warning text-foreground px-2 py-0.5 rounded-sm border border-border">
+                <span className="font-mono tabular-nums text-xs font-bold bg-warning text-foreground px-2 py-0.5 rounded-sm border border-border">
                   01:14:20
                 </span>
               </div>
@@ -165,9 +165,9 @@ export function LandingPage() {
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b-2 border-border pb-6">
           <div className="space-y-2 max-w-2xl">
             <span className="text-xs font-bold uppercase tracking-wider text-ink-muted">
-              Cấu trúc bài thi chuẩn quốc tế
+              Cấu trúc bài thi tiêu chuẩn 7 phần
             </span>
-            <h2 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
               Phân bổ 7 phần thi Listening và Reading
             </h2>
           </div>
@@ -206,7 +206,7 @@ export function LandingPage() {
                     className="p-5 sm:px-6 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-background transition-colors"
                   >
                     <div className="flex items-start gap-4 flex-1 min-w-0">
-                      <span className="font-mono text-sm font-black px-2.5 py-1 rounded-sm border border-border bg-secondary/45 text-foreground shrink-0">
+                      <span className="font-mono text-sm font-extrabold px-2.5 py-1 rounded-sm border border-border bg-secondary/45 text-foreground shrink-0">
                         P{item.part}
                       </span>
                       <div className="space-y-1 min-w-0">
@@ -251,7 +251,7 @@ export function LandingPage() {
                   <div key={item.part} className="p-6 flex flex-col justify-between gap-4">
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="font-mono text-sm font-black px-2.5 py-0.5 rounded-sm border border-border bg-primary/60 text-foreground">
+                        <span className="font-mono text-sm font-extrabold px-2.5 py-0.5 rounded-sm border border-border bg-primary/60 text-foreground">
                           Part {item.part}
                         </span>
                         <span className="font-mono text-xs font-bold text-ink-muted">{item.questions}</span>
@@ -272,7 +272,7 @@ export function LandingPage() {
                 <div className="border-t border-border/20 bg-background p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div className="space-y-1.5 max-w-2xl">
                     <div className="flex items-center gap-2.5">
-                      <span className="font-mono text-sm font-black px-2.5 py-0.5 rounded-sm border border-border bg-primary text-foreground">
+                      <span className="font-mono text-sm font-extrabold px-2.5 py-0.5 rounded-sm border border-border bg-primary text-foreground">
                         Part {readingPart7.part}
                       </span>
                       <span className="font-mono text-xs font-bold text-foreground">
@@ -305,7 +305,7 @@ export function LandingPage() {
               <span className="text-xs font-bold uppercase tracking-wider text-ink-muted">
                 Quy trình thực hành
               </span>
-              <h2 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
                 3 bước luyện đề rõ ràng
               </h2>
             </div>
@@ -329,7 +329,7 @@ export function LandingPage() {
                 },
               ].map((item) => (
                 <div key={item.step} className="p-5 flex items-start gap-4">
-                  <span className="font-mono text-base font-black px-2.5 py-1 rounded-sm border border-border bg-primary text-foreground shrink-0">
+                  <span className="font-mono text-base font-extrabold px-2.5 py-1 rounded-sm border border-border bg-primary text-foreground shrink-0">
                     {item.step}
                   </span>
                   <div className="space-y-1">
@@ -347,7 +347,7 @@ export function LandingPage() {
               <span className="text-xs font-bold uppercase tracking-wider text-ink-muted">
                 Thiết kế cho việc học thực chất
               </span>
-              <h2 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
                 Nền tảng tách biệt vai trò học viên và giảng viên
               </h2>
             </div>
@@ -370,10 +370,10 @@ export function LandingPage() {
                   <CheckCircle2 className="h-5 w-5" />
                 </div>
                 <h3 className="text-base font-extrabold text-foreground">
-                  Đáp án và lời giải sau khi nộp
+                  Kết quả chấm và lời giải sau khi nộp
                 </h3>
                 <p className="text-sm text-ink-muted leading-relaxed">
-                  Đáp án chuẩn cùng lời giải chi tiết từng câu được hiển thị ngay sau khi bạn nộp bài, giúp rà soát và rút kinh nghiệm cho từng câu hỏi.
+                  Kết quả đúng/sai cùng lời giải thích chi tiết từng câu được hiển thị ngay sau khi bạn nộp bài, giúp rà soát và rút kinh nghiệm cho từng câu hỏi.
                 </p>
               </Card>
             </div>
@@ -402,7 +402,7 @@ export function LandingPage() {
             <span className="text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-sm border border-border bg-surface inline-block">
               Bắt đầu miễn phí
             </span>
-            <h2 className="text-2xl sm:text-4xl font-black tracking-tight leading-tight">
+            <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight leading-tight">
               Sẵn sàng bắt đầu luyện đề hôm nay?
             </h2>
             <p className="text-sm sm:text-base text-foreground/85 leading-relaxed">

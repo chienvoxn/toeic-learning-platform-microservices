@@ -78,11 +78,13 @@ export function AdminUsersPage() {
               <UserInitials name={u.displayName} email={u.email} />
             </AvatarFallback>
           </Avatar>
-          <div className="min-w-0">
-            <p className="font-extrabold text-foreground truncate">
+          <div className="min-w-0 max-w-xs sm:max-w-sm">
+            <p className="font-extrabold text-foreground break-words" tabIndex={0} title={u.displayName || '(Chưa đặt tên)'}>
               {u.displayName || '(Chưa đặt tên)'}
             </p>
-            <p className="font-mono text-xs text-ink-muted truncate">{u.email}</p>
+            <p className="font-mono text-xs text-ink-muted break-all select-all" tabIndex={0} title={u.email}>
+              {u.email}
+            </p>
           </div>
         </div>
       ),
@@ -124,7 +126,7 @@ export function AdminUsersPage() {
       header: <span className="block text-right">Thao tác</span>,
       className: 'text-right',
       render: (u) => (
-        <div className="flex justify-end">
+        <div className="flex justify-end whitespace-nowrap">
           <Button
             variant="outline"
             size="sm"
@@ -142,7 +144,7 @@ export function AdminUsersPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b-[1.5px] border-border pb-4">
         <div className="space-y-1">
-          <h1 className="text-2xl font-black text-foreground tracking-tight">
+          <h1 className="text-2xl font-extrabold text-foreground tracking-tight">
             Danh bạ người dùng &amp; quản trị RBAC
           </h1>
           <p className="text-sm text-ink-muted">

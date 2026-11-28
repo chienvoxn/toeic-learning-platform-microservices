@@ -75,7 +75,7 @@ export function LearnerPreviewModal({
             </div>
             <div className="space-y-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <DialogTitle className="text-base font-black text-foreground truncate">
+                <DialogTitle className="text-base font-extrabold text-foreground truncate">
                   {title || 'Đề thi không có tiêu đề'}
                 </DialogTitle>
                 <Badge variant={premium ? 'pro' : 'outline'} className="text-[11px]">
