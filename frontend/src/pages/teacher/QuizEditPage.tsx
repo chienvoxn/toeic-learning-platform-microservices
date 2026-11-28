@@ -158,6 +158,7 @@ export function QuizEditPage() {
   // Lifecycle & concurrency refs
   const isMountedRef = useRef(true);
   const activeQuizIdRef = useRef<string | undefined>(id);
+  const editSessionSeqRef = useRef<number>(0);
   const initializedQuizIdRef = useRef<string | null>(null);
   const currentVersionRef = useRef<number>(0);
   const editRevisionRef = useRef<number>(0);
@@ -219,6 +220,7 @@ export function QuizEditPage() {
 
   // Reset all transient editor state when route quiz ID changes
   useEffect(() => {
+    editSessionSeqRef.current += 1;
     activeQuizIdRef.current = id;
     initializedQuizIdRef.current = null;
     currentVersionRef.current = 0;
@@ -279,7 +281,14 @@ export function QuizEditPage() {
     isError,
   } = useQuery<DraftDetail>({
     queryKey: ['teacher-draft', id],
-    queryFn: () => apiRequest<DraftDetail>(`/ms/v1/contents/quizzes/${id}/draft`),
+    queryFn: async () => {
+      const data = await apiRequest<DraftDetail>(`/ms/v1/contents/quizzes/${id}/draft`);
+      const cached = queryClient.getQueryData<DraftDetail>(['teacher-draft', id]);
+      if (cached && cached.quiz.version > data.quiz.version) {
+        return cached;
+      }
+      return data;
+    },
     enabled: Boolean(id),
     staleTime: 0,
   });
@@ -322,10 +331,11 @@ export function QuizEditPage() {
     onMutate: async () => {
       const targetQuizId = id;
       const revisionAtStart = editRevisionRef.current;
+      const sessionSeqAtStart = editSessionSeqRef.current;
       if (targetQuizId) {
         await queryClient.cancelQueries({ queryKey: ['teacher-draft', targetQuizId] });
       }
-      return { targetQuizId, revisionAtStart };
+      return { targetQuizId, revisionAtStart, sessionSeqAtStart };
     },
     mutationFn: async () => {
       const targetQuizId = id;
@@ -351,7 +361,13 @@ export function QuizEditPage() {
       );
       queryClient.invalidateQueries({ queryKey: ['teacher-quizzes'] });
 
-      if (!isMountedRef.current || activeQuizIdRef.current !== targetQuizId) return;
+      if (
+        !isMountedRef.current ||
+        activeQuizIdRef.current !== targetQuizId ||
+        editSessionSeqRef.current !== context?.sessionSeqAtStart
+      ) {
+        return;
+      }
 
       currentVersionRef.current = updated.quiz.version;
       setCurrentVersion(updated.quiz.version);
@@ -365,7 +381,13 @@ export function QuizEditPage() {
       setSaveSuccess(`Đã lưu bản nháp thành công (Phiên bản v${updated.quiz.version}).`);
     },
     onError: (err: unknown, _variables, context) => {
-      if (!isMountedRef.current || activeQuizIdRef.current !== context?.targetQuizId) return;
+      if (
+        !isMountedRef.current ||
+        activeQuizIdRef.current !== context?.targetQuizId ||
+        editSessionSeqRef.current !== context?.sessionSeqAtStart
+      ) {
+        return;
+      }
       setSaveSuccess(null);
       const msg = err instanceof Error ? err.message : 'Lỗi khi lưu bản nháp.';
       const isConflict =
@@ -386,7 +408,7 @@ export function QuizEditPage() {
   // 3. Publish Mutation (POST /ms/v1/contents/quizzes/{id}/publish)
   const publishMutation = useMutation({
     onMutate: () => {
-      return { targetQuizId: id };
+      return { targetQuizId: id, sessionSeqAtStart: editSessionSeqRef.current };
     },
     mutationFn: async () => {
       return apiRequest<OwnedQuiz>(`/ms/v1/contents/quizzes/${id}/publish`, {
@@ -399,14 +421,26 @@ export function QuizEditPage() {
       queryClient.invalidateQueries({ queryKey: ['teacher-quizzes'] });
       queryClient.invalidateQueries({ queryKey: ['public-quizzes'] });
 
-      if (!isMountedRef.current || activeQuizIdRef.current !== targetQuizId) return;
+      if (
+        !isMountedRef.current ||
+        activeQuizIdRef.current !== targetQuizId ||
+        editSessionSeqRef.current !== context?.sessionSeqAtStart
+      ) {
+        return;
+      }
 
       isPublishRedirectingRef.current = true;
       setHasUnsavedChanges(false);
       navigate('/teacher/quizzes', { replace: true });
     },
     onError: (err: unknown, _variables, context) => {
-      if (!isMountedRef.current || activeQuizIdRef.current !== context?.targetQuizId) return;
+      if (
+        !isMountedRef.current ||
+        activeQuizIdRef.current !== context?.targetQuizId ||
+        editSessionSeqRef.current !== context?.sessionSeqAtStart
+      ) {
+        return;
+      }
       const msg = err instanceof Error ? err.message : 'Xuất bản đề thi thất bại.';
       const isConflict =
         (err instanceof ApiError && err.isConflict()) ||
@@ -427,6 +461,7 @@ export function QuizEditPage() {
 
   const executeReloadFromServer = async () => {
     const targetQuizId = id;
+    const sessionSeqAtStart = editSessionSeqRef.current;
     if (!targetQuizId || saveMutation.isPending || publishMutation.isPending) return;
 
     setIsReloadConfirmOpen(false);
@@ -437,17 +472,33 @@ export function QuizEditPage() {
     try {
       await queryClient.cancelQueries({ queryKey: ['teacher-draft', targetQuizId] });
       const freshDraft = await apiRequest<DraftDetail>(`/ms/v1/contents/quizzes/${targetQuizId}/draft`);
-      if (!isMountedRef.current || activeQuizIdRef.current !== targetQuizId) return;
+      if (
+        !isMountedRef.current ||
+        activeQuizIdRef.current !== targetQuizId ||
+        editSessionSeqRef.current !== sessionSeqAtStart
+      ) {
+        return;
+      }
 
       queryClient.setQueryData(['teacher-draft', targetQuizId], freshDraft);
       hydrateDraftState(freshDraft);
       setSaveSuccess(`Đã tải lại bản mới nhất từ máy chủ (Phiên bản v${freshDraft.quiz.version}).`);
     } catch (err: unknown) {
-      if (!isMountedRef.current || activeQuizIdRef.current !== targetQuizId) return;
+      if (
+        !isMountedRef.current ||
+        activeQuizIdRef.current !== targetQuizId ||
+        editSessionSeqRef.current !== sessionSeqAtStart
+      ) {
+        return;
+      }
       const msg = err instanceof Error ? err.message : 'Không thể tải lại bản nháp từ máy chủ.';
       setErrorMessage(msg);
     } finally {
-      if (isMountedRef.current && activeQuizIdRef.current === targetQuizId) {
+      if (
+        isMountedRef.current &&
+        activeQuizIdRef.current === targetQuizId &&
+        editSessionSeqRef.current === sessionSeqAtStart
+      ) {
         setIsReloadingFromServer(false);
       }
     }

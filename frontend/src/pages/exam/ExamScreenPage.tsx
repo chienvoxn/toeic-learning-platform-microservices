@@ -112,6 +112,7 @@ export function ExamScreenPage() {
   const isBackendGradedLockedRef = useRef(false);
   const isExitBypassRef = useRef(false);
   const activeAttemptIdRef = useRef<string | undefined>(attemptId);
+  const attemptSessionSeqRef = useRef<number>(0);
   const verifyPromiseRef = useRef<Promise<'GRADED' | 'IN_PROGRESS' | 'ERROR'> | null>(null);
   const onAutosaveConflictRef = useRef<(conflictAttemptId: string) => void>(() => {});
 
@@ -131,7 +132,14 @@ export function ExamScreenPage() {
     refetch: refetchAttempt,
   } = useQuery<AttemptView>({
     queryKey: ['attempt', attemptId],
-    queryFn: () => apiRequest<AttemptView>(`/ms/v1/attempts/${attemptId}`),
+    queryFn: async () => {
+      const data = await apiRequest<AttemptView>(`/ms/v1/attempts/${attemptId}`);
+      const cached = queryClient.getQueryData<AttemptView>(['attempt', attemptId]);
+      if (cached?.status === 'GRADED' && data.status === 'IN_PROGRESS') {
+        return cached;
+      }
+      return data;
+    },
     enabled: Boolean(attemptId),
     retry: 1,
     staleTime: 0,
@@ -151,6 +159,7 @@ export function ExamScreenPage() {
 
   // Reset editor session state when navigating to another attemptId
   useEffect(() => {
+    attemptSessionSeqRef.current += 1;
     activeAttemptIdRef.current = attemptId;
     hydratedAttemptIdRef.current = null;
     isSubmittingRef.current = false;
@@ -191,6 +200,7 @@ export function ExamScreenPage() {
       source: 'autosave_conflict' | 'submit_uncertain'
     ): Promise<'GRADED' | 'IN_PROGRESS' | 'ERROR'> => {
       if (!targetAttemptId) return 'ERROR';
+      const sessionSeqAtStart = attemptSessionSeqRef.current;
       if (verifyPromiseRef.current) {
         return verifyPromiseRef.current;
       }
@@ -199,7 +209,11 @@ export function ExamScreenPage() {
       verifyPromise = (async (): Promise<'GRADED' | 'IN_PROGRESS' | 'ERROR'> => {
         try {
           const fresh = await apiRequest<AttemptView>(`/ms/v1/attempts/${targetAttemptId}`);
-          if (!isMountedRef.current || activeAttemptIdRef.current !== targetAttemptId) {
+          if (
+            !isMountedRef.current ||
+            activeAttemptIdRef.current !== targetAttemptId ||
+            attemptSessionSeqRef.current !== sessionSeqAtStart
+          ) {
             return 'ERROR';
           }
 
@@ -226,7 +240,11 @@ export function ExamScreenPage() {
           );
           return 'IN_PROGRESS';
         } catch {
-          if (!isMountedRef.current || activeAttemptIdRef.current !== targetAttemptId) {
+          if (
+            !isMountedRef.current ||
+            activeAttemptIdRef.current !== targetAttemptId ||
+            attemptSessionSeqRef.current !== sessionSeqAtStart
+          ) {
             return 'ERROR';
           }
           setStatusAlertMessage(
@@ -260,6 +278,7 @@ export function ExamScreenPage() {
   // 5. Initial hydration & GRADED redirect (EX-01 + M1)
   useEffect(() => {
     if (!attempt || !attemptId || attempt.id !== attemptId) return;
+    if (isBackendGradedLockedRef.current) return;
 
     if (attempt.status === 'GRADED') {
       stopAutosaveForGraded();
@@ -448,6 +467,7 @@ export function ExamScreenPage() {
   // Safe Submit Handler (EX-06 + H1 + M1)
   const handleConfirmSubmit = async () => {
     const targetAttemptId = attemptId;
+    const sessionSeqAtStart = attemptSessionSeqRef.current;
     if (
       !targetAttemptId ||
       isSubmittingRef.current ||
@@ -466,7 +486,11 @@ export function ExamScreenPage() {
     try {
       // 1. Sync pending answers sequentially
       const syncOk = await syncPending();
-      if (!isMountedRef.current || activeAttemptIdRef.current !== targetAttemptId) {
+      if (
+        !isMountedRef.current ||
+        activeAttemptIdRef.current !== targetAttemptId ||
+        attemptSessionSeqRef.current !== sessionSeqAtStart
+      ) {
         return;
       }
 
@@ -476,7 +500,11 @@ export function ExamScreenPage() {
           return;
         }
         const verified = await verifyAttemptStateFromServer(targetAttemptId, 'submit_uncertain');
-        if (!isMountedRef.current || activeAttemptIdRef.current !== targetAttemptId) {
+        if (
+          !isMountedRef.current ||
+          activeAttemptIdRef.current !== targetAttemptId ||
+          attemptSessionSeqRef.current !== sessionSeqAtStart
+        ) {
           return;
         }
         if (verified === 'GRADED') {
@@ -494,7 +522,11 @@ export function ExamScreenPage() {
         method: 'POST',
       });
 
-      if (!isMountedRef.current || activeAttemptIdRef.current !== targetAttemptId) {
+      if (
+        !isMountedRef.current ||
+        activeAttemptIdRef.current !== targetAttemptId ||
+        attemptSessionSeqRef.current !== sessionSeqAtStart
+      ) {
         return;
       }
 
@@ -511,7 +543,11 @@ export function ExamScreenPage() {
       isExitBypassRef.current = true;
       navigate(`/learner/results/${graded.id}`, { replace: true });
     } catch (err: unknown) {
-      if (!isMountedRef.current || activeAttemptIdRef.current !== targetAttemptId) {
+      if (
+        !isMountedRef.current ||
+        activeAttemptIdRef.current !== targetAttemptId ||
+        attemptSessionSeqRef.current !== sessionSeqAtStart
+      ) {
         return;
       }
       if (isBackendGradedLockedRef.current) {

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { UserView, Session, RbacAccess } from '@/types/auth';
 import { getAuthToken, setAuthToken, apiRequest } from '@/lib/api-client';
 import { clearPrivateQueryCache } from '@/lib/query-client';
@@ -24,16 +24,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [permissions, setPermissions] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  const authReqSeqRef = useRef<number>(0);
+  const isMountedRef = useRef<boolean>(true);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      authReqSeqRef.current += 1;
+    };
+  }, []);
+
   const fetchRbacAndProfile = useCallback(async () => {
+    const currentSeq = ++authReqSeqRef.current;
+    const currentToken = getAuthToken();
     try {
       const [userProfile, rbac] = await Promise.all([
         apiRequest<UserView>('/ms/v1/identity/me'),
         apiRequest<RbacAccess>('/ms/v1/identity/rbac/me'),
       ]);
+      if (!isMountedRef.current || currentSeq !== authReqSeqRef.current || currentToken !== getAuthToken()) {
+        return;
+      }
       setUser(userProfile);
       setRoles(rbac.roles || []);
       setPermissions(rbac.permissions || []);
     } catch (error) {
+      if (!isMountedRef.current || currentSeq !== authReqSeqRef.current || currentToken !== getAuthToken()) {
+        return;
+      }
       console.warn('Phiên đăng nhập không hợp lệ hoặc đã hết hạn:', error);
       setAuthToken(null);
       setUser(null);
@@ -41,7 +60,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setPermissions([]);
       clearPrivateQueryCache();
     } finally {
-      setIsLoading(false);
+      if (isMountedRef.current && currentSeq === authReqSeqRef.current) {
+        setIsLoading(false);
+      }
     }
   }, []);
 
@@ -55,16 +76,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [fetchRbacAndProfile]);
 
   const login = async (session: Session) => {
+    authReqSeqRef.current += 1;
     setAuthToken(session.accessToken);
     setUser(session.user);
     await fetchRbacAndProfile();
   };
 
   const logout = () => {
+    authReqSeqRef.current += 1;
     setAuthToken(null);
     setUser(null);
     setRoles([]);
     setPermissions([]);
+    setIsLoading(false);
     clearPrivateQueryCache();
   };
 
